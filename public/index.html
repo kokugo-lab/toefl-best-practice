@@ -117,6 +117,18 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  .sheet{position:fixed; inset:0; background:rgba(0,0,0,.38); z-index:70; display:flex; align-items:flex-end; justify-content:center}
+  .sheet[hidden]{display:none}
+  .sheet-in{background:var(--card); color:var(--ink); width:100%; max-width:760px; max-height:88vh; overflow:auto; border-radius:16px 16px 0 0; padding:0 16px calc(24px + env(safe-area-inset-bottom))}
+  .sheet-h{position:sticky; top:0; background:var(--card); display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 0 8px; border-bottom:1px solid var(--line); z-index:1}
+  .sheet-h h2{font-size:.98rem; margin:0}
+  .sheet .seg{flex-wrap:wrap} .sheet .seg button{flex:1 1 auto; font-size:.78rem}
+  .sheet h3{font-size:.85rem; margin:16px 0 6px; color:var(--sub); letter-spacing:.05em}
+  .gtips li{margin:6px 0}
+  .gw{padding:8px 0; border-bottom:1px dashed var(--line)}
+  .gw .mini{margin-top:4px}
+  body.noscroll{overflow:hidden}
+  button.guidebtn{border-color:var(--accent); color:var(--accent)}
   button.quit{color:var(--warn); border-color:var(--warn); background:var(--card)}
   .xpbox{white-space:normal}
   .xs{padding:4px 0}
@@ -303,6 +315,7 @@
         <button class="primary" id="r-start">第1段階を始める</button>
         <button id="r-reset" style="display:none">新しいセットにする</button>
         <button id="c-start">3分ドリル（Complete the Words）</button>
+        <button class="guidebtn" data-guide="cw">コツと単語</button>
       </div>
       <p class="tiny" style="margin-top:6px">3分ドリルは、Complete the Words の1段落だけを3分で解くすき間時間用の練習です。時間になると自動で答え合わせします。</p>
       <div id="r-msg"></div>
@@ -319,6 +332,7 @@
       <div class="row">
         <button class="primary" id="l-start">第1段階を始める</button>
         <button id="l-voice">声のテスト</button>
+        <button class="guidebtn" data-guide="response">コツと単語</button>
         <button id="l-reset" style="display:none">新しいセットにする</button>
       </div>
       <p class="tiny" id="l-voiceinfo" style="margin-top:8px"></p>
@@ -344,6 +358,7 @@
         <p class="tiny">会話の流れに合うように、語のかたまりを正しい順番に並べて文を完成させます（10問・目安6分）。かたまりを押すと解答欄に入り、解答欄のかたまりを押すと戻ります。使わないダミーが1つ混ざっている問題もあります。</p>
         <div class="row">
           <button class="primary" id="b-start">10問を始める</button>
+          <button class="guidebtn" data-guide="build">コツと単語</button>
           <button id="b-reset" style="display:none">新しいセットにする</button>
         </div>
       </div>
@@ -354,7 +369,7 @@
       <div class="card">
         <h2>Write an Email</h2>
         <p class="tiny">大学の事務室や教授あてのメールを書く課題です。制限時間は10分、90語以上が目安。</p>
-        <div class="row"><button class="primary" id="w-gen">課題を出す</button></div>
+        <div class="row"><button class="primary" id="w-gen">課題を出す</button><button class="guidebtn" data-guide="email">コツと単語</button></div>
         <div id="w-task" style="display:none"></div>
       </div>
       <div class="card" id="w-editor" style="display:none">
@@ -377,7 +392,7 @@
       <div class="card">
         <h2>Write for an Academic Discussion</h2>
         <p class="tiny">授業のオンライン掲示板で、教授の問いとクラスメート2人の投稿を読み、自分の意見を投稿します。制限時間は10分、100語以上が目安。クラスメートの意見に触れつつ、新しい視点を足すのがコツです。</p>
-        <div class="row"><button class="primary" id="d-gen">課題を出す</button></div>
+        <div class="row"><button class="primary" id="d-gen">課題を出す</button><button class="guidebtn" data-guide="disc">コツと単語</button></div>
         <div id="d-task" style="display:none"></div>
       </div>
       <div class="card" id="d-editor" style="display:none">
@@ -414,6 +429,7 @@
         <p class="tiny">案内役の話す文を1回だけ聞き、聞こえたとおりにくり返します（7文・だんだん長くなります）。再生が終わると自動で録音が始まります。文字起こしと元の文を比べて、再現できた語の割合を出します。</p>
         <div class="row">
           <button class="primary" id="p-start">7文を始める</button>
+          <button class="guidebtn" data-guide="repeat">コツと単語</button>
           <button id="p-reset" style="display:none">新しいセットにする</button>
         </div>
       </div>
@@ -427,6 +443,7 @@
         <div class="row">
           <button class="primary" data-ivstart="set">本番形式（4問・各45秒）</button>
           <button data-ivstart="one">1問だけ（60秒）</button>
+          <button class="guidebtn" data-guide="interview">コツと単語</button>
         </div>
       </div>
       <div id="iv-body"></div>
@@ -582,6 +599,13 @@
     ここで出題される問題はすべて、新形式を模して作成した練習問題です（公式問題ではありません）。<br>
     バンドは目安であり、公式採点とは一致しません。課題名・問題数・時間は公式と細部が異なる場合があります。
   </p>
+</div>
+
+<div id="guide" class="sheet" hidden>
+  <div class="sheet-in" role="dialog" aria-labelledby="guide-title">
+    <div class="sheet-h"><h2 id="guide-title">コツと単語</h2><button data-guideclose="1">閉じる</button></div>
+    <div id="guide-body"></div>
+  </div>
 </div>
 
 <nav>
@@ -963,7 +987,7 @@ function partHTML(sec, mod, pi){
       ${pl.done ? p.qs.map((q,qi)=>mcHTML(sec,pi,qi,q,mod.ans[pi+"-"+qi],{num:qi+1})).join("") : ""}
       ${allDone ? `<h3>スクリプトと訳</h3>${xpStatusHTML(`rl|${sec}|${pi}`, p, "スクリプトの訳")}<button data-replay="${sec}|${pi}|all">全体を聞き直す</button>${drillScriptHTML(`${sec}-${pi}`, segsOf(p,0), p.xp, 0, (k)=>k+1)}${kwHTML(p.data.key_words)}` : ""}`;
   }
-  return `<div class="card" id="${SEC[sec].p}-part-${pi}"><div class="part-h"><h2>${esc(p.title)}</h2></div>${inner}</div>`;
+  return `<div class="card" id="${SEC[sec].p}-part-${pi}"><div class="part-h"><h2>${esc(p.title)}</h2>${PTYPE2GUIDE[p.type]?guideBtnHTML(PTYPE2GUIDE[p.type]):""}</div>${inner}</div>`;
 }
 
 function stagebarHTML(sec, st){
@@ -3087,6 +3111,177 @@ document.addEventListener("click", e=>{
   if(!armTwice(`[data-quit="${b.dataset.quit}"]`)) return;
   quitSession(b.dataset.quit);
 });
+
+/* ================= コツと単語（TOEFL の各単元） ================= */
+// 単元ごとの形式の要点・コツ・落とし穴・覚えるべき単語。中身は固定（生成しないのですぐ開け、無料枠も使わない）。
+// 単語は [英語, 意味, 例文]。
+const GUIDE_SEC={
+  reading:{name:"Reading", units:["cw","daily","academic"]},
+  listening:{name:"Listening", units:["response","conversation","announcement","talk"]},
+  writing:{name:"Writing", units:["build","email","disc"]},
+  speaking:{name:"Speaking", units:["repeat","interview"]},
+};
+const GUIDE={
+  cw:{title:"Complete the Words", form:"学術的な短い段落。2文目から1語おきに語の後半が消えていて、消えた文字を入れる。",
+    tips:[
+      "まず1文目と段落全体をざっと読み、何の話かをつかんでから埋める。話題がわかると候補の語がしぼれる。",
+      "空欄の前後の語から品詞を決める。the/a の後なら名詞、主語の後なら動詞、名詞の前なら形容詞、動詞のそばなら副詞（-ly）。",
+      "形を確かめる：主語が複数なら動詞に -s は付かない、過去の話なら -ed、数えられる名詞が複数なら -s。",
+      "残っている前半の文字数から、消えた文字数（下線の本数）を数えて語をしぼる。普通は語の約半分が消えている。",
+      "接続のことば（however, although, because, therefore など）は、前後の文の関係（逆接・理由・結果）から決める。",
+      "迷う空欄は飛ばして最後に戻る。全体が埋まると前後関係で決まることが多い。",
+    ],
+    traps:["つづりを1文字でも間違えると不正解。-tion / -sion、-ence / -ance などの語尾に注意。","意味が合っていても品詞が違えば不正解（example ↔ exemplify など）。"],
+    words:[["although","〜だけれども","Although the theory is old, it is still useful."],["however","しかしながら","However, the results were different."],["therefore","したがって","The sample was small; therefore, more research is needed."],["whereas","〜である一方","Some plants need sun, whereas others prefer shade."],["despite","〜にもかかわらず","Despite the rain, the study continued."],["process","過程・処理する","Digestion is a complex process."],["significant","重要な・かなりの","There was a significant increase in sales."],["evidence","証拠","There is little evidence for this idea."],["environment","環境","Animals adapt to their environment."],["development","発達・開発","Language development begins early."],["influence","影響（を与える）","Climate influences plant growth."],["require","必要とする","Most plants require water and light."],["provide","提供する","Trees provide shelter for birds."],["include","含む","The course includes three exams."],["increase","増える・増加","The number of students increased."],["establish","確立する・設立する","Scientists established a new method."],["approach","取り組み方・近づく","This approach saves time."],["structure","構造","The structure of the cell is simple."],["function","機能（する）","Each part has a different function."],["individual","個人・個々の","Each individual learns differently."],["factor","要因","Diet is an important factor."],["consequence","結果・影響","The decision had serious consequences."],["particular","特定の","This particular species is rare."],["generally","一般的に","Birds generally migrate in autumn."]]},
+  daily:{title:"Read in Daily Life", form:"掲示・メール・SNS投稿・チラシなど、大学生活の短い文章。目的・詳細・推測を問う。",
+    tips:[
+      "最初に設問を見て、何を探すか（日付・場所・やるべきこと・目的）を決めてから本文を読む。",
+      "見出し・差出人・太字・箇条書き・日時は答えになりやすい。まずそこを確認する。",
+      "「目的」の問題は、冒頭か最後の1文（お願い・お知らせの中心）に答えがあることが多い。",
+      "「〜しなければならないこと」は must / required / please / make sure などの語の近くを探す。",
+      "正解の選択肢は本文の言い換え。同じ単語が入っている選択肢ほど疑う（部分一致の引っかけ）。",
+    ],
+    traps:["本文に書いていない一般常識で選ばない。","「すべての」「必ず」など言い過ぎの選択肢（all, always, only）に注意。"],
+    words:[["deadline","締め切り","The deadline for the essay is Friday."],["submit","提出する","Please submit the form online."],["register","登録する","Register for classes by May 1."],["enroll","入学する・履修登録する","She enrolled in a history course."],["tuition","授業料","Tuition will increase next year."],["refund","返金","You can get a full refund."],["eligible","資格がある","Only full-time students are eligible."],["mandatory","必須の","Attendance is mandatory."],["optional","任意の","The workshop is optional."],["postpone","延期する","The meeting was postponed."],["reschedule","予定を変更する","Can we reschedule the exam?"],["venue","会場","The venue has changed to Hall B."],["attendance","出席","Attendance will be taken."],["facility","施設","The sports facility opens at 7."],["maintenance","保守・点検","The elevator is under maintenance."],["residence hall","学生寮","Residence halls close in June."],["advisor","指導教員・相談員","Meet your advisor this week."],["transcript","成績証明書","Order your transcript online."],["notify","知らせる","We will notify you by email."],["confirm","確認する","Please confirm your attendance."],["reimburse","払い戻す","Travel costs will be reimbursed."],["prior to","〜より前に","Arrive prior to 9 a.m."],["in advance","前もって","Book a room in advance."],["available","利用できる・空いている","Tickets are available at the office."]]},
+  academic:{title:"Read an Academic Passage", form:"入門的な教科書のような説明文（約200語）。主旨・詳細・語彙・推測・目的を問う。",
+    tips:[
+      "各段落の1文目（トピックセンテンス）を先に読むと、文章全体の流れがつかめる。",
+      "主旨の問題は、一部分だけの話ではなく文章全体を言い表した選択肢を選ぶ。",
+      "詳細の問題は、設問のキーワードを本文で探し、その前後1〜2文だけを丁寧に読む。",
+      "語彙の問題は、その語を選択肢の語に置き換えて文の意味が通るかで確かめる。",
+      "推測の問題は「本文から確実に言えること」。書いていないことを足した選択肢は誤り。",
+      "目的の問題（Why does the author mention…?）は、その例が何を説明するために出てきたかを考える。",
+    ],
+    traps:["本文の語をそのまま使った選択肢は、意味がずれていることが多い（すり替え）。","because / however の後に答えが来やすい。逆接の前後を取り違えない。"],
+    words:[["hypothesis","仮説","The hypothesis was later confirmed."],["phenomenon","現象","Rainbows are a natural phenomenon."],["species","種（生物の）","Many species live in the rainforest."],["adapt","適応する","Animals adapt to cold climates."],["erosion","浸食","Wind causes soil erosion."],["migrate","移動する・渡る","Birds migrate south in winter."],["decline","減少（する）","The population declined sharply."],["emerge","現れる","New ideas emerged in the 1900s."],["abundant","豊富な","Water is abundant in the region."],["crucial","非常に重要な","Sleep is crucial for memory."],["contribute to","〜の一因となる","Pollution contributes to disease."],["derive from","〜に由来する","The word derives from Latin."],["indicate","示す","The data indicate a clear trend."],["subsequent","その後の","Subsequent studies agreed."],["prevalent","広く見られる","The belief was prevalent then."],["distinct","はっきり異なる","Two distinct groups appeared."],["comprise","〜から成る","The team comprises five members."],["facilitate","促進する・容易にする","Maps facilitate navigation."],["inhibit","抑える","Cold inhibits plant growth."],["sustain","維持する","Farms cannot sustain this demand."],["undergo","経験する・受ける","The city underwent rapid change."],["attribute A to B","AをBのせいにする","They attribute success to luck."],["consequently","その結果","Consequently, prices rose."],["primarily","主に","It is primarily a desert plant."]]},
+  response:{title:"Listen and Choose a Response", form:"短い発話を1回だけ聞き、最も自然な返事を選ぶ。発話の文字は出ない。",
+    tips:[
+      "最初の疑問詞（When / Where / Who / Why / How）を絶対に聞き逃さない。答えの種類がそこで決まる。",
+      "Yes/No 疑問文でも、正解は Yes/No で始まらない遠回しな答えが多い（例：Is the library open? → It closes at five today.）。",
+      "発話と同じ単語・似た音の単語が入った選択肢は引っかけのことが多い。",
+      "依頼（Could you…?）には引き受け・断り、提案（Why don't we…?）には賛成・代案が自然な返事。",
+      "時制を確認する：過去のことを聞かれたら、未来の話をしている選択肢は外れ。",
+    ],
+    traps:["話がかみ合わない返事（質問とずれた内容）を、単語が合っているだけで選ばない。","When に場所、Where に時間で答えている選択肢に注意。"],
+    words:[["I'd rather …","むしろ〜したい","I'd rather stay home tonight."],["Not that I know of.","私の知る限りでは違う","Is the class canceled? — Not that I know of."],["It depends.","場合による","It depends on the weather."],["I'll take care of it.","私がやっておきます","Don't worry, I'll take care of it."],["Don't mention it.","どういたしまして","Thanks! — Don't mention it."],["I'm afraid not.","残念ながら違う","Is there time? — I'm afraid not."],["Sounds good.","いいですね","Lunch at noon? — Sounds good."],["No wonder …","どうりで〜","No wonder you're tired."],["I wish I could.","できたらいいんだけど（断り）","Join us? — I wish I could."],["Let me check.","確認させて","Let me check my schedule."],["It slipped my mind.","うっかり忘れた","Sorry, it slipped my mind."],["I'm swamped.","とても忙しい","I'm swamped with homework."],["I'll pass.","遠慮しておく","More cake? — I'll pass."],["That makes sense.","なるほど","Oh, that makes sense now."],["You can say that again.","まったくその通り","It's hot! — You can say that again."],["As far as I know","私の知る限り","As far as I know, it's free."],["Not yet.","まだです","Have you finished? — Not yet."],["Either is fine.","どちらでもいい","Tea or coffee? — Either is fine."]]},
+  conversation:{title:"Listen to a Conversation", form:"学生どうし・学生と職員の日常的な会話。主題・詳細・話し手の意図・次にすることを問う。",
+    tips:[
+      "最初の2〜3往復で「何の問題・用事か」が出る。そこを聞き取るのが主題問題の答え。",
+      "Actually / But / Well, I thought… の後は話が変わる合図。本当の気持ちや問題はその後に来る。",
+      "最後の部分で「次に何をするか」が決まることが多い（I'll go… / Let me… / Why don't you…）。",
+      "メモは単語だけでよい。誰が（W/M）何をするか、を矢印で書くと後で迷わない。",
+      "話し手の意図の問題は、言葉どおりの意味ではなく、その場で何を伝えたいか（断り・提案・驚き）を考える。",
+    ],
+    traps:["会話の途中で出た案は、最後に却下されることがある。最終的に決まった内容を選ぶ。","女性と男性のどちらの話かを取り違えない。"],
+    words:[["office hours","教員の面談時間","I'll visit during office hours."],["extension","（締め切りの）延長","Can I get an extension?"],["prerequisite","履修の前提科目","This course has a prerequisite."],["syllabus","授業計画","Check the syllabus for dates."],["drop a class","履修を取り消す","I want to drop a class."],["major in","〜を専攻する","She majors in biology."],["get back to you","後で連絡する","I'll get back to you tomorrow."],["figure out","理解する・解決する","I can't figure out this problem."],["come up with","思いつく","We came up with a plan."],["run out of","〜を使い切る","The printer ran out of paper."],["look into","調べる","I'll look into it."],["hand in / turn in","提出する","Hand in your report by Monday."],["catch up on","遅れを取り戻す","I need to catch up on reading."],["put off","延期する","Don't put off your homework."],["fill out","記入する","Fill out this form, please."],["be supposed to","〜することになっている","We're supposed to meet at two."],["sign up for","申し込む","I signed up for the workshop."],["work on","取り組む","I'm working on my project."]]},
+  announcement:{title:"Listen to an Announcement", form:"教授・職員などが1人で話すお知らせ。目的と、聞き手がすべきことを問う。",
+    tips:[
+      "冒頭の1〜2文で「何のお知らせか（変更・注意・案内）」が言われる。目的の問題はほぼここ。",
+      "変更のお知らせは「前は〜、これからは〜」の対比になる。新しい内容のほうが答え。",
+      "Please / Make sure / Don't forget / You'll need to の後が「聞き手がすること」。",
+      "日時・場所・持ち物は数字や固有の語として出るので、聞こえたらすぐメモする。",
+    ],
+    traps:["変更前の情報（もう有効でない内容）を選ばない。","ついでに言った補足を、お知らせの目的と取り違えない。"],
+    words:[["Attention, please.","お知らせします","Attention, please, all students."],["effective immediately","ただちに有効","The rule is effective immediately."],["relocate","移転する","The office will relocate."],["cancel","中止する","Today's lab is canceled."],["reminder","念のためのお知らせ","Just a reminder about the test."],["be required to","〜しなければならない","You are required to bring ID."],["make sure","必ず〜する","Make sure you sign in."],["in case of","〜の場合は","In case of fire, use the stairs."],["guest speaker","招待講演者","We have a guest speaker today."],["sign-in sheet","出席の記入用紙","Please fill in the sign-in sheet."],["due","締め切りの","The paper is due next week."],["instead","代わりに","We'll meet in Room 5 instead."],["handout","配布資料","Take a handout at the door."],["make-up class","補講","There will be a make-up class."]]},
+  talk:{title:"Listen to an Academic Talk", form:"講義の一部（約200語）。主題・詳細・教授が例を出した目的・推測を問う。",
+    tips:[
+      "最初に「今日のテーマ」が言われる（Today we'll look at… / Let's talk about…）。主題の問題の答え。",
+      "道しるべのことば（First, / Now, let's turn to / For example / So why does this matter?）で話の区切りをつかむ。",
+      "For example / For instance の後は具体例。「なぜその例を出したか」は、直前の一般的な説明を思い出す。",
+      "定義（X is… / X refers to… / what we call…）は詳細問題によく出る。",
+      "話の流れを「主張 → 理由 → 例」の形でメモすると、どの問題にも答えやすい。",
+    ],
+    traps:["具体例の細かい数字より、その例が何を示すかが問われることが多い。","教授が否定した説（Some people think…, but…）を正解にしない。"],
+    words:[["Let's turn to …","次に〜に移りましょう","Now let's turn to the second cause."],["In other words","言い換えると","In other words, it's a cycle."],["That brings us to …","そこで〜の話になる","That brings us to our main point."],["The key point is …","要点は〜","The key point is energy."],["refer to","〜を指す","This term refers to heat."],["theory","理論","Darwin's theory changed biology."],["experiment","実験","They ran an experiment."],["observe","観察する","We can observe this in birds."],["conclude","結論づける","They concluded it was safe."],["contrast","対比（する）","In contrast, plants grow slowly."],["mechanism","しくみ","The mechanism is still unclear."],["essentially","本質的に","It is essentially a chemical reaction."],["account for","説明する・占める","This accounts for the change."],["as a result","その結果","As a result, the river dried up."],["evolve","進化する・発展する","Whales evolved from land animals."],["property","性質","Water has unusual properties."]]},
+  build:{title:"Build a Sentence", form:"会話の返事を、語のかたまりを並べ替えて作る。ダミーが1つ混ざることがある。",
+    tips:[
+      "まず「主語＋動詞」を決める。英語の文はそこから並べると速い。",
+      "相手の質問の形（Do you know…? / Could you tell me…?）は、答えの形のヒントになる。",
+      "間接疑問は「疑問詞＋主語＋動詞」の順（where the lab is）。does / did は入らない。",
+      "前置詞＋名詞、助動詞＋動詞の原形、to＋動詞の原形 は必ずひとかたまりで考える。",
+      "最後に、ダミーの語（does / to / for など）を使っていないか、文が自然かを確かめる。",
+    ],
+    traps:["間接疑問に do / does / did を入れてしまう。","形容詞の位置（something important）や副詞の位置（always / already）を間違える。"],
+    words:[["Do you know where it is?","どこにあるか知っていますか（間接疑問）","Do you know where the lab is?"],["so … that","とても〜なので…","It was so hot that we stayed in."],["not only A but also B","AだけでなくBも","It's not only cheap but also fast."],["would rather","むしろ〜したい","I would rather walk."],["used to do","以前は〜したものだ","I used to live here."],["be used to -ing","〜に慣れている","I'm used to getting up early."],["had better","〜したほうがいい","You had better hurry."],["It takes … to do","〜するのに…かかる","It takes an hour to get there."],["the 比較級, the 比較級","〜すればするほど…","The more you read, the faster you get."],["whether or not","〜かどうか","I don't know whether or not he'll come."],["as soon as","〜するとすぐに","Call me as soon as you arrive."],["unless","〜しない限り","We'll go unless it rains."],["in order to","〜するために","I study hard in order to pass."],["look forward to -ing","〜を楽しみにする","I look forward to seeing you."],["have something done","〜してもらう","I had my bike repaired."],["mind -ing","〜するのを気にする","Do you mind opening the window?"],["too … to do","…すぎて〜できない","It's too late to call."],["what to do","何をすべきか","I don't know what to do."]]},
+  email:{title:"Write an Email", form:"大学の事務室や教授に、状況に合ったメールを書く。指示された内容をすべて入れる。",
+    tips:[
+      "構成は「あいさつ → 用件（1文） → 詳しい説明・お願い（指示の点を1つずつ） → お礼と結び」。",
+      "指示された内容（箇条書き）を、1つにつき1〜2文で必ず全部入れる。抜けると大きく減点される。",
+      "相手と目的に合った丁寧さにする。教授・事務には Could you… / I would appreciate it if… を使う。",
+      "理由や具体的な日付・状況を1つ足すと、内容が具体的になり評価が上がる。",
+      "最後の1〜2分で、主語と動詞の一致・時制・冠詞を見直す。",
+    ],
+    traps:["くだけすぎた表現（Hey, gonna, wanna）を使わない。","用件を最後まで書かず、あいさつと前置きだけが長くなる。"],
+    words:[["I am writing to …","〜のためにご連絡しています","I am writing to ask about the deadline."],["I would appreciate it if …","〜していただけるとありがたいです","I would appreciate it if you could reply."],["Could you please …?","〜していただけますか","Could you please send the file?"],["I was wondering if …","〜していただけないかと思いまして","I was wondering if I could meet you."],["I apologize for …","〜をお詫びします","I apologize for the late reply."],["regarding","〜に関して","I have a question regarding the exam."],["inconvenience","ご不便","Sorry for any inconvenience."],["clarify","はっきりさせる","Could you clarify the instructions?"],["request","依頼（する）","I'd like to request an extension."],["arrange","手配する","Can we arrange a meeting?"],["availability","都合のよい時間","Please let me know your availability."],["attached","添付した","Please see the attached file."],["Thank you for your understanding.","ご理解に感謝します","Thank you for your understanding."],["I look forward to hearing from you.","お返事をお待ちしています","I look forward to hearing from you."],["Best regards,","よろしくお願いします（結び）","Best regards, Taro"]]},
+  disc:{title:"Write for an Academic Discussion", form:"授業の掲示板で、教授の問いとクラスメート2人の投稿を読み、自分の意見を書く（100語以上）。",
+    tips:[
+      "1文目で教授の問いにはっきり答える（I believe that… / In my view…）。",
+      "クラスメートの名前を出して触れる（I agree with Ana that…, but… / Unlike Ken, I think…）。ただし言い換えるだけで終わらない。",
+      "2人が言っていない新しい理由や例を1つ入れる。これが高評価の決め手。",
+      "理由 → 具体例（自分の経験・社会の例） → 結果、の順で1つの段落を作る。",
+      "最後に一文でまとめる（That is why… / For these reasons…）。",
+    ],
+    traps:["クラスメートの意見をなぞるだけで、自分の意見が新しくない。","具体例がなく、一般論だけで終わる。"],
+    words:[["I see X's point, but …","Xの言うこともわかるが","I see Ana's point, but cost matters too."],["Building on X's idea","Xの考えをさらに進めると","Building on Ken's idea, schools could…"],["From my perspective","私の考えでは","From my perspective, it is fair."],["A key reason is that …","大きな理由は〜","A key reason is that it saves time."],["Admittedly","確かに","Admittedly, it is expensive."],["Nevertheless","それでも","Nevertheless, the benefits are clear."],["In the long run","長い目で見れば","In the long run, it helps everyone."],["lead to","〜につながる","This could lead to better health."],["trade-off","一長一短の関係","There is a trade-off between speed and quality."],["beneficial","有益な","Exercise is beneficial for students."],["drawback","欠点","The main drawback is the cost."],["outweigh","〜にまさる","The benefits outweigh the costs."],["foster","育てる・促す","Group work fosters cooperation."],["enhance","高める","Technology can enhance learning."],["accessible","利用しやすい","Online classes are more accessible."]]},
+  repeat:{title:"Listen and Repeat", form:"案内役の文を1回聞き、そのままくり返す。文はだんだん長くなる。",
+    tips:[
+      "文を単語ではなく意味のかたまり（3〜4語ずつ）で覚える：to the left / of the main entrance。",
+      "聞きながら頭の中で一緒に言う（シャドーイング）と、そのまま口から出やすい。",
+      "a / the / -s / -ed など小さな語や語尾も落とさない。採点では1語ずつ比べている。",
+      "途中で詰まっても止まらず、覚えている部分を最後まで言い切る。",
+      "普段から長めの文を音読・シャドーイングしておくと、覚えられる長さが伸びる。",
+    ],
+    traps:["意味は合っていても、別の単語に言い換えると減点される。","最初の数語だけ言って止まってしまう。"],
+    words:[["be located","〜にある","The library is located next to the gym."],["feel free to","遠慮なく〜して","Feel free to ask questions."],["make sure to","必ず〜して","Make sure to return the books."],["be equipped with","〜を備えている","The lab is equipped with computers."],["open to all students","全学生が利用できる","The pool is open to all students."],["reservation","予約","Rooms need a reservation."],["entrance","入口","Meet at the main entrance."],["on the second floor","2階に","The café is on the second floor."],["check out","（本を）借りる","You can check out ten books."],["quiet zone","私語禁止の区域","This floor is a quiet zone."],["staff member","職員","Ask any staff member for help."],["in front of","〜の前で","We'll meet in front of the hall."]]},
+  interview:{title:"Take an Interview", form:"1つのテーマについて質問が続き、準備時間なしで各45秒ほど答える。",
+    tips:[
+      "最初の1文で質問に直接答える（Yes, I think… / My favorite is…）。",
+      "「答え → 理由 → 具体例 → まとめ」の型で話すと、45秒がちょうど埋まる。",
+      "具体例は自分の経験で。いつ・どこで・何があったかを1つ話すと自然に長くなる。",
+      "考える時間がほしいときは That's an interesting question. などで2〜3秒つなぐ。",
+      "最後に So, overall, … と一言まとめると、話が途中で切れた印象にならない。",
+    ],
+    traps:["理由を言わずに答えだけで終わる（短すぎる）。","質問とずれた話を長く続ける。"],
+    words:[["In my experience","私の経験では","In my experience, group study works."],["Personally, I think …","個人的には〜と思う","Personally, I think it's useful."],["One reason is that …","理由の1つは〜","One reason is that it's cheaper."],["For instance","たとえば","For instance, last year I joined a club."],["Looking back","振り返ると","Looking back, it was a great choice."],["I'd say …","〜だと思います","I'd say it's about balance."],["On the other hand","一方で","On the other hand, it takes time."],["Nowadays","最近では","Nowadays, most students use laptops."],["That's an interesting question.","いい質問ですね（つなぎ）","That's an interesting question. I think…"],["Overall","全体として","Overall, I prefer studying alone."],["It depends on …","〜による","It depends on the situation."],["In the future","将来は","In the future, I want to study abroad."]]},
+};
+const PTYPE2GUIDE={words:"cw", daily:"daily", academic:"academic", response:"response", conversation:"conversation", announcement:"announcement", talk:"talk"};
+let GUIDE_CUR=null;
+const guideBtnHTML=(unit, label)=>`<button class="mini guidebtn" data-guide="${unit}">${label||"コツと単語"}</button>`;
+function guideUnitsOf(unit){ const s=Object.values(GUIDE_SEC).find(x=>x.units.includes(unit)); return s?s.units:[unit]; }
+function guideRender(){
+  const u=GUIDE_CUR, g=GUIDE[u]; if(!g) return;
+  const units=guideUnitsOf(u);
+  const inNotes=(en)=>DB.notes.some(n=>n.kind==="word" && String(n.data.en).toLowerCase()===en.toLowerCase());
+  $("#guide-body").innerHTML=`
+    <div class="seg">${units.map(k=>`<button data-guide="${k}" aria-pressed="${k===u}">${esc(GUIDE[k].title)}</button>`).join("")}</div>
+    <p class="tiny">${esc(g.form)}</p>
+    <h3>解き方のコツ</h3><ol class="gtips">${g.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
+    <h3>よくある落とし穴</h3><ul>${g.traps.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+    <div class="part-h"><h3>覚えるべき単語・表現（${g.words.length}）</h3><button class="mini" data-guideall="${u}">全部ノートに追加</button></div>
+    <p class="tiny">ノートに追加すると、翌日から間隔反復の「今日の復習」に出てきます。▶で発音を聞けます。</p>
+    ${g.words.map(([en,ja,ex],i)=>`<div class="gw"><div><strong class="en">${esc(en)}</strong> <button class="mini" data-sayen="${esc(en)}">▶</button>
+        <span class="muted">${esc(ja)}</span></div><div class="tiny en">${esc(ex)}</div>
+        <button class="mini" data-guideadd="${u}|${i}" ${inNotes(en)?"disabled":""}>${inNotes(en)?"ノートにあります":"ノートに追加"}</button></div>`).join("")}
+    <p class="tiny" style="margin-top:12px">公式の問題数・時間などは細部が異なる場合があります。</p>`;
+  $("#guide-title").textContent=`コツと単語：${g.title}`;
+}
+function guideOpen(unit){
+  if(!GUIDE[unit]) return;
+  GUIDE_CUR=unit; guideRender();
+  const el=$("#guide"); el.hidden=false; document.body.classList.add("noscroll"); $("#guide .sheet-in").scrollTop=0;
+}
+function guideClose(){ $("#guide").hidden=true; document.body.classList.remove("noscroll"); }
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button");
+  if(e.target.id==="guide"){ guideClose(); return; }
+  if(!b) return;
+  const d=b.dataset;
+  if(d.guide){ guideOpen(d.guide); }
+  else if(d.guideclose!=null){ guideClose(); }
+  else if(d.guideadd){ const [u,i]=d.guideadd.split("|"); const w=GUIDE[u].words[+i]; addNotes("word",[{en:w[0], ja:`${w[1]}（例：${w[2]}）`}]); guideRender(); }
+  else if(d.guideall){ const g=GUIDE[d.guideall]; addNotes("word", g.words.map(w=>({en:w[0], ja:`${w[1]}（例：${w[2]}）`}))); guideRender(); toast(`${g.words.length}語をノートに追加しました（翌日から復習に出ます）`); }
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#guide").hidden) guideClose(); });
 
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
