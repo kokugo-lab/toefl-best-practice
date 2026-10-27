@@ -36,7 +36,7 @@ https://aistudio.google.com/apikey で発行する。画面側のコードはプ
 ## 実装状況
 
 - [x] 第1段階：ホーム／記録・ノート／Netlify Function／Speaking (Take an Interview)／Writing (Write an Email)
-- [ ] 第2段階：Reading、Listening
+- [x] 第2段階：Reading（Complete the Words／Daily Life／Academic Passage）、Listening（Choose a Response／Conversation／Announcement／Academic Talk）。いずれも2段階アダプティブ
 - [ ] 第3段階：Listen and Repeat、Build a Sentence、Academic Discussion
 - [ ] 第4段階：模試モード（一括生成・制限時間・成績画面）
 

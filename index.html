@@ -47,7 +47,7 @@
   .primary:hover:not(:disabled){filter:brightness(1.08)}
   .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   nav{position:fixed; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--line); display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:50}
-  nav button{flex:1; border:0; border-radius:0; background:none; padding:12px 4px 14px; font-size:.72rem; color:var(--sub); display:flex; flex-direction:column; align-items:center; gap:3px}
+  nav button{flex:1; min-width:0; border:0; border-radius:0; background:none; padding:11px 2px 13px; font-size:.66rem; color:var(--sub); display:flex; flex-direction:column; align-items:center; gap:3px}
   nav button .ic{font-size:1.15rem; line-height:1}
   nav button[aria-current="true"]{color:var(--accent); font-weight:600}
   .view{display:none} .view.on{display:block}
@@ -58,7 +58,7 @@
   .band{display:inline-flex; align-items:baseline; gap:6px; background:var(--accent-soft); color:var(--accent); border-radius:10px; padding:6px 14px; font-weight:700; font-size:1.5rem}
   .band span{font-size:.7rem; font-weight:500}
   .bars{display:grid; gap:8px; margin:12px 0}
-  .bar{display:grid; grid-template-columns:5.5em 1fr 2em; align-items:center; gap:8px; font-size:.82rem}
+  .bar{display:grid; grid-template-columns:7.5em 1fr 2em; align-items:center; gap:8px; font-size:.82rem}
   .bar .track{height:7px; background:var(--line); border-radius:4px; overflow:hidden}
   .bar .fill{height:100%; background:var(--accent); border-radius:4px}
   ul{padding-left:1.2em; margin:6px 0}
@@ -81,6 +81,38 @@
   hr{border:0; border-top:1px solid var(--line); margin:18px 0}
   .kv{display:flex; justify-content:space-between; font-size:.84rem; padding:5px 0; border-bottom:1px dashed var(--line)}
   .kv:last-child{border:0}
+
+  .choice{display:block; width:100%; text-align:left; margin:6px 0; line-height:1.55}
+  .choice.ok{background:var(--accent-soft); border-color:var(--accent); font-weight:600}
+  .choice.ng{background:var(--warn-soft); border-color:var(--warn)}
+  .choice.hidden{display:none}
+  .passage{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:14px 16px; white-space:pre-wrap; margin:10px 0}
+  .cw{white-space:normal; line-height:2.3}
+  .cw .w{white-space:nowrap}
+  .cw input{font:inherit; border:0; border-bottom:2px solid var(--accent); background:transparent; color:var(--ink); padding:0 1px; margin:0 1px; outline:none; border-radius:0}
+  .cw input.ok{border-color:var(--accent); color:var(--accent); font-weight:650}
+  .cw input.ng{border-color:var(--warn); color:var(--warn); text-decoration:line-through}
+  .cw .fix{color:var(--accent); font-size:.8em; font-weight:650; margin-left:2px}
+  .fb{font-size:.88rem; margin-top:8px; padding:10px 12px; border-radius:10px; background:var(--bg); border:1px solid var(--line)}
+  .fb .h{font-weight:700; margin-bottom:4px}
+  .fb .h.ok{color:var(--accent)} .fb .h.ng{color:var(--warn)}
+  .q{padding:12px 0; border-top:1px dashed var(--line)}
+  .q:first-of-type{border-top:0}
+  .q .qt{font-weight:600; margin-bottom:6px}
+  .part-h{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap}
+  .part-h .tag{margin:0}
+  .stagebar{display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 0; border-bottom:1px solid var(--line)}
+  .progress{height:5px; background:var(--line); border-radius:3px; overflow:hidden; margin-top:6px}
+  .progress>i{display:block; height:100%; background:var(--accent); transition:width .3s}
+  .playbtn{display:inline-flex; align-items:center; gap:8px; font-weight:600}
+  .playbtn .dot{width:9px; height:9px; border-radius:50%; background:var(--accent)}
+  .playbtn.playing .dot{animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  .script{font-size:.9rem; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-top:10px}
+  .script .ln{margin:3px 0}
+  .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
+  .script .sp.M{color:var(--warn)}
+  .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
 </style>
 </head>
 <body>
@@ -100,8 +132,10 @@
       <h2>今日のメニュー</h2>
       <div id="menu"></div>
       <div class="row" style="margin-top:12px">
-        <button class="primary" onclick="go('writing')">Writing を始める</button>
-        <button onclick="go('speaking')">Speaking を始める</button>
+        <button class="primary" onclick="go('reading')">Reading</button>
+        <button onclick="go('listening')">Listening</button>
+        <button onclick="go('writing')">Writing</button>
+        <button onclick="go('speaking')">Speaking</button>
       </div>
     </div>
 
@@ -109,6 +143,37 @@
       <h2>直近の記録</h2>
       <div id="recent" class="muted">まだ記録がありません。練習すると、ここにバンドの推移と苦手分野が出ます。</div>
     </div>
+  </section>
+
+
+  <!-- ============ Reading ============ -->
+  <section id="v-reading" class="view">
+    <div class="card">
+      <h2>Reading</h2>
+      <p class="tiny">新形式の3課題（Complete the Words／Read in Daily Life／Read an Academic Passage）を1セットにして出題します。2段階式で、第1段階の正答率によって第2段階の難しさが変わります。選択肢を選ぶとすぐに採点し、言い換えの解説と、間違えた原因を表示します。</p>
+      <div class="row">
+        <button class="primary" id="r-start">第1段階を始める</button>
+        <button id="r-reset" style="display:none">新しいセットにする</button>
+      </div>
+      <div id="r-msg"></div>
+    </div>
+    <div id="r-body"></div>
+  </section>
+
+  <!-- ============ Listening ============ -->
+  <section id="v-listening" class="view">
+    <div class="card">
+      <h2>Listening</h2>
+      <p class="tiny">新形式の4課題（Listen and Choose a Response／Conversation／Announcement／Academic Talk）を1セットにして出題します。音声は本番どおり1回だけ再生でき、設問は再生が終わってから表示されます。解答後はスクリプトを見ながら何度でも聞き直せます。2段階式です。</p>
+      <div class="row">
+        <button class="primary" id="l-start">第1段階を始める</button>
+        <button id="l-voice">声のテスト</button>
+        <button id="l-reset" style="display:none">新しいセットにする</button>
+      </div>
+      <p class="tiny" id="l-voiceinfo" style="margin-top:8px"></p>
+      <div id="l-msg"></div>
+    </div>
+    <div id="l-body"></div>
   </section>
 
   <!-- ============ Writing ============ -->
@@ -178,6 +243,7 @@
         <button data-k="word" aria-pressed="false">未知語</button>
         <button data-k="para" aria-pressed="false">言い換え</button>
         <button data-k="fix" aria-pressed="false">直された点</button>
+        <button data-k="miss" aria-pressed="false">間違い</button>
       </div>
       <div id="n-list"></div>
     </div>
@@ -201,6 +267,8 @@
 
 <nav>
   <button data-v="home" aria-current="true" onclick="go('home')"><span class="ic">◧</span>ホーム</button>
+  <button data-v="reading" onclick="go('reading')"><span class="ic">▦</span>Reading</button>
+  <button data-v="listening" onclick="go('listening')"><span class="ic">♪</span>Listening</button>
   <button data-v="writing" onclick="go('writing')"><span class="ic">✎</span>Writing</button>
   <button data-v="speaking" onclick="go('speaking')"><span class="ic">◉</span>Speaking</button>
   <button data-v="notes" onclick="go('notes')"><span class="ic">▤</span>ノート</button>
@@ -227,6 +295,7 @@ function go(v){
   window.scrollTo(0,0);
   if(v==="notes") renderNotes(), renderHist();
   if(v==="home") renderHome();
+  if(v==="reading"||v==="listening") renderRL(v);
 }
 
 async function api(action, input){
@@ -251,7 +320,7 @@ function addNotes(kind, items){
   const now = Date.now();
   items.forEach(it=>{
     if(!it) return;
-    const key = JSON.stringify([kind, it.en||it.from||it.before||""]).toLowerCase();
+    const key = JSON.stringify([kind, it.en||it.from||it.before||it.q||""]).toLowerCase();
     if(DB.notes.some(n=>n.key===key)) return;
     DB.notes.push({key, kind, at:now, data:it});
   });
@@ -262,7 +331,8 @@ function renderNotes(){
   const k = $("#n-seg button[aria-pressed='true']").dataset.k;
   const list = DB.notes.filter(n=>(k==="all"||n.kind===k) && JSON.stringify(n.data).toLowerCase().includes(q)).reverse();
   $("#n-list").innerHTML = list.length ? list.map(n=>{
-    const d=n.data, label={word:"未知語",para:"言い換え",fix:"直された点"}[n.kind]||"";
+    const d=n.data, label={word:"未知語",para:"言い換え",fix:"直された点",miss:"間違い"}[n.kind]||"";
+    if(n.kind==="miss") return `<div class="note"><span class="tag">${label}・${esc(d.section||"")}</span><div class="k en">${esc(d.q)}</div><div class="v">あなたの答え：<span class="en">${esc(d.chosen)}</span></div><div class="v">正解：<span class="en">${esc(d.correct)}</span></div><div class="v">${esc(d.trap?("【"+d.trap+"】"):"")}${esc(d.why)}</div></div>`;
     if(n.kind==="word") return `<div class="note"><span class="tag">${label}</span><span class="k en">${esc(d.en)}</span><div class="v">${esc(d.ja)}</div></div>`;
     if(n.kind==="para") return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.from)}</div><div class="k en">→ ${esc(d.to)}</div><div class="v">${esc(d.ja)}</div></div>`;
     return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.before)}</div><div class="k en">→ ${esc(d.after)}</div><div class="v">${esc(d.why_ja)}</div></div>`;
@@ -291,9 +361,13 @@ function renderHome(){
 
   const w = DB.records.filter(r=>r.kind==="Writing");
   const s = DB.records.filter(r=>r.kind==="Speaking");
+  const cnt=(k)=>DB.records.filter(r=>r.kind===k).length;
+  const st=(k,u)=>cnt(k)?`累計 ${cnt(k)}${u}`:"未着手";
   $("#menu").innerHTML = `
-    <div class="kv"><span>Writing（Write an Email）10分 × 1本</span><span class="muted">${w.length ? "累計 "+w.length+"本" : "未着手"}</span></div>
-    <div class="kv"><span>Speaking（Take an Interview）60秒 × 2本</span><span class="muted">${s.length ? "累計 "+s.length+"本" : "未着手"}</span></div>
+    <div class="kv"><span>Reading 1セット（2段階・約20分）</span><span class="muted">${st("Reading","セット")}</span></div>
+    <div class="kv"><span>Listening 1セット（2段階・約15分）</span><span class="muted">${st("Listening","セット")}</span></div>
+    <div class="kv"><span>Writing（Write an Email）10分 × 1本</span><span class="muted">${st("Writing","本")}</span></div>
+    <div class="kv"><span>Speaking（Take an Interview）60秒 × 2本</span><span class="muted">${st("Speaking","本")}</span></div>
     <div class="kv"><span>ノートの復習クイズ 5問</span><span class="muted">${DB.notes.length} 件たまっています</span></div>`;
 
   if(!DB.records.length){ return; }
@@ -303,14 +377,14 @@ function renderHome(){
   const agg = {};
   DB.records.forEach(r=>{ Object.entries(r.scores||{}).forEach(([k,v])=>{ (agg[k]=agg[k]||[]).push(+v); }); });
   const labels = {task_response:"課題対応",organization:"構成",grammar:"文法",vocabulary:"語彙",content:"内容"};
-  const rows = Object.entries(agg).sort((a,b)=>avg(a[1])-avg(b[1]));
+  const rows = Object.entries(agg).sort((a,b)=>avg(a[1])-avg(b[1])).slice(0,6);
   $("#recent").innerHTML = `
     <div class="muted" style="margin-bottom:8px">直近${last.length}回の推定バンド平均 <strong style="color:var(--accent)">${avg(last.map(r=>r.band)).toFixed(1)}</strong></div>
     <div class="bars">${rows.map(([k,v])=>{
       const a=avg(v);
       return `<div class="bar"><span>${labels[k]||k}</span><span class="track"><span class="fill" style="width:${(a/6*100).toFixed(0)}%"></span></span><span>${a.toFixed(1)}</span></div>`;
     }).join("")}</div>
-    <p class="tiny">下にあるものほど伸ばしどころです。</p>`;
+    <p class="tiny">数値の低い順に6項目を表示しています（Reading・Listeningは正答率を6段階に換算）。上にあるものほど伸ばしどころです。</p>`;
 }
 
 /* ================= Writing ================= */
@@ -478,6 +552,445 @@ function renderEval(r, kind){
     <p class="tiny" style="margin-top:14px">このバンドは目安です。公式採点とは一致しません。語句と言い換えはノートに自動で保存しました。</p>
   </div>`;
 }
+
+/* ================= Reading / Listening 共通エンジン ================= */
+const TOPICS_AC = ["geology","marine biology","astronomy","art history","cognitive psychology","linguistics","behavioral economics","archaeology","environmental science","anthropology","architecture history","music history","sociology of cities","plant biology","animal behavior","climate science","history of technology","nutrition science","educational psychology","media studies","ecology of forests","chemistry in everyday life","volcanology","ancient trade routes"];
+const TOPICS_DAILY = ["a notice posted on a campus bulletin board","an email from a professor to the class","a message from the university housing office","a flyer for a student club event","a library announcement posted online","a text-message thread between classmates","a campus job posting","a schedule change notice from the student center","an online post in a course discussion forum","a notice from campus dining services"];
+const TOPICS_CONV = ["two classmates planning a group project","a student asking a librarian for help","a student and a professor during office hours","two roommates discussing a problem in the dorm","a student talking to an advisor about changing a course","two students deciding which campus event to attend","a student asking the bookstore clerk about a textbook"];
+const TOPICS_ANN = ["a professor announcing a change to an assignment at the start of class","a campus tour guide giving instructions","a librarian announcing new service hours","a student government member announcing an event","a lab instructor giving safety reminders"];
+const pick = (a)=>a[Math.floor(Math.random()*a.length)];
+const pick2 = (a)=>{ const x=pick(a); let y=pick(a); let g=0; while(y===x && g++<10) y=pick(a); return [x,y]; };
+
+const LV = {
+  easy:{label:"やさしめ", lo:1.0, hi:4.0, rate:.86},
+  standard:{label:"標準", lo:2.0, hi:5.0, rate:.94},
+  hard:{label:"難しめ", lo:3.0, hi:6.0, rate:1.0},
+};
+const nextLevel = (acc)=> acc>=0.7 ? "hard" : acc<0.4 ? "easy" : "standard";
+const SEC = {
+  reading:{p:"r", name:"Reading", guide:11*60},
+  listening:{p:"l", name:"Listening", guide:8*60},
+};
+DB.cur = DB.cur || {};
+const GEN = {};          // 生成中のPromise（二重生成防止）
+const PLAYING = {};      // 再生中のキー（保存しない）
+
+/* 選択肢をシャッフルし、誤答理由・誤答タイプの並びもそろえる */
+function normQ(q){
+  if(!q || !Array.isArray(q.choices) || q.choices.length<2) return null;
+  const n=q.choices.length, ans=parseInt(q.answer,10);
+  if(!(ans>=0 && ans<n)) return null;
+  const idx=[...Array(n).keys()];
+  for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  const al=(arr)=>idx.map(i=>Array.isArray(arr)?(arr[i]||""):"");
+  return Object.assign({}, q, {choices:idx.map(i=>String(q.choices[i])), why_wrong_ja:al(q.why_wrong_ja), trap:al(q.trap), answer:idx.indexOf(ans), tag:q.tag||"その他"});
+}
+
+/* Complete the Words：1文目はそのまま、2文目以降の「1語おき」の語の後半を消す（最大10語） */
+function buildCTest(par){
+  par=String(par||"").replace(/\s+/g," ").trim();
+  const m=par.match(/^.*?[.!?]["')]?(\s|$)/);
+  const first = m ? m[0] : "";
+  const rest = par.slice(first.length);
+  const parts=[]; let eligible=0, nb=0;
+  rest.split(/(\s+)/).forEach(tok=>{
+    const w=tok.match(/^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/);
+    if(w && w[2].length>=2 && nb<10){
+      eligible++;
+      if(eligible%2===0){
+        const keep=Math.floor(w[2].length/2);
+        parts.push({pre:w[1], keep:w[2].slice(0,keep), miss:w[2].slice(keep), post:w[3], word:w[2]});
+        nb++; return;
+      }
+    }
+    parts.push({t:tok});
+  });
+  return {first, parts, n:nb};
+}
+
+async function genModule(sec, level){
+  if(sec==="reading"){
+    const [t1,t2]=pick2(TOPICS_AC);
+    const [w,d,a]=await Promise.all([
+      api("gen_r_words",{level, topic:t1}),
+      api("gen_r_daily",{level, topic:pick(TOPICS_DAILY)}),
+      api("gen_r_academic",{level, topic:t2}),
+    ]);
+    const ct=buildCTest(w.paragraph);
+    if(ct.n<5) throw new Error("Complete the Words の本文がうまく作れませんでした。もう一度お試しください。");
+    return {sec, level, started:Date.now(), ans:{}, parts:[
+      {type:"words", title:"Complete the Words", data:w, ct, inputs:{}, checked:false, res:[]},
+      {type:"daily", title:"Read in Daily Life", data:d, qs:(d.questions||[]).map(normQ).filter(Boolean)},
+      {type:"academic", title:"Read an Academic Passage", data:a, qs:(a.questions||[]).map(normQ).filter(Boolean)},
+    ]};
+  }
+  const [t1]=pick2(TOPICS_AC);
+  const [r,c,an,t]=await Promise.all([
+    api("gen_l_response",{level, count:4}),
+    api("gen_l_conversation",{level, topic:pick(TOPICS_CONV)}),
+    api("gen_l_announcement",{level, topic:pick(TOPICS_ANN)}),
+    api("gen_l_talk",{level, topic:t1}),
+  ]);
+  const items=(r.items||[]).map(it=>{ const q=normQ(it); return q && Object.assign(q,{speaker:it.speaker==="M"?"M":"F", prompt:String(it.prompt||"")}); }).filter(Boolean);
+  return {sec, level, started:Date.now(), ans:{}, parts:[
+    {type:"response", title:"Listen and Choose a Response", qs:items, play:{}},
+    {type:"conversation", title:"Listen to a Conversation", data:c, qs:(c.questions||[]).map(normQ).filter(Boolean), play:{n:0,done:false}},
+    {type:"announcement", title:"Listen to an Announcement", data:an, qs:(an.questions||[]).map(normQ).filter(Boolean), play:{n:0,done:false}},
+    {type:"talk", title:"Listen to an Academic Talk", data:t, qs:(t.questions||[]).map(normQ).filter(Boolean), play:{n:0,done:false}},
+  ]};
+}
+
+/* 進捗と結果 */
+function countItems(mod){
+  let total=0, done=0;
+  mod.parts.forEach((p,pi)=>{
+    if(p.type==="words"){ total+=p.ct.n; if(p.checked) done+=p.ct.n; }
+    else (p.qs||[]).forEach((q,qi)=>{ total++; if(mod.ans[pi+"-"+qi]!=null) done++; });
+  });
+  return {total, done};
+}
+function results(mod){
+  const out=[];
+  mod.parts.forEach((p,pi)=>{
+    if(p.type==="words") (p.res||[]).forEach(ok=>out.push({tag:"語彙補完", ok}));
+    else (p.qs||[]).forEach((q,qi)=>{ const a=mod.ans[pi+"-"+qi]; if(a!=null) out.push({tag:q.tag||"その他", ok:a===q.answer}); });
+  });
+  return out;
+}
+const accOf=(res)=> res.length ? res.filter(r=>r.ok).length/res.length : 0;
+const curMod=(st)=> (st.phase==="s2"||st.phase==="done") ? st.s2 : st.s1;
+const stageNo=(st)=> (st.phase==="s2"||st.phase==="done") ? 2 : 1;
+
+/* ---------- 描画 ---------- */
+function mcHTML(sec, pi, qi, q, chosen, o={}){
+  const answered = chosen!=null;
+  const btns = q.choices.map((c,i)=>{
+    let cls="choice en";
+    if(answered){ if(i===q.answer) cls+=" ok"; else if(i===chosen) cls+=" ng"; }
+    if(o.hide) cls+=" hidden";
+    return `<button class="${cls}" ${answered?"disabled":""} data-mc="${sec}|${pi}|${qi}|${i}">${String.fromCharCode(65+i)}. ${esc(c)}</button>`;
+  }).join("");
+  let fb="";
+  if(answered){
+    const ok = chosen===q.answer;
+    const pp = q.paraphrase||{};
+    fb = `<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"正解":"不正解"}　<span class="tag">${esc(q.tag||"")}</span></div>
+      <div>${esc(q.explain_ja||"")}</div>
+      ${(pp.from&&pp.to)?`<div class="para"><span class="muted">言い換え</span>　<span class="en">${esc(pp.from)}</span> → <strong class="en">${esc(pp.to)}</strong></div>`:""}
+      ${!ok?`<div class="corr"><strong>間違えた原因</strong>${q.trap[chosen]?`【${esc(q.trap[chosen])}】`:""}<br>${esc(q.why_wrong_ja[chosen]||"")}</div>`:""}
+    </div>`;
+  }
+  return `<div class="q">${o.head||""}${q.q?`<div class="qt en">${o.num?o.num+". ":""}${esc(q.q)}</div>`:""}${btns}${fb}</div>`;
+}
+
+function wordsHTML(sec, pi, p){
+  const ct=p.ct; let bi=0;
+  const body = ct.parts.map(x=>{
+    if(x.t!=null) return esc(x.t);
+    const i=bi++, v=p.inputs[i]||"";
+    if(!p.checked)
+      return `<span class="w">${esc(x.pre+x.keep)}<input data-cw="${sec}|${pi}|${i}" maxlength="${x.miss.length}" style="width:${x.miss.length+0.8}ch" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v)}">${esc(x.post)}</span>`;
+    const ok=p.res[i];
+    return `<span class="w">${esc(x.pre+x.keep)}<input class="${ok?"ok":"ng"}" disabled value="${esc(v||"＿")}" style="width:${Math.max(x.miss.length,v.length||1)+0.8}ch">${ok?"":`<span class="fix">${esc(x.miss)}</span>`}${esc(x.post)}</span>`;
+  }).join("");
+  const gl=(p.data.glossary||[]);
+  return `<p class="tiny">段落の2文目から、1語おきに語の後半が消えています。消えた文字を入れてください（${ct.n}語）。</p>
+    <div class="passage cw en">${esc(ct.first)}${body}</div>
+    ${!p.checked?`<button class="primary" data-cwcheck="${sec}|${pi}">答え合わせ</button>`:`
+      <div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${ct.n} 語 正解</div>
+      <div>${esc(p.data.summary_ja||"")}</div>
+      ${gl.length?`<h3>この段落の語句</h3><ul>${gl.map(g=>`<li><span class="en">${esc(g.en)}</span>　<span class="muted">${esc(g.ja)}</span></li>`).join("")}</ul>`:""}</div>`}`;
+}
+
+function scriptHTML(p){
+  if(p.type==="conversation") return (p.data.lines||[]).map(l=>`<div class="ln en"><span class="sp ${l.sp==="M"?"M":"F"}">${l.sp==="M"?"M":"W"}</span>${esc(l.text)}</div>`).join("");
+  return `<div class="ln en">${esc(p.data.text||"")}</div>`;
+}
+function kwHTML(list){
+  return (list&&list.length)?`<h3>語句</h3><ul>${list.map(g=>`<li><span class="en">${esc(g.en)}</span>　<span class="muted">${esc(g.ja)}</span></li>`).join("")}</ul>`:"";
+}
+
+function partHTML(sec, mod, pi){
+  const p=mod.parts[pi];
+  let inner="";
+  if(p.type==="words") inner=wordsHTML(sec,pi,p);
+  else if(p.type==="daily"||p.type==="academic"){
+    const text = p.type==="daily" ? p.data.text : p.data.passage;
+    const allDone = p.qs.every((q,qi)=>mod.ans[pi+"-"+qi]!=null);
+    inner = `${p.data.genre_ja?`<p class="tiny">${esc(p.data.genre_ja)}</p>`:""}
+      <div class="passage en"><strong>${esc(p.data.title||"")}</strong>\n\n${esc(text||"")}</div>
+      ${p.qs.map((q,qi)=>mcHTML(sec,pi,qi,q,mod.ans[pi+"-"+qi],{num:qi+1})).join("")}
+      ${allDone?kwHTML(p.data.key_words):""}`;
+  }
+  else if(p.type==="response"){
+    inner = `<p class="tiny">短い発話を聞き、最も自然な応答を選びます。発話の文字は表示されません。</p>` +
+      p.qs.map((q,qi)=>{
+        const k=pi+"-"+qi, st=p.play[qi], chosen=mod.ans[k];
+        const playing = PLAYING[sec]===`${pi}|${qi}`;
+        let head = `<div class="row" style="justify-content:space-between"><strong>${qi+1}.</strong>`;
+        if(!st && !playing) head += `<button class="playbtn" data-play="${sec}|${pi}|${qi}"><span class="dot"></span>音声を再生（1回のみ）</button>`;
+        else if(playing) head += `<span class="playbtn playing muted"><span class="dot"></span>再生中…</span>`;
+        else head += `<span class="muted tiny">再生済み</span>`;
+        head += `</div>`;
+        let tail="";
+        if(chosen!=null) tail = `<div class="script"><div class="ln en"><span class="sp ${q.speaker}">${q.speaker==="M"?"M":"W"}</span>${esc(q.prompt)}</div><div class="ln en"><span class="sp ${q.speaker==="M"?"F":"M"}">${q.speaker==="M"?"W":"M"}</span>${esc(q.choices[q.answer])}</div></div>
+          <button data-replay="${sec}|${pi}|${qi}" style="margin-top:6px">聞き直す</button>`;
+        return mcHTML(sec,pi,qi,q,chosen,{head, hide: st!=="done" && chosen==null}) + tail;
+      }).join("");
+  }
+  else {
+    const pl=p.play, playing=PLAYING[sec]===`${pi}|all`;
+    const ctx = p.data.setting_ja || p.data.context_ja || (p.data.title?`講義：${p.data.title}`:"");
+    const allDone = p.qs.every((q,qi)=>mod.ans[pi+"-"+qi]!=null);
+    let ctl="";
+    if(!pl.n && !playing) ctl=`<button class="playbtn primary" data-play="${sec}|${pi}|all"><span class="dot" style="background:#fff"></span>音声を再生（1回のみ）</button>`;
+    else if(playing) ctl=`<span class="playbtn playing muted"><span class="dot"></span>再生中…　設問は再生後に表示されます</span>`;
+    inner = `<p class="tiny">${esc(ctx)}</p>${ctl}
+      ${pl.done ? p.qs.map((q,qi)=>mcHTML(sec,pi,qi,q,mod.ans[pi+"-"+qi],{num:qi+1})).join("") : ""}
+      ${allDone ? `<h3>スクリプト</h3><div class="script">${scriptHTML(p)}</div><button data-replay="${sec}|${pi}|all" style="margin-top:8px">スクリプトを聞き直す</button>${kwHTML(p.data.key_words)}` : ""}`;
+  }
+  return `<div class="card" id="${SEC[sec].p}-part-${pi}"><div class="part-h"><h2>${esc(p.title)}</h2></div>${inner}</div>`;
+}
+
+function stagebarHTML(sec, st){
+  const mod=curMod(st), c=countItems(mod);
+  return `<div class="stagebar"><div><strong>第${stageNo(st)}段階</strong> <span class="tag">${LV[mod.level].label}</span>
+      <span class="muted">解答 ${c.done} / ${c.total}</span>
+      <div class="progress" style="width:min(240px,50vw)"><i style="width:${c.total?c.done/c.total*100:0}%"></i></div></div>
+    <div class="timer" data-start="${mod.started}" data-limit="${SEC[sec].guide}" title="目安時間">–</div></div>`;
+}
+
+function summaryHTML(sec, st){
+  const P=SEC[sec].p;
+  if(st.phase==="s1done"){
+    const res=results(st.s1), a=accOf(res);
+    const ready=!!st.s2pre;
+    return `<div class="card" id="${P}-summary"><h2>第1段階の結果</h2>
+      <div class="sum-big">${Math.round(a*100)}%</div><p class="muted">${res.filter(r=>r.ok).length} / ${res.length} 問正解</p>
+      <p>第2段階は <span class="tag">${LV[st.level2].label}</span> で出題します。</p>
+      ${st.s2err?`<div class="err">${esc(st.s2err)}</div><button class="primary" data-s2retry="${sec}">もう一度作る</button>`:
+        ready?`<button class="primary" data-s2go="${sec}">第2段階へ進む</button>`:`<p class="muted"><span class="spin"></span>第2段階の問題を作っています…（上の解説を見直して待てます）</p>`}
+    </div>`;
+  }
+  if(st.phase==="done"){
+    const r1=results(st.s1), r2=results(st.s2);
+    const tags={};
+    r1.concat(r2).forEach(r=>{ (tags[r.tag]=tags[r.tag]||[0,0]); tags[r.tag][1]++; if(r.ok) tags[r.tag][0]++; });
+    return `<div class="card" id="${P}-summary"><h2>${SEC[sec].name} の結果</h2>
+      <div class="band">${st.band.toFixed(1)}<span>推定バンド</span></div>
+      <p class="tiny" style="margin-top:8px">正答率と第2段階の難しさから出した目安で、公式採点とは一致しません。</p>
+      <div class="kv"><span>第1段階（${LV[st.s1.level].label}）</span><strong>${Math.round(accOf(r1)*100)}%</strong></div>
+      <div class="kv"><span>第2段階（${LV[st.s2.level].label}）</span><strong>${Math.round(accOf(r2)*100)}%</strong></div>
+      <h3>分野別の正答率</h3>
+      <div class="bars">${Object.entries(tags).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).map(([t,[c,n]])=>
+        `<div class="bar"><span>${esc(t)}</span><span class="track"><span class="fill" style="width:${(c/n*100).toFixed(0)}%"></span></span><span>${c}/${n}</span></div>`).join("")}</div>
+      <p class="tiny">間違えた問題・言い換え・語句はノートに保存しました。下に第2段階の問題と解説が残っています。</p>
+      <button class="primary" data-newset="${sec}">新しいセットで練習する</button>
+    </div>`;
+  }
+  return "";
+}
+
+function renderRL(sec){
+  const P=SEC[sec].p, st=DB.cur[sec], body=$("#"+P+"-body");
+  $("#"+P+"-reset").style.display = st ? "" : "none";
+  $("#"+P+"-start").style.display = (st && st.phase!=="done") ? "none" : "";
+  $("#"+P+"-start").textContent = "第1段階を始める";
+  if(!st){ body.innerHTML=""; return; }
+  const mod=curMod(st);
+  // 再生途中で閉じた場合は、設問を出して先へ進めるようにする
+  mod.parts.forEach((p,pi)=>{
+    if(p.play && p.play.n && !p.play.done && PLAYING[sec]!==`${pi}|all`) p.play.done=true;
+    if(p.type==="response") Object.keys(p.play).forEach(qi=>{ if(p.play[qi]==="started" && PLAYING[sec]!==`${pi}|${qi}`) p.play[qi]="done"; });
+  });
+  let html="";
+  if(st.phase==="done") html += summaryHTML(sec,st);
+  if(st.phase==="s1"||st.phase==="s2") html += stagebarHTML(sec,st);
+  html += mod.parts.map((p,pi)=>partHTML(sec,mod,pi)).join("");
+  if(st.phase==="s1done") html += summaryHTML(sec,st);
+  body.innerHTML = html;
+  tickTimers();
+}
+function rerenderPart(sec, pi){
+  const st=DB.cur[sec], mod=curMod(st), el=$(`#${SEC[sec].p}-part-${pi}`);
+  if(el) el.outerHTML = partHTML(sec,mod,pi);
+  const bar=$(`#${SEC[sec].p}-body .stagebar`);
+  if(bar && (st.phase==="s1"||st.phase==="s2")) bar.outerHTML = stagebarHTML(sec,st);
+  tickTimers();
+}
+
+function tickTimers(){
+  document.querySelectorAll(".timer[data-start]").forEach(t=>{
+    const left = +t.dataset.limit - Math.floor((Date.now() - +t.dataset.start)/1000);
+    t.textContent = (left<0?"+":"") + mmss(Math.abs(left));
+    t.classList.toggle("low", left<=60);
+  });
+}
+setInterval(tickTimers, 1000);
+
+/* ---------- 進行 ---------- */
+async function startSet(sec){
+  const P=SEC[sec].p, body=$("#"+P+"-body");
+  busy(body, "第1段階の問題を作っています…（20〜40秒ほどかかります）");
+  $("#"+P+"-start").disabled=true;
+  try{
+    const mod = await genModule(sec, "standard");
+    DB.cur[sec] = {phase:"s1", s1:mod, s2:null, s2pre:null, level2:null};
+    save(); renderRL(sec); window.scrollTo(0, $("#"+P+"-body").offsetTop-10);
+  }catch(e){ fail(body, e, ()=>startSet(sec)); }
+  finally{ $("#"+P+"-start").disabled=false; }
+}
+function prefetchS2(sec){
+  const st=DB.cur[sec]; if(!st || st.s2pre || GEN[sec]) return;
+  st.s2err=null;
+  GEN[sec] = genModule(sec, st.level2).then(m=>{ st.s2pre=m; save(); }).catch(e=>{ st.s2err=e.message||String(e); })
+    .finally(()=>{ GEN[sec]=null; const s=$(`#${SEC[sec].p}-summary`); if(s) s.outerHTML=summaryHTML(sec,DB.cur[sec]); });
+}
+function checkStage(sec){
+  const st=DB.cur[sec], mod=curMod(st), c=countItems(mod);
+  if(c.done<c.total) return;
+  // 語句をノートへ
+  mod.parts.forEach(p=>{ if(p.data && p.data.key_words) addNotes("word", p.data.key_words); });
+  if(st.phase==="s1"){
+    st.phase="s1done"; st.level2=nextLevel(accOf(results(st.s1)));
+    save(); renderRL(sec); prefetchS2(sec);
+    setTimeout(()=>{ const s=$(`#${SEC[sec].p}-summary`); if(s) s.scrollIntoView({behavior:"smooth", block:"center"}); }, 50);
+  } else if(st.phase==="s2"){
+    const a1=accOf(results(st.s1)), a2=accOf(results(st.s2)), L=LV[st.s2.level];
+    const raw=L.lo + (L.hi-L.lo)*(0.4*a1 + 0.6*a2);
+    st.band=Math.min(6, Math.max(1, Math.round(raw*2)/2));
+    st.phase="done";
+    const tags={};
+    results(st.s1).concat(results(st.s2)).forEach(r=>{ (tags[r.tag]=tags[r.tag]||[0,0]); tags[r.tag][1]++; if(r.ok) tags[r.tag][0]++; });
+    const scores={}; Object.entries(tags).forEach(([t,[ok,n]])=>scores[`${SEC[sec].name.slice(0,1)}・${t}`]=+(ok/n*6).toFixed(1));
+    DB.records.push({at:Date.now(), kind:SEC[sec].name, band:st.band, scores});
+    save(); renderRL(sec); window.scrollTo(0, $("#"+SEC[sec].p+"-body").offsetTop-10);
+  }
+}
+
+/* ---------- 音声（男女2声） ---------- */
+const VOICE={F:null, M:null, same:true};
+const FEM=/(female|samantha|karen|victoria|moira|tessa|fiona|zira|aria|jenny|susan|allison|ava|serena|kate|emma|libby|sonia|natasha|michelle|google us english)/i;
+const MAL=/(\bmale|alex|daniel|fred|tom\b|aaron|guy|david|mark|arthur|oliver|rishi|ryan|thomas|christopher|eric|george|google uk english male)/i;
+function loadVoices(){
+  try{
+    const all=speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang));
+    const us=all.filter(v=>/en[-_]US/i.test(v.lang)), pool=us.length?us.concat(all.filter(v=>!us.includes(v))):all;
+    VOICE.F = pool.find(v=>FEM.test(v.name) && !/male/i.test(v.name.replace(/female/i,""))) || pool[0] || null;
+    VOICE.M = pool.find(v=>MAL.test(v.name) && v!==VOICE.F) || pool.find(v=>v!==VOICE.F) || VOICE.F;
+    VOICE.same = !VOICE.F || VOICE.F===VOICE.M;
+    const info=$("#l-voiceinfo");
+    if(info) info.textContent = VOICE.F ? `女性の声：${VOICE.F.name}　男性の声：${VOICE.M?VOICE.M.name:"-"}${VOICE.same?"（同じ声のため高さで区別します）":""}` : "この端末では英語の音声が見つかりません。";
+  }catch(e){}
+}
+try{ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }catch(e){}
+const UTT=[]; // GCで再生が止まるのを防ぐ
+function speakSeq(segs, rate, onend){
+  let finished=false; const done=()=>{ if(!finished){ finished=true; onend&&onend(); } };
+  try{
+    if(!("speechSynthesis" in window)) throw new Error("no tts");
+    speechSynthesis.cancel(); UTT.length=0;
+    const list=[];
+    segs.forEach(s=>{ (String(s.text||"").match(/[^.!?]+[.!?]+["')]?|[^.!?]+$/g)||[]).forEach(t=>{ t=t.trim(); if(t) list.push({t, sp:s.sp}); }); });
+    if(!list.length) return done();
+    list.forEach((x,i)=>{
+      const u=new SpeechSynthesisUtterance(x.t);
+      u.lang="en-US"; u.rate=rate||.94;
+      const v = x.sp==="M" ? VOICE.M : VOICE.F;
+      if(v) u.voice=v;
+      if(VOICE.same) u.pitch = x.sp==="M" ? 0.7 : 1.25;
+      if(i===list.length-1){ u.onend=done; u.onerror=done; }
+      UTT.push(u); speechSynthesis.speak(u);
+    });
+    // 念のため：onendが来ない端末向けの保険（語数から長さを見積もる）
+    const words=list.reduce((n,x)=>n+x.t.split(/\s+/).length,0);
+    setTimeout(()=>{ if(!finished && !speechSynthesis.speaking) done(); }, (words/ (2.4*(rate||.94)) )*1000 + 4000);
+  }catch(e){
+    const m=$("#l-msg"); if(m) m.innerHTML=`<div class="err">この端末では音声を再生できません。スクリプトを表示して進めます。</div>`;
+    done();
+  }
+}
+function segsOf(p, qi){
+  if(p.type==="response"){ const q=p.qs[qi]; return [{sp:q.speaker, text:q.prompt}]; }
+  if(p.type==="conversation") return (p.data.lines||[]).map(l=>({sp:l.sp==="M"?"M":"F", text:l.text}));
+  return [{sp:p.data.speaker==="M"?"M":"F", text:p.data.text}];
+}
+
+/* ---------- イベント（委譲） ---------- */
+document.addEventListener("click", (e)=>{
+  const t=e.target.closest("button"); if(!t) return;
+  const d=t.dataset;
+  if(d.mc){
+    const [sec,pi,qi,i]=d.mc.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi], q=p.qs[+qi], k=pi+"-"+qi;
+    if(mod.ans[k]!=null || st.phase==="s1done" || st.phase==="done") return;
+    mod.ans[k]=+i;
+    const ok = +i===q.answer;
+    if(!ok) addNotes("miss",[{section:SEC[sec].name, q: q.q || `（音声）${q.prompt}`, chosen:q.choices[+i], correct:q.choices[q.answer], why:q.why_wrong_ja[+i], trap:q.trap[+i]}]);
+    if(q.paraphrase && q.paraphrase.from && q.paraphrase.to) addNotes("para",[{from:q.paraphrase.from, to:q.paraphrase.to, ja:`${SEC[sec].name}「${(q.q||"").slice(0,40)}」より`}]);
+    save(); rerenderPart(sec,+pi); checkStage(sec);
+  }
+  else if(d.cwcheck){
+    const [sec,pi]=d.cwcheck.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi];
+    const blanks=p.ct.parts.filter(x=>x.t==null);
+    p.res = blanks.map((x,i)=>(p.inputs[i]||"").trim().toLowerCase()===x.miss.toLowerCase());
+    p.checked=true;
+    const gl=p.data.glossary||[];
+    addNotes("word", blanks.filter((x,i)=>!p.res[i]).map(x=>{ const g=gl.find(g=>String(g.en).toLowerCase()===x.word.toLowerCase()); return {en:x.word, ja:g?g.ja:"（Complete the Words で間違えた語）"}; }));
+    save(); rerenderPart(sec,+pi); checkStage(sec);
+  }
+  else if(d.play){
+    const [sec,pi,qi]=d.play.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi];
+    if(qi==="all"){ if(p.play.n) return; p.play.n=1; } else { if(p.play[qi]) return; p.play[qi]="started"; }
+    PLAYING[sec]=`${pi}|${qi}`; save(); rerenderPart(sec,+pi);
+    speakSeq(segsOf(p, qi==="all"?0:+qi), LV[mod.level].rate, ()=>{
+      PLAYING[sec]=null;
+      if(qi==="all") p.play.done=true; else p.play[qi]="done";
+      save(); rerenderPart(sec,+pi);
+    });
+  }
+  else if(d.replay){
+    const [sec,pi,qi]=d.replay.split("|"); const mod=curMod(DB.cur[sec]), p=mod.parts[+pi];
+    let segs = segsOf(p, qi==="all"?0:+qi);
+    if(p.type==="response"){ const q=p.qs[+qi]; segs=segs.concat([{sp:q.speaker==="M"?"F":"M", text:q.choices[q.answer]}]); }
+    speakSeq(segs, LV[mod.level].rate);
+  }
+  else if(d.s2go){
+    const sec=d.s2go, st=DB.cur[sec]; if(!st.s2pre) return;
+    st.s2=st.s2pre; st.s2pre=null; st.s2.started=Date.now(); st.phase="s2";
+    save(); renderRL(sec); window.scrollTo(0, $("#"+SEC[sec].p+"-body").offsetTop-10);
+  }
+  else if(d.s2retry){ prefetchS2(d.s2retry); const s=$(`#${SEC[d.s2retry].p}-summary`); if(s) s.outerHTML=summaryHTML(d.s2retry,DB.cur[d.s2retry]); }
+  else if(d.newset){ DB.cur[d.newset]=null; save(); startSet(d.newset); }
+});
+document.addEventListener("input", (e)=>{
+  const t=e.target; if(!t.dataset || !t.dataset.cw) return;
+  const [sec,pi,i]=t.dataset.cw.split("|"); const p=curMod(DB.cur[sec]).parts[+pi];
+  t.value=t.value.replace(/[^A-Za-z]/g,"");
+  p.inputs[i]=t.value; save();
+  if(t.value.length>=t.maxLength){ const all=[...document.querySelectorAll(`input[data-cw^="${sec}|${pi}|"]`)]; const nx=all[all.indexOf(t)+1]; if(nx) nx.focus(); }
+});
+document.addEventListener("keydown", (e)=>{
+  const t=e.target; if(!t.dataset || !t.dataset.cw) return;
+  if(e.key==="Backspace" && !t.value){ const all=[...document.querySelectorAll(`input[data-cw]`)]; const pv=all[all.indexOf(t)-1]; if(pv){ pv.focus(); e.preventDefault(); } }
+  if(e.key==="Enter"){ const all=[...document.querySelectorAll(`input[data-cw]`)]; const nx=all[all.indexOf(t)+1]; if(nx) nx.focus(); }
+});
+
+["reading","listening"].forEach(sec=>{
+  const P=SEC[sec].p;
+  $("#"+P+"-start").onclick=()=>startSet(sec);
+  $("#"+P+"-reset").onclick=()=>{
+    if(DB.cur[sec] && DB.cur[sec].phase!=="done" && !confirmReset()) return;
+    DB.cur[sec]=null; save(); renderRL(sec); startSet(sec);
+  };
+});
+let resetArmed=0;
+function confirmReset(){ // ダイアログを出さずに二度押しで確定
+  if(Date.now()-resetArmed<4000) return true;
+  resetArmed=Date.now();
+  document.querySelectorAll("#r-reset,#l-reset").forEach(b=>{ b.textContent="もう一度押すと破棄します"; setTimeout(()=>b.textContent="新しいセットにする",4000); });
+  return false;
+}
+$("#l-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is the woman's voice."},{sp:"M",text:"And this is the man's voice."}], .94); };
 
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{

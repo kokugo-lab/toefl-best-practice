@@ -22,6 +22,29 @@ Everything you produce is ORIGINAL practice material modelled on the new format,
 All Japanese explanations must be encouraging but concrete and specific - never vague praise.
 Always reply with a single valid JSON object and nothing else: no markdown fences, no preamble.`;
 
+
+const LEVEL = {
+  easy: "CEFR B1 level: shorter sentences, high-frequency vocabulary, answers stated fairly explicitly, distractors clearly wrong on careful reading.",
+  standard: "CEFR B2 level: typical difficulty of the new-format TOEFL, some inference required, plausible distractors.",
+  hard: "CEFR B2+ to C1 level: denser sentences, lower-frequency academic vocabulary, more inference and purpose questions, distractors that stay close to the text (partial matches, overstatements, swapped details).",
+};
+const lv = (i) => LEVEL[i.level] || LEVEL.standard;
+
+// Multiple-choice item schema shared by Reading and Listening.
+const QSCHEMA = `{
+  "q": "question in English",
+  "choices": ["choice A", "choice B", "choice C", "choice D"],
+  "answer": 0,
+  "tag": "exactly one of: 主旨 / 詳細 / 推測 / 語彙 / 目的 / 話し手の意図 / 構成",
+  "explain_ja": "正解の根拠を日本語で。本文（音声）のどの表現が、正解の選択肢でどう言い換えられているかを具体的に示す",
+  "paraphrase": {"from": "本文（音声）の表現（英語）", "to": "正解の選択肢での言い換え（英語）"},
+  "why_wrong_ja": ["各選択肢がなぜ誤りか（日本語・1文）。正解の位置は空文字", "", "", ""],
+  "trap": ["各選択肢の誤答タイプ：本文にない／言い過ぎ／部分一致／すり替え／逆の内容 のいずれか。正解の位置は空文字", "", "", ""]
+}`;
+const QRULES = `Rules for questions: exactly 4 choices; vary the position of the correct answer; every distractor must be
+wrong for a reason you can state; never make two choices both defensible; why_wrong_ja and trap arrays have
+exactly 4 entries aligned with choices.`;
+
 const TASKS = {
   // ---- generation -------------------------------------------------
   gen_email: {
@@ -134,6 +157,129 @@ JSON shape:
 }`,
   },
 
+
+  // ---- Reading ----------------------------------------------------
+  gen_r_words: {
+    max_tokens: 1200,
+    prompt: (i) => `${COMMON}
+
+Create the source text for one "Complete the Words" task (a C-test). Difficulty: ${lv(i)}
+Topic: ${i.topic || "an academic subject"}.
+Write ONE coherent academic paragraph of 75-95 words in 5-6 sentences. The first sentence should be short and
+complete the context. Use ordinary words (no proper nouns, numbers, hyphenated words or abbreviations after
+the first sentence) so that every word can be completed from context. Do NOT insert blanks yourself; the app
+removes letters automatically.
+
+JSON shape:
+{"title": "short English title", "paragraph": "the paragraph", "summary_ja": "段落の要旨（日本語1文）",
+ "glossary": [{"en": "word as it appears", "ja": "意味"}, ...8 items, words from the paragraph worth learning]}`,
+  },
+
+  gen_r_daily: {
+    max_tokens: 2600,
+    prompt: (i) => `${COMMON}
+
+Create one "Read in Daily Life" task. Difficulty: ${lv(i)}
+Text type: ${i.topic || "a notice posted on campus"}.
+The text is a realistic non-academic text from university life, 90-150 words, with line breaks where the
+real thing would have them (headings, sender, times, bullet-like lines). Then write 3 questions.
+${QRULES}
+
+JSON shape:
+{"genre_ja": "掲示／メール／SNS投稿 など", "title": "short English title", "text": "the text with \\n line breaks",
+ "questions": [${QSCHEMA}, ...3 items],
+ "key_words": [{"en": "word", "ja": "意味"}, ...4 items]}`,
+  },
+
+  gen_r_academic: {
+    max_tokens: 3600,
+    prompt: (i) => `${COMMON}
+
+Create one "Read an Academic Passage" task. Difficulty: ${lv(i)}
+Topic: ${i.topic || "an academic subject"}.
+Write an expository passage of about 200 words in 2-3 paragraphs (separate paragraphs with \\n\\n), like an
+introductory university textbook. Then write 5 questions covering: the main idea, two details, one
+vocabulary-in-context question, and one inference or purpose question.
+${QRULES}
+
+JSON shape:
+{"title": "English title", "passage": "the passage",
+ "questions": [${QSCHEMA}, ...5 items],
+ "key_words": [{"en": "word", "ja": "意味"}, ...5 items]}`,
+  },
+
+  // ---- Listening --------------------------------------------------
+  gen_l_response: {
+    max_tokens: 2600,
+    prompt: (i) => `${COMMON}
+
+Create ${i.count || 4} "Listen and Choose a Response" items. Difficulty: ${lv(i)}
+Each item is one short spoken question or statement from campus or daily life (4-14 words) and four possible
+spoken replies. The learner only HEARS the prompt. The best reply must be natural and responsive, often indirect
+(not just repeating words from the prompt); distractors should include a reply that reuses a word from the prompt
+but does not answer it, and a reply with the wrong tense or wrong question type. Alternate speakers F and M.
+
+JSON shape:
+{"items": [{
+  "speaker": "F or M", "prompt": "what the first speaker says",
+  "choices": ["reply A", "reply B", "reply C", "reply D"], "answer": 0, "tag": "応答",
+  "explain_ja": "なぜその応答が自然か（日本語）",
+  "paraphrase": {"from": "", "to": ""},
+  "why_wrong_ja": ["", "", "", ""], "trap": ["音の引っかけ／話がかみ合わない／時制のずれ／疑問詞のずれ 等。正解は空文字", "", "", ""]
+}, ...]}`,
+  },
+
+  gen_l_conversation: {
+    max_tokens: 2600,
+    prompt: (i) => `${COMMON}
+
+Create one "Listen to a Conversation" task. Difficulty: ${lv(i)}
+Setting: ${i.topic || "two students talking on campus"}.
+Write a natural everyday conversation between a woman (F) and a man (M), 8-12 turns, about 130-170 words in
+total, with natural spoken features (hesitations like "Well," "Actually," short reactions). Then 2 questions
+(one about the main topic or problem, one about a detail, intention, or what a speaker will do next).
+${QRULES}
+
+JSON shape:
+{"setting_ja": "場面の説明（日本語1文）",
+ "lines": [{"sp": "F", "text": "..."}, {"sp": "M", "text": "..."}],
+ "questions": [${QSCHEMA}, ...2 items],
+ "key_words": [{"en": "word or phrase", "ja": "意味"}, ...3 items]}`,
+  },
+
+  gen_l_announcement: {
+    max_tokens: 2200,
+    prompt: (i) => `${COMMON}
+
+Create one "Listen to an Announcement" task. Difficulty: ${lv(i)}
+Context: ${i.topic || "a professor making an announcement at the start of class"}.
+One speaker, 90-130 words, spoken style. Then 2 questions (purpose of the announcement, and a detail or
+what listeners must do).
+${QRULES}
+
+JSON shape:
+{"speaker": "F or M", "context_ja": "場面（日本語1文）", "text": "the announcement",
+ "questions": [${QSCHEMA}, ...2 items],
+ "key_words": [{"en": "word or phrase", "ja": "意味"}, ...3 items]}`,
+  },
+
+  gen_l_talk: {
+    max_tokens: 3400,
+    prompt: (i) => `${COMMON}
+
+Create one "Listen to an Academic Talk" task. Difficulty: ${lv(i)}
+Topic: ${i.topic || "an academic subject"}.
+A lecture excerpt by one professor, 180-240 words, spoken style (signposting such as "Now, let's turn to...",
+"So why does this matter?", a concrete example). Then 4 questions: main topic, two details, and one about the
+purpose of something the professor says or an inference.
+${QRULES}
+
+JSON shape:
+{"speaker": "F or M", "title": "English title", "text": "the talk",
+ "questions": [${QSCHEMA}, ...4 items],
+ "key_words": [{"en": "word or phrase", "ja": "意味"}, ...5 items]}`,
+  },
+
   // ---- review quiz ------------------------------------------------
   gen_review: {
     max_tokens: 1200,
@@ -166,20 +312,26 @@ function extractJson(text) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function geminiOnce(model, key, prompt, maxTokens) {
+async function geminiOnce(model, key, prompt, maxTokens, think) {
+  const generationConfig = {
+    responseMimeType: "application/json",
+    // maxOutputTokens counts thinking tokens too, so leave generous headroom.
+    maxOutputTokens: Math.max(maxTokens * 2, maxTokens + 3000),
+    temperature: 0.9,
+  };
+  if (think) generationConfig.thinkingConfig = { thinkingLevel: /lite/.test(model) ? "minimal" : "low" };
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
     {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: maxTokens, temperature: 0.8 },
-      }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
     }
   );
   if (!res.ok) {
     const detail = await res.text();
+    // If this model rejects the thinking setting, try once more without it.
+    if (think && res.status === 400 && /thinking/i.test(detail)) return geminiOnce(model, key, prompt, maxTokens, false);
     const err = new Error("gemini");
     err.status = res.status;
     err.detail = detail.slice(0, 500);
@@ -188,7 +340,7 @@ async function geminiOnce(model, key, prompt, maxTokens) {
   const data = await res.json();
   const cand = (data.candidates || [])[0] || {};
   if (cand.finishReason === "SAFETY") throw { user: "内容が安全フィルタに触れました。別の課題でもう一度お試しください。", code: 502 };
-  return ((cand.content && cand.content.parts) || []).map((p) => p.text || "").join("");
+  return ((cand.content && cand.content.parts) || []).filter((p) => !p.thought).map((p) => p.text || "").join("");
 }
 
 async function callGemini(prompt, maxTokens) {
@@ -210,7 +362,7 @@ async function callGemini(prompt, maxTokens) {
   for (const step of chain) {
     if (step.wait) await sleep(step.wait);
     try {
-      return await geminiOnce(step.model, key, prompt, maxTokens);
+      return await geminiOnce(step.model, key, prompt, maxTokens, true);
     } catch (e) {
       if (e && e.user) throw e;
       last = e;
