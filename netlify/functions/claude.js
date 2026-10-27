@@ -312,7 +312,7 @@ function extractJson(text) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function geminiOnce(model, key, prompt, maxTokens, think) {
+async function geminiOnce(model, key, prompt, maxTokens, think, ms) {
   const generationConfig = {
     responseMimeType: "application/json",
     // maxOutputTokens counts thinking tokens too, so leave generous headroom.
@@ -326,12 +326,18 @@ async function geminiOnce(model, key, prompt, maxTokens, think) {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
+      signal: AbortSignal.timeout(Math.max(1000, ms || 20000)),
     }
-  );
+  ).catch((e) => {
+    const err = new Error("gemini");
+    err.status = e && (e.name === "TimeoutError" || e.name === "AbortError") ? 504 : 502;
+    err.detail = String(e).slice(0, 200);
+    throw err;
+  });
   if (!res.ok) {
     const detail = await res.text();
     // If this model rejects the thinking setting, try once more without it.
-    if (think && res.status === 400 && /thinking/i.test(detail)) return geminiOnce(model, key, prompt, maxTokens, false);
+    if (think && res.status === 400 && /thinking/i.test(detail)) return geminiOnce(model, key, prompt, maxTokens, false, ms);
     const err = new Error("gemini");
     err.status = res.status;
     err.detail = detail.slice(0, 500);
@@ -347,27 +353,31 @@ async function callGemini(prompt, maxTokens) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw { user: "サーバーにAPIキーが設定されていません（Netlifyの環境変数 GEMINI_API_KEY を確認してください）", code: 500 };
 
-  // 混雑(503)や瞬間的な超過(429)に備え、同じモデルで一度待って再試行し、
-  // それでも駄目なら軽いモデルに切り替える。
+  // Netlifyの関数は30秒前後で打ち切られるので、全体を約25秒に収める。
+  // 主モデルが遅い(時間切れ)ときは軽いモデルへ、混雑(503/429)なら少し待って再試行。
   const primary = process.env.GEMINI_MODEL || "gemini-3.8-flash";
   const fallback = process.env.GEMINI_MODEL_FALLBACK || "gemini-3.5-flash-lite";
-  const chain = [
-    { model: primary, wait: 0 },
-    { model: primary, wait: 1500 },
-    { model: fallback, wait: 500 },
-    { model: fallback, wait: 2500 },
+  const deadline = Date.now() + 25000;
+  const left = () => deadline - Date.now();
+  const steps = [
+    { model: primary, wait: 0, cap: 17000 },
+    { model: primary, wait: 1500, cap: 12000, only: [503, 429] },
+    { model: fallback, wait: 0, cap: 15000 },
+    { model: fallback, wait: 1500, cap: 15000, only: [503, 429] },
   ];
 
   let last = null;
-  for (const step of chain) {
-    if (step.wait) await sleep(step.wait);
+  for (const st of steps) {
+    if (st.only && !(last && st.only.includes(last.status))) continue;
+    if (st.wait) await sleep(st.wait);
+    const ms = Math.min(st.cap, left() - 300);
+    if (ms < 3000) break;
     try {
-      return await geminiOnce(step.model, key, prompt, maxTokens, true);
+      return await geminiOnce(st.model, key, prompt, maxTokens, true, ms);
     } catch (e) {
       if (e && e.user) throw e;
       last = e;
-      if (e.status === 503 || e.status === 429 || e.status >= 500) continue;
-      break;
+      if (!(e.status === 503 || e.status === 429 || e.status === 504 || e.status >= 500)) break;
     }
   }
 
@@ -378,6 +388,8 @@ async function callGemini(prompt, maxTokens) {
         ? "無料枠の上限に達したか混み合っています。少し待ってからもう一度お試しください。"
         : st === 503
         ? "Gemini側が混み合っています。1分ほど待ってからもう一度お試しください。"
+        : st === 504
+        ? "生成に時間がかかりすぎました。もう一度お試しください。"
         : st === 400 || st === 403
         ? "APIキーが正しくないか、権限がありません。Netlifyの環境変数 GEMINI_API_KEY を確認してください。"
         : "Gemini APIからエラーが返りました。",

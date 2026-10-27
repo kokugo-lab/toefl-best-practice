@@ -298,14 +298,20 @@ function go(v){
   if(v==="reading"||v==="listening") renderRL(v);
 }
 
-async function api(action, input){
-  const res = await fetch("/api/claude", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({action, input})
-  });
-  let j = null;
-  try{ j = await res.json(); }catch(e){ throw new Error("サーバーの応答を読み取れませんでした。"); }
-  if(!res.ok || !j.ok) throw new Error((j && j.error) || "通信に失敗しました。");
+async function api(action, input, tries){
+  tries = tries==null ? 1 : tries;   // 時間切れ・混雑時は自動で1回だけやり直す
+  let res, j=null;
+  try{
+    res = await fetch("/api/claude", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({action, input}) });
+  }catch(e){
+    if(tries>0) return api(action, input, tries-1);
+    throw new Error("通信に失敗しました。接続を確認してもう一度お試しください。");
+  }
+  try{ j = await res.json(); }catch(e){ j=null; }
+  const retryable = !j || res.status===502 || res.status===504 || res.status===503;
+  if((!res.ok || !j || !j.ok) && retryable && tries>0){ await new Promise(r=>setTimeout(r,1200)); return api(action, input, tries-1); }
+  if(!j) throw new Error(res.status>=500 ? "問題の生成に時間がかかりすぎました。もう一度お試しください。" : "サーバーの応答を読み取れませんでした。");
+  if(!res.ok || !j.ok) throw new Error(j.error || "通信に失敗しました。");
   return j.data;
 }
 const busy = (el, msg)=>{ el.innerHTML = `<div class="card"><span class="spin"></span>${esc(msg)}</div>`; };
