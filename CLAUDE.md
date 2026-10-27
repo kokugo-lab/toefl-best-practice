@@ -28,7 +28,7 @@
         Write for an Academic Discussion（Writing・`eval_discussion` で添削）
 - [x] 学習効果の追加（2026-10）：ノートの間隔反復（SRS）、苦手タグを生成に渡す（`focus`）、Writing の書き直しループ、
         Listening の文ごとの聞き直し・書き取り・くり返し、Interview 本番形式（4問×45秒）と答え直し、1問ごとの時間記録、
-        Complete the Words 3分ドリル、学習カレンダー、バックアップ（JSON書き出し・読み込み）
+        Complete the Words 練習（3分）、学習カレンダー、バックアップ（JSON書き出し・読み込み）
 - [x] IELTS Academic モード（初回に TOEFL／IELTS を選ぶ。右上の「試験」で切替）：Listening 4パート、Reading 3パッセージ、
         Writing Task 1（図表をSVGで描画）・Task 2、Speaking Part 1〜3。バンドは0〜9
 - [x] 適性診断（約8〜10分、`v-fit`、`fitStart`/`fitRender`/`fitScore`、生成は `gen_fit_a`・`gen_fit_b`）：長文TFNG・読む速さ・
@@ -67,6 +67,9 @@
 - Complete the Words の全文訳は結果（○/10 語 正解）の上に出す（`cwTransHTML`）。
 - 基礎練習（TOEFL のみ）：`wuStart(view)` が `GUIDE` から5問（例文の穴埋め・意味）＋今日のポイントを作り `#wu-<view>` に出す。
   課題を始めたとき自動で出す（`DB.ui.wuOff` で止められる）。状態は保存しない。間違えた語はノートへ。
+- 画面の呼び名：🎯 本番（セット）／⏱️ 練習（3分の Complete the Words、Interview の1問）／🌱 基礎（`wuStart`）／💡 コツと単語。開始ボタンは `.stack` で縦に並べる。
+- デザイン：やわらかカフェ風＋鳥（見出し・メニュー・ホームの吹き出し `birdSay()`・ぐるぐるは🐦）。正解は「🎉 正解！」、不正解は「💪 おしい！」。
+  結果画面には `cheerHTML(正答率, seed)`（鳥のひとこと＋名言 `QUOTES`）。名言は出典が確かなものだけを入れる。
 - 音声は SpeechSynthesis（男女2声、同じ声しかなければ pitch で区別）、文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。

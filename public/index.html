@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TOEFL Best Practice</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐦%3C/text%3E%3C/svg%3E">
 <style>
   :root{
-    --bg:#f6f4ef; --card:#fffdf8; --ink:#23201b; --sub:#6b6459;
-    --line:#e2dccf; --accent:#1f6f5c; --accent-soft:#e3efe9;
-    --warn:#a8552f; --warn-soft:#f6e9e1; --shadow:0 1px 2px rgba(35,32,27,.06),0 8px 24px rgba(35,32,27,.05);
-    --r:14px;
+    --bg:#fbf6ec; --card:#fffdf8; --ink:#3a3128; --sub:#7c7063;
+    --line:#ece2d2; --accent:#2f8f6f; --accent-soft:#e3f3ea;
+    --warn:#cf6b3c; --warn-soft:#fdeee3; --shadow:0 2px 4px rgba(120,90,50,.05),0 10px 26px rgba(120,90,50,.07);
+    --r:22px;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -70,7 +71,9 @@
   .note{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0; background:var(--bg)}
   .note .k{font-weight:650} .note .v{color:var(--sub); font-size:.86rem}
   .tag{display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--accent-soft); color:var(--accent); margin-right:6px}
-  .spin{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; margin-right:8px}
+  .spin{display:inline-block; margin-right:8px; animation:flap .6s ease-in-out infinite alternate; font-size:1.05em; line-height:1}
+  .spin::before{content:"🐦"}
+  @keyframes flap{from{transform:translateY(1px) rotate(-8deg)} to{transform:translateY(-4px) rotate(8deg)}}
   @keyframes sp{to{transform:rotate(360deg)}}
   .err{background:var(--warn-soft); color:var(--warn); border:1px solid var(--warn); border-radius:10px; padding:10px 14px; margin:10px 0; font-size:.86rem}
   .seg{display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:10px 0}
@@ -117,6 +120,30 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  /* ---- やわらかカフェ風・鳥 ---- */
+  button{border-radius:16px}
+  .primary{box-shadow:0 4px 12px rgba(47,143,111,.22)}
+  .stack{display:flex; flex-direction:column; gap:10px; align-items:stretch}
+  .stack button{display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; padding:13px 18px; font-size:1rem; font-weight:600}
+  .stack button small{font-weight:400; font-size:.76rem; opacity:.85; text-align:right}
+  .stack button.ready::after{content:"準備済み"; font-size:.68rem; font-weight:600; background:rgba(255,255,255,.25); border-radius:8px; padding:1px 7px; margin-left:6px}
+  .stack button:not(.primary).ready::after{background:var(--accent-soft); color:var(--accent)}
+  .card{border-radius:var(--r)}
+  .tag{border-radius:20px}
+  .seg{border-radius:16px} .seg button{border-radius:0}
+  .mascot{display:inline-block; margin-right:6px; animation:hop 2.8s ease-in-out infinite}
+  @keyframes hop{0%,80%,100%{transform:translateY(0)} 88%{transform:translateY(-5px)} 94%{transform:translateY(0)}}
+  .bubble{display:flex; align-items:flex-end; gap:10px; margin:14px 0 4px}
+  .bubble .bird{font-size:2.4rem; line-height:1; animation:hop 3.2s ease-in-out infinite}
+  .bubble .say{position:relative; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:10px 14px; font-size:.9rem; box-shadow:var(--shadow)}
+  .bubble .say::before{content:""; position:absolute; left:-7px; bottom:12px; width:12px; height:12px; background:var(--card); border-left:1px solid var(--line); border-bottom:1px solid var(--line); transform:rotate(45deg)}
+  .cheer{margin:10px 0 6px; font-weight:600}
+  .quote{position:relative; margin:6px 0 10px; padding:12px 16px 12px 18px; border-radius:16px; background:var(--accent-soft); border-left:4px solid var(--accent)}
+  .quote .qen{font-weight:600; font-style:italic}
+  .quote .qja{font-size:.88rem; margin-top:2px}
+  .quote .qsrc{font-size:.74rem; color:var(--sub); margin-top:4px; text-align:right}
+  nav button .ic{font-size:1.3rem}
+  @media (prefers-reduced-motion: reduce){ .mascot, .bubble .bird, .spin{animation:none} }
   .card.wu{border-color:var(--accent)}
   .bandpill{display:inline-block; background:var(--accent-soft); color:var(--accent); border-radius:8px; padding:1px 9px; font-weight:700; font-size:.95em}
   .xlat{margin:10px 0; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); font-size:.9rem}
@@ -247,7 +274,7 @@
 <body>
 <div class="wrap">
   <header class="hd">
-    <h1><span id="hd-title">TOEFL Best Practice</span><small id="hd-sub">新形式（2026年1月〜）練習　Reading / Listening / Writing / Speaking</small></h1>
+    <h1><span class="mascot" aria-hidden="true">🐦</span><span id="hd-title">TOEFL Best Practice</span><small id="hd-sub">新形式（2026年1月〜）練習　Reading / Listening / Writing / Speaking</small></h1>
     <button class="modebtn" onclick="go('pick')" title="試験を切り替える">試験：<strong id="mode-name">TOEFL</strong> ▾</button>
   </header>
 
@@ -283,14 +310,15 @@
 
   <!-- ============ ホーム ============ -->
   <section id="v-home" class="view on">
+    <div class="bubble"><span class="bird" aria-hidden="true">🐤</span><div class="say" id="birdsay">今日も一緒にがんばろう！</div></div>
     <div class="card">
-      <h2>本番まで</h2>
+      <h2>🗓️ 本番まで</h2>
       <div class="countdown"><div class="n" id="days">–</div><div class="muted" id="daysSub"></div></div>
       <div id="plan" class="tiny" style="margin-top:8px"></div>
     </div>
 
     <div class="card">
-      <h2>今日のおすすめ</h2>
+      <h2>🐤 今日のおすすめ</h2>
       <button class="reco" onclick="go('fit')" id="fit-reco"><strong>TOEFL と IELTS、どっちが向いている？ 診断テスト（約8〜10分） →</strong><span>短い問題とアンケートで、向いている試験の目安を出します。</span></button>
       <div id="reco"></div>
     </div>
@@ -302,7 +330,7 @@
     </div>
 
     <div class="card">
-      <h2>学習カレンダー</h2>
+      <h2>📅 学習カレンダー</h2>
       <div id="cal"></div>
     </div>
 
@@ -316,16 +344,16 @@
   <!-- ============ Reading ============ -->
   <section id="v-reading" class="view">
     <div class="card">
-      <h2>Reading</h2>
+      <h2>🦉 Reading</h2>
       <p class="tiny">新形式の3課題（Complete the Words／Read in Daily Life／Read an Academic Passage）を1セットにして出題します。2段階式で、第1段階の正答率によって第2段階の難しさが変わります。選択肢を選ぶとすぐに採点し、言い換えの解説と、間違えた原因を表示します。</p>
-      <div class="row">
-        <button class="primary" id="r-start">第1段階を始める</button>
+      <div class="stack">
+        <button class="primary" id="r-start">🎯 本番<small>2段階・約20分</small></button>
         <button id="r-reset" style="display:none">新しいセットにする</button>
-        <button id="c-start">3分ドリル（Complete the Words）</button>
-        <button class="guidebtn" data-guide="cw">コツと単語</button>
-        <button class="guidebtn" data-wu="reading">基礎練習</button>
+        <button id="c-start">⏱️ 練習<small>Complete the Words を3分で</small></button>
+        <button class="guidebtn" data-wu="reading">🌱 基礎<small>覚えるべき語句の確認5問</small></button>
+        <button class="guidebtn" data-guide="cw">💡 コツと単語</button>
       </div>
-      <p class="tiny" style="margin-top:6px">3分ドリルは、Complete the Words の1段落だけを3分で解くすき間時間用の練習です。時間になると自動で答え合わせします。</p>
+      <p class="tiny" style="margin-top:6px">練習は、Complete the Words の1段落だけを3分で解くすき間時間用です。時間になると自動で答え合わせします。</p>
       <div id="r-msg"></div>
     </div>
     <div id="wu-reading"></div>
@@ -336,14 +364,14 @@
   <!-- ============ Listening ============ -->
   <section id="v-listening" class="view">
     <div class="card">
-      <h2>Listening</h2>
+      <h2>🐦 Listening</h2>
       <p class="tiny">新形式の4課題（Listen and Choose a Response／Conversation／Announcement／Academic Talk）を1セットにして出題します。音声は本番どおり1回だけ再生でき、設問は再生が終わってから表示されます。解答後はスクリプトを見ながら何度でも聞き直せます。2段階式です。</p>
-      <div class="row">
-        <button class="primary" id="l-start">第1段階を始める</button>
-        <button id="l-voice">声のテスト</button>
-        <button class="guidebtn" data-guide="response">コツと単語</button>
-        <button class="guidebtn" data-wu="listening">基礎練習</button>
+      <div class="stack">
+        <button class="primary" id="l-start">🎯 本番<small>2段階・約15分</small></button>
         <button id="l-reset" style="display:none">新しいセットにする</button>
+        <button class="guidebtn" data-wu="listening">🌱 基礎<small>覚えるべき語句の確認5問</small></button>
+        <button class="guidebtn" data-guide="response">💡 コツと単語</button>
+        <button id="l-voice">🔊 声のテスト</button>
       </div>
       <p class="tiny" id="l-voiceinfo" style="margin-top:8px"></p>
       <div id="l-msg"></div>
@@ -355,13 +383,12 @@
   <!-- ============ Writing ============ -->
   <section id="v-writing" class="view">
     <div class="card">
-      <h2>Writing</h2>
+      <h2>🕊️ Writing</h2>
       <div class="seg" id="w-seg">
         <button data-t="build" aria-pressed="true">Build a Sentence</button>
         <button data-t="email" aria-pressed="false">Write an Email</button>
         <button data-t="disc" aria-pressed="false">Academic Discussion</button>
       </div>
-      <button class="mini" data-wu="writing">基礎練習（いま開いている課題）</button>
     </div>
     <div id="wu-writing"></div>
 
@@ -369,10 +396,11 @@
       <div class="card">
         <h2>Build a Sentence</h2>
         <p class="tiny">会話の流れに合うように、語のかたまりを正しい順番に並べて文を完成させます（10問・目安6分）。かたまりを押すと解答欄に入り、解答欄のかたまりを押すと戻ります。使わないダミーが1つ混ざっている問題もあります。</p>
-        <div class="row">
-          <button class="primary" id="b-start">10問を始める</button>
-          <button class="guidebtn" data-guide="build">コツと単語</button>
+        <div class="stack">
+          <button class="primary" id="b-start">🎯 本番<small>10問・約6分</small></button>
           <button id="b-reset" style="display:none">新しいセットにする</button>
+          <button class="guidebtn" data-wu="writing">🌱 基礎<small>覚えるべき語句の確認5問</small></button>
+          <button class="guidebtn" data-guide="build">💡 コツと単語</button>
         </div>
       </div>
       <div id="b-body"></div>
@@ -382,7 +410,7 @@
       <div class="card">
         <h2>Write an Email</h2>
         <p class="tiny">大学の事務室や教授あてのメールを書く課題です。制限時間は10分、90語以上が目安。</p>
-        <div class="row"><button class="primary" id="w-gen">課題を出す</button><button class="guidebtn" data-guide="email">コツと単語</button></div>
+        <div class="stack"><button class="primary" id="w-gen">🎯 本番<small>課題を出す・10分</small></button><button class="guidebtn" data-wu="writing">🌱 基礎<small>覚えるべき表現の確認5問</small></button><button class="guidebtn" data-guide="email">💡 コツと単語</button></div>
         <div id="w-task" style="display:none"></div>
       </div>
       <div class="card" id="w-editor" style="display:none">
@@ -405,7 +433,7 @@
       <div class="card">
         <h2>Write for an Academic Discussion</h2>
         <p class="tiny">授業のオンライン掲示板で、教授の問いとクラスメート2人の投稿を読み、自分の意見を投稿します。制限時間は10分、100語以上が目安。クラスメートの意見に触れつつ、新しい視点を足すのがコツです。</p>
-        <div class="row"><button class="primary" id="d-gen">課題を出す</button><button class="guidebtn" data-guide="disc">コツと単語</button></div>
+        <div class="stack"><button class="primary" id="d-gen">🎯 本番<small>課題を出す・10分</small></button><button class="guidebtn" data-wu="writing">🌱 基礎<small>覚えるべき表現の確認5問</small></button><button class="guidebtn" data-guide="disc">💡 コツと単語</button></div>
         <div id="d-task" style="display:none"></div>
       </div>
       <div class="card" id="d-editor" style="display:none">
@@ -428,12 +456,11 @@
   <!-- ============ Speaking ============ -->
   <section id="v-speaking" class="view">
     <div class="card">
-      <h2>Speaking</h2>
+      <h2>🦜 Speaking</h2>
       <div class="seg" id="s-seg">
         <button data-t="repeat" aria-pressed="true">Listen and Repeat</button>
         <button data-t="iv" aria-pressed="false">Take an Interview</button>
       </div>
-      <button class="mini" data-wu="speaking" style="margin-bottom:6px">基礎練習（いま開いている課題）</button>
       <p class="tiny">評価は文字起こしをもとに行うため、発音・抑揚・間は評価していません。</p>
     </div>
     <div id="wu-speaking"></div>
@@ -442,10 +469,11 @@
       <div class="card">
         <h2>Listen and Repeat</h2>
         <p class="tiny">案内役の話す文を1回だけ聞き、聞こえたとおりにくり返します（7文・だんだん長くなります）。再生が終わると自動で録音が始まります。文字起こしと元の文を比べて、再現できた語の割合を出します。</p>
-        <div class="row">
-          <button class="primary" id="p-start">7文を始める</button>
-          <button class="guidebtn" data-guide="repeat">コツと単語</button>
+        <div class="stack">
+          <button class="primary" id="p-start">🎯 本番<small>7文</small></button>
           <button id="p-reset" style="display:none">新しいセットにする</button>
+          <button class="guidebtn" data-wu="speaking">🌱 基礎<small>覚えるべき語句の確認5問</small></button>
+          <button class="guidebtn" data-guide="repeat">💡 コツと単語</button>
         </div>
       </div>
       <div id="p-body"></div>
@@ -455,10 +483,11 @@
       <div class="card">
         <h2>Take an Interview</h2>
         <p class="tiny">本番形式では、1つのテーマについて4問続けて質問され、準備時間なしで各45秒答えます。質問が読み上げられると録音が始まり、次の質問へ自動で進みます。1問だけの練習（準備15秒・解答60秒）もできます。文字起こしは自分で直してから評価に出せます。</p>
-        <div class="row">
-          <button class="primary" data-ivstart="set">本番形式（4問・各45秒）</button>
-          <button data-ivstart="one">1問だけ（60秒）</button>
-          <button class="guidebtn" data-guide="interview">コツと単語</button>
+        <div class="stack">
+          <button class="primary" data-ivstart="set">🎯 本番<small>4問・各45秒</small></button>
+          <button data-ivstart="one">⏱️ 練習<small>1問だけ・準備15秒・解答60秒</small></button>
+          <button class="guidebtn" data-wu="speaking">🌱 基礎<small>答えに使える表現の確認5問</small></button>
+          <button class="guidebtn" data-guide="interview">💡 コツと単語</button>
         </div>
       </div>
       <div id="iv-body"></div>
@@ -468,7 +497,7 @@
   <!-- ============ IELTS Listening ============ -->
   <section id="v-ilistening" class="view">
     <div class="card">
-      <h2>IELTS Listening</h2>
+      <h2>🐦 IELTS Listening</h2>
       <p class="tiny">4つのパート（Part 1 日常会話／Part 2 日常の独話／Part 3 学術的な会話／Part 4 講義）。本番と同じく先に設問を読み、音声は1回だけ再生されます。聞きながら解答し、再生が終わったら答え合わせします。答え合わせのあとは、スクリプトを1文ずつ聞き直し・書き取り・くり返しできます。</p>
       <div class="row">
         <button data-istart="ilistening|1">Part 1</button>
@@ -489,7 +518,7 @@
   <!-- ============ IELTS Reading ============ -->
   <section id="v-ireading" class="view">
     <div class="card">
-      <h2>IELTS Reading（Academic）</h2>
+      <h2>🦉 IELTS Reading（Academic）</h2>
       <p class="tiny">1パッセージ約700語・13問（TRUE / FALSE / NOT GIVEN、多肢選択、文完成）。目安は1パッセージ20分です。本番と同じく、解き終わってからパッセージごとにまとめて答え合わせします。</p>
       <div class="row">
         <button class="primary" data-istart="ireading|1">1パッセージ（20分）</button>
@@ -503,7 +532,7 @@
   <!-- ============ IELTS Writing ============ -->
   <section id="v-iwriting" class="view">
     <div class="card">
-      <h2>IELTS Writing（Academic）</h2>
+      <h2>🕊️ IELTS Writing（Academic）</h2>
       <div class="seg" id="iw-seg">
         <button data-t="t1" aria-pressed="true">Task 1（図表）</button>
         <button data-t="t2" aria-pressed="false">Task 2（エッセイ）</button>
@@ -558,7 +587,7 @@
   <!-- ============ IELTS Speaking ============ -->
   <section id="v-ispeaking" class="view">
     <div class="card">
-      <h2>IELTS Speaking</h2>
+      <h2>🦜 IELTS Speaking</h2>
       <p class="tiny">Part 1（身近な質問4問・各30秒まで）→ Part 2（カードを見て準備1分・2分スピーチ）→ Part 3（Part 2 のテーマを掘り下げる4問・各60秒まで）。試験官の質問を読み上げ、録音と文字起こしを行います。評価は文字起こしにもとづくため、発音（Pronunciation）は評価していません。</p>
       <div class="row">
         <button class="primary" data-isp="all">通し（Part 1〜3・約14分）</button>
@@ -573,12 +602,12 @@
   <!-- ============ ノート ============ -->
   <section id="v-notes" class="view">
     <div class="card" id="srs-card">
-      <h2>今日の復習（間隔反復）</h2>
+      <h2>🐧 今日の復習（間隔反復）</h2>
       <p class="tiny">ノートの語句・言い換え・間違いを、1日→3日→7日→14日→30日…と間隔をあけて出します。答えを思い出してから「答えを見る」を押し、覚えていたかどうかを選んでください。忘れていたものは翌日にもう一度出ます。</p>
       <div id="srs"></div>
     </div>
     <div class="card">
-      <h2>記録・ノート</h2>
+      <h2>🐧 記録・ノート</h2>
       <input type="text" id="n-q" placeholder="語句・日本語で検索">
       <div class="seg" id="n-seg">
         <button data-k="all" aria-pressed="true">すべて</button>
@@ -624,12 +653,12 @@
 </div>
 
 <nav>
-  <button data-v="home" aria-current="true" onclick="go('home')"><span class="ic">◧</span>ホーム</button>
-  <button data-v="reading" onclick="go('reading')"><span class="ic">▦</span>Reading</button>
-  <button data-v="listening" onclick="go('listening')"><span class="ic">♪</span>Listening</button>
-  <button data-v="writing" onclick="go('writing')"><span class="ic">✎</span>Writing</button>
-  <button data-v="speaking" onclick="go('speaking')"><span class="ic">◉</span>Speaking</button>
-  <button data-v="notes" onclick="go('notes')"><span class="ic">▤</span>ノート</button>
+  <button data-v="home" aria-current="true" onclick="go('home')"><span class="ic">🐤</span>ホーム</button>
+  <button data-v="reading" onclick="go('reading')"><span class="ic">🦉</span>Reading</button>
+  <button data-v="listening" onclick="go('listening')"><span class="ic">🐦</span>Listening</button>
+  <button data-v="writing" onclick="go('writing')"><span class="ic">🕊️</span>Writing</button>
+  <button data-v="speaking" onclick="go('speaking')"><span class="ic">🦜</span>Speaking</button>
+  <button data-v="notes" onclick="go('notes')"><span class="ic">🐧</span>ノート</button>
 </nav>
 
 <script>
@@ -940,7 +969,7 @@ function mcHTML(sec, pi, qi, q, chosen, o={}){
   if(answered){
     const ok = chosen===q.answer;
     const pp = q.paraphrase||{};
-    fb = `<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"正解":"不正解"}　<span class="tag">${esc(q.tag||"")}</span></div>
+    fb = `<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"🎉 正解！":"💪 おしい！"}　<span class="tag">${esc(q.tag||"")}</span></div>
       <div>${esc(q.explain_ja||"")}</div>
       ${(pp.from&&pp.to)?`<div class="para"><span class="muted">言い換え</span>　<span class="en">${esc(pp.from)}</span> → <strong class="en">${esc(pp.to)}</strong></div>`:""}
       ${!ok?`<div class="corr"><strong>間違えた原因</strong>${q.trap[chosen]?`【${esc(q.trap[chosen])}】`:""}<br>${esc(q.why_wrong_ja[chosen]||"")}</div>`:""}
@@ -1057,6 +1086,7 @@ function summaryHTML(sec, st){
       <h3>分野別の正答率</h3>
       <div class="bars">${Object.entries(tags).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).map(([t,[c,n]])=>
         `<div class="bar"><span>${esc(t)}</span><span class="track"><span class="fill" style="width:${(c/n*100).toFixed(0)}%"></span></span><span>${c}/${n}</span></div>`).join("")}</div>
+      ${cheerHTML(accOf(r1.concat(r2)), st.s2.started)}
       ${timesHTML(st)}
       <p class="tiny">間違えた問題・言い換え・語句はノートに保存しました。下に第2段階の問題と解説が残っています。</p>
       <button class="primary" data-newset="${sec}">新しいセットで練習する</button>
@@ -1069,7 +1099,7 @@ function renderRL(sec){
   const P=SEC[sec].p, st=DB.cur[sec], body=$("#"+P+"-body");
   $("#"+P+"-reset").style.display = st ? "" : "none";
   $("#"+P+"-start").style.display = (st && st.phase!=="done") ? "none" : "";
-  $("#"+P+"-start").textContent = "第1段階を始める";
+  $("#"+P+"-start").innerHTML = "🎯 本番<small>2段階・約"+(sec==="reading"?20:15)+"分</small>";
   if(!st){ body.innerHTML=""; return; }
   const mod=curMod(st);
   // 再生途中で閉じた場合は、設問を出して先へ進めるようにする
@@ -1487,7 +1517,7 @@ function bItemHTML(st, i){
   let fb="";
   if(ch){
     const ok=st.ok[i];
-    fb=`<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"正解":"不正解"}　<span class="tag">${esc(it.tag)}</span></div>
+    fb=`<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"🎉 正解！":"💪 おしい！"}　<span class="tag">${esc(it.tag)}</span></div>
       <div class="en"><strong>${esc(bSentence(it, it.chunks))}</strong></div>
       <div class="muted">${esc(it.ja)}</div>
       ${!ok?`<div class="corr"><strong>あなたの答え</strong><br><span class="en">${esc(bSentence(it, pl.map(id=>it.tiles[id].t)))}</span></div>`:""}
@@ -1523,6 +1553,7 @@ function bSummaryHTML(st){
     <h3>文法項目別</h3>
     <div class="bars">${Object.entries(tags).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).map(([t,[k,m]])=>
       `<div class="bar"><span>${esc(t)}</span><span class="track"><span class="fill" style="width:${(k/m*100).toFixed(0)}%"></span></span><span>${k}/${m}</span></div>`).join("")}</div>
+    ${cheerHTML(c/n, st.started)}
     <p class="tiny">間違えた問題はノートに保存しました。</p>
     <button class="primary" data-bnew="1">新しいセットで練習する</button>
   </div>`;
@@ -1665,6 +1696,7 @@ function pSummaryHTML(st){
     <div class="band">${st.band.toFixed(1)}<span>推定バンド</span></div>
     <p class="tiny" style="margin-top:8px">文字起こしと元の文の一致率から出した目安で、公式採点とは一致しません。発音・抑揚・間は評価していません。音声認識の誤りで低く出ることもあります。</p>
     <div class="kv"><span>全体の再現率</span><strong>${Math.round(st.acc*100)}%</strong></div>
+    ${cheerHTML(st.acc, st.data.setting_en||st.data.setting_ja||"")}
     ${rows}
     ${kwHTML(st.data.key_words)}
     <p class="tiny">再現率が85%未満だった文はノートの「間違い」に保存しました。</p>
@@ -1829,7 +1861,7 @@ function weakList(sec){
 const weakTags=(sec)=>weakList(sec).slice(0,2).map(x=>x.tag);
 const STATSEC={toefl:{R:"Reading",L:"Listening",B:"Build a Sentence"}, ielts:{iR:"Reading",iL:"Listening"}};
 
-const TASKNAME={build:"Build a Sentence", email:"Email", disc:"Academic Discussion", repeat:"Listen and Repeat", interview:"Interview", cwdrill:"3分ドリル", it1:"Task 1", it2:"Task 2"};
+const TASKNAME={build:"Build a Sentence", email:"Email", disc:"Academic Discussion", repeat:"Listen and Repeat", interview:"Interview", cwdrill:"練習（3分）", it1:"Task 1", it2:"Task 2"};
 // 第3段階より前の記録には task がないので、Writing は Email、Speaking は Interview とみなす
 const taskOf=(r)=>r.task || (r.kind==="Writing" ? "email" : r.kind==="Speaking" ? "interview" : "");
 const bandTxt=(x)=> x.band==null ? (x.acc!=null?`${Math.round(x.acc*100)}%`:"–") : (+x.band).toFixed(1);
@@ -1843,9 +1875,9 @@ function renderHist(){
 /* ================= ホーム ================= */
 const MENU={
   toefl:[
-    {k:"Reading", t:"", label:"Reading 1セット（2段階・約20分）", u:"セット", go:"reading"},
-    {k:"Reading", t:"cwdrill", label:"Complete the Words 3分ドリル", u:"回", go:"reading"},
-    {k:"Listening", t:"", label:"Listening 1セット（2段階・約15分）", u:"セット", go:"listening"},
+    {k:"Reading", t:"", label:"🎯 本番：Reading（2段階・約20分）", u:"セット", go:"reading"},
+    {k:"Reading", t:"cwdrill", label:"⏱️ 練習：Complete the Words（3分）", u:"回", go:"reading"},
+    {k:"Listening", t:"", label:"🎯 本番：Listening（2段階・約15分）", u:"セット", go:"listening"},
     {k:"Writing", t:"build", label:"Writing（Build a Sentence）10問", u:"セット", go:"writing", tab:"build"},
     {k:"Writing", t:"email", label:"Writing（Write an Email）10分", u:"本", go:"writing", tab:"email"},
     {k:"Writing", t:"disc", label:"Writing（Academic Discussion）10分", u:"本", go:"writing", tab:"disc"},
@@ -1925,6 +1957,7 @@ function renderHome(){
       return `<button class="mrow" data-goto="${gotoOf(i)}"><span>${esc(i.label)}</span><span class="muted">${c?`累計 ${c}${i.u}`:"未着手"}</span></button>`; }).join("")
     + `<button class="mrow" data-goto="notes|srs"><span>ノートの復習</span><span class="muted">今日 ${srsDue().length}件 ／ 全${DB.notes.length}件</span></button>`;
   $("#cal").innerHTML = calHTML();
+  $("#birdsay").textContent = birdSay();
 
   const R=recs().filter(r=>r.band!=null);
   if(!R.length){ $("#recent").innerHTML=`<p class="muted">まだ記録がありません。練習すると、ここにバンドの推移と苦手分野が出ます。</p>`; return; }
@@ -2052,6 +2085,7 @@ function renderEval(r, kind, max){
     <div class="band">${(+r.band||0).toFixed(1)}<span>推定バンド（${max===9?"0〜9":"1〜6"}）</span></div>
     <p class="tiny" style="margin-top:8px">${esc(r.band_note_ja||"")}</p>
     <div class="bars">${bars}</div>
+    ${/^\d/.test(kind) ? "" : cheerHTML((+r.band||0)/max, kind+(r.revised_en||r.model_answer_en||r.band))}
     ${r.rewrite_ja?`<h3>前回からの変化</h3><p>${esc(r.rewrite_ja)}</p>`:""}
     ${secs}
     ${r.not_assessed_ja?`<p class="tiny" style="margin-top:10px">${esc(r.not_assessed_ja)}</p>`:""}
@@ -2141,6 +2175,7 @@ function spkDoneHTML(key, st){
     h+=`<div class="card"><h2>Take an Interview の結果</h2>
       <div class="band">${E.agg.band.toFixed(1)}<span>推定バンド（4問の平均）</span></div>
       <p class="tiny" style="margin-top:8px">公式採点とは一致しない目安です。発音・抑揚・間は文字起こしからは判定できないため評価していません。</p>
+      ${cheerHTML(E.agg.band/6, st.qs.map(q=>q.en).join(""))}
       <div class="bars">${Object.entries(E.agg.scores).map(([k,v])=>`<div class="bar"><span>${SCORELABEL[k]||k}</span><span class="track"><span class="fill" style="width:${(v/6*100).toFixed(0)}%"></span></span><span>${v}</span></div>`).join("")}</div>
       ${st.qs.map((q,i)=>`<div class="kv"><span class="en">${i+1}. ${esc(q.en.slice(0,60))}${q.en.length>60?"…":""}</span><strong>${(+E.each[i].band).toFixed(1)}</strong></div>`).join("")}
       <p class="tiny">下の各問の講評を開いて、模範回答と言い換えを確認してください。</p></div>`;
@@ -2451,7 +2486,7 @@ function iQHTML(sec, st, pi, qi){
   let fb="";
   if(ch){
     const right = q.type==="gap" ? q.answer.join(" / ") : q.choices[q.answer];
-    fb=`<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"正解":"不正解"}　<span class="tag">${esc(q.tag)}</span>${ok?"":`<span class="en">正解：${esc(right)}</span>`}</div>
+    fb=`<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"🎉 正解！":"💪 おしい！"}　<span class="tag">${esc(q.tag)}</span>${ok?"":`<span class="en">正解：${esc(right)}</span>`}</div>
       <div>${esc(q.explain_ja)}</div>
       ${q.evidence?`<div class="para"><span class="muted">根拠</span>　<span class="en">${esc(q.evidence)}</span></div>`:""}
       ${!ok && q.type==="mcq" && v!=null && q.why_wrong_ja[v]?`<div class="corr"><strong>間違えた原因</strong><br>${esc(q.why_wrong_ja[v])}</div>`:""}
@@ -2510,6 +2545,7 @@ function iSummaryHTML(sec, st){
     <h3>設問タイプ別</h3>
     <div class="bars">${Object.entries(tags).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).map(([t,[c,n]])=>
       `<div class="bar"><span>${esc(t)}</span><span class="track"><span class="fill" style="width:${(c/n*100).toFixed(0)}%"></span></span><span>${c}/${n}</span></div>`).join("")}</div>
+    ${cheerHTML(st.raw/st.total, st.started)}
     <p class="tiny">間違えた問題と語句はノートに保存しました。</p>
     <button class="primary" data-ireset="${sec}">新しいセットで練習する</button></div>`;
 }
@@ -2696,8 +2732,8 @@ async function cwdStart(){
   $("#c-start").disabled=true;
   try{
     const {level, w, ct}=await stockGet("cwd");
-    DB.cur.cwd={phase:"s1", s1:{sec:"cwd", level, started:Date.now(), ans:{}, times:{}, parts:[{type:"words", title:"Complete the Words（3分ドリル）", data:w, ct, inputs:{}, checked:false, res:[]}]}};
-    save(); cwdRender(); arrived(body, "3分ドリルの問題", "reading");
+    DB.cur.cwd={phase:"s1", s1:{sec:"cwd", level, started:Date.now(), ans:{}, times:{}, parts:[{type:"words", title:"⏱️ 練習：Complete the Words（3分）", data:w, ct, inputs:{}, checked:false, res:[]}]}};
+    save(); cwdRender(); arrived(body, "練習（3分）の問題", "reading");
   }catch(e){ fail(body, e, cwdStart); }
   finally{ $("#c-start").disabled=false; }
 }
@@ -2706,12 +2742,13 @@ function cwdRender(){
   if(!st){ body.innerHTML=""; return; }
   const mod=st.s1, p=mod.parts[0];
   const top = p.checked
-    ? `<div class="card"><h2>3分ドリルの結果</h2><div class="sum-big">${p.res.filter(Boolean).length} / ${p.ct.n}</div>
+    ? `<div class="card"><h2>⏱️ 練習の結果</h2><div class="sum-big">${p.res.filter(Boolean).length} / ${p.ct.n}</div>
         <p>${bandPill("Reading", partBand(p.res.filter(Boolean).length/p.ct.n, mod.level))}</p>
+        ${cheerHTML(p.res.filter(Boolean).length/p.ct.n, mod.started)}
         <p class="muted">かかった時間 ${mmss(st.sec||0)}（目安 3:00）・難しさ ${LV[mod.level].label}</p>
-        <p class="tiny">次のドリルの難しさは、直近3回の正答率で自動で変わります（80%以上で難しめ、50%未満でやさしめ）。</p>
+        <p class="tiny">次の練習の難しさは、直近3回の正答率で自動で変わります（80%以上で難しめ、50%未満でやさしめ）。</p>
         <div class="row"><button class="primary" data-cwdnew="1">もう1回</button><button data-cwdclose="1">閉じる</button></div></div>`
-    : `<div class="stagebar"><div><strong>3分ドリル</strong> <span class="tag">${LV[mod.level].label}</span></div><div class="row" style="gap:6px"><div class="timer" data-start="${mod.started}" data-limit="180">–</div>${quitBtnHTML("cwd")}</div></div>`;
+    : `<div class="stagebar"><div><strong>⏱️ 練習（3分）</strong> <span class="tag">${LV[mod.level].label}</span></div><div class="row" style="gap:6px"><div class="timer" data-start="${mod.started}" data-limit="180">–</div>${quitBtnHTML("cwd")}</div></div>`;
   body.innerHTML = top + partHTML("cwd", mod, 0);
   tickTimers();
 }
@@ -3377,17 +3414,17 @@ function wuHTML(view){
       : `<div class="qt">${i+1}. <span class="en">${esc(q.prompt)}</span> の意味は？</div>`;
     const btns=q.opts.map(o=>{ let cls="choice"+(q.kind==="fill"?" en":""); if(answered){ if(o===q.ans) cls+=" ok"; else if(o===c) cls+=" ng"; }
       return `<button class="${cls}" ${answered?"disabled":""} data-wua="${view}|${i}|${encodeURIComponent(o)}">${esc(o)}</button>`; }).join("");
-    const fb = answered ? `<div class="fb"><div class="h ${c===q.ans?"ok":"ng"}">${c===q.ans?"正解":"不正解"}</div>
+    const fb = answered ? `<div class="fb"><div class="h ${c===q.ans?"ok":"ng"}">${c===q.ans?"🎉 正解！":"💪 おしい！"}</div>
         <div><strong class="en">${esc(en)}</strong> <button class="mini" data-sayen="${esc(en)}">▶</button>　${esc(ja)}</div>
         <div class="tiny en">${esc(ex)}</div>${c!==q.ans?`<div class="tiny">ノートに追加しました（翌日から復習に出ます）</div>`:""}</div>` : "";
     return `<div class="q">${head}${btns}${fb}</div>`;
   }).join("");
   return `<div class="card wu">
-    <div class="part-h"><h2>基礎練習：${st.units.length>1?`${GUIDE_SEC[view].name}（${st.units.length}課題）`:esc(GUIDE[st.units[0]].title)}</h2><button class="mini" data-wuclose="${view}">閉じる</button></div>
-    <p class="tiny">問題の準備を待つ間や、解く前のウォームアップに。3分ドリルよりやさしい、覚えるべき語句の確認です（${n}問）。</p>
+    <div class="part-h"><h2>🌱 基礎：${st.units.length>1?`${GUIDE_SEC[view].name}（${st.units.length}課題）`:esc(GUIDE[st.units[0]].title)}</h2><button class="mini" data-wuclose="${view}">閉じる</button></div>
+    <p class="tiny">問題の準備を待つ間や、解く前のウォームアップに。練習よりやさしい、覚えるべき語句の確認です（${n}問）。</p>
     <div class="xlat"><div class="mh">今日のポイント（${esc(GUIDE[st.tip.u].title)}）</div><div>${esc(st.tip.t)}</div></div>
     ${qh}
-    ${done===n?`<div class="fb"><div class="h ${ok===n?"ok":"ng"}">${n}問中 ${ok}問正解</div></div>
+    ${done===n?`<div class="fb"><div class="h ${ok===n?"ok":"ng"}">${n}問中 ${ok}問正解　${bandPill(GUIDE_SEC[view]?GUIDE_SEC[view].name:(view[0].toUpperCase()+view.slice(1)), partBand(ok/n, "easy"))}</div></div>${cheerHTML(ok/n, st.qs.map(q=>q.w[0]).join(""))}
       <div class="row" style="margin-top:8px"><button data-wu="${view}">別の${n}問</button><button data-wuclose="${view}">閉じる</button></div>`:""}
     <label class="tiny" style="display:block;margin-top:10px"><input type="checkbox" data-wuoff="1" ${DB.ui.wuOff?"checked":""}> 問題を始めたときに自動で出さない</label>
   </div>`;
@@ -3406,6 +3443,50 @@ document.addEventListener("click", e=>{
   }
 });
 document.addEventListener("change", e=>{ const t=e.target; if(t.dataset && t.dataset.wuoff){ DB.ui.wuOff=t.checked; save(); } });
+
+/* ================= 鳥のひとこと・世界の名言 ================= */
+// 名言は出典がはっきりしているものだけ（誤って広まった「〜の言葉」は入れない）。
+const QUOTES=[
+  ["A journey of a thousand miles begins with a single step.","千里の道も一歩から。","老子『道徳経』"],
+  ["Is it not a pleasure to learn and to practice what you have learned?","学びて時に之を習う、亦た説ばしからずや。","孔子『論語』"],
+  ["While we teach, we learn.","人は教えることで学ぶ。","セネカ『倫理書簡集』"],
+  ["The limits of my language mean the limits of my world.","私の言語の限界が、私の世界の限界を意味する。","ウィトゲンシュタイン『論理哲学論考』"],
+  ["Knowledge itself is power.","知識そのものが力である。","フランシス・ベーコン"],
+  ["Stay hungry, stay foolish.","ハングリーであれ、愚かであれ。","スティーブ・ジョブズ（スタンフォード大学卒業式の講演）"],
+  ["Do. Or do not. There is no try.","やるか、やらないかだ。「試し」などない。","ヨーダ（『スター・ウォーズ 帝国の逆襲』）"],
+  ["Slow and steady wins the race.","ゆっくりでも着実な者が勝つ。","イソップ寓話「ウサギとカメ」"],
+  ["Little by little, one goes far.","少しずつ進めば、遠くまで行ける。","スペインのことわざ"],
+  ["Rome was not built in a day.","ローマは一日にして成らず。","ヨーロッパのことわざ"],
+  ["Practice makes perfect.","練習が完璧をつくる。","英語のことわざ"],
+  ["Where there's a will, there's a way.","意志あるところに道は開ける。","英語のことわざ"],
+  ["Fall seven times, stand up eight.","七転び八起き。","日本のことわざ"],
+  ["Well begun is half done.","始めよければ半ば成功。","英語のことわざ"],
+  ["Every day is a new beginning.","毎日が新しい始まり。","英語のことわざ"],
+];
+const quoteFor=(seed)=>{ let h=0; String(seed).split("").forEach(c=>{ h=(h*31+c.charCodeAt(0))>>>0; }); return QUOTES[h%QUOTES.length]; };
+function cheerOf(acc){
+  if(acc>=0.8) return "🦉 すばらしい！この調子でいこう！";
+  if(acc>=0.5) return "🐦 いい感じ！間違えたところはノートで復習しよう。";
+  return "🐤 大丈夫、少しずつ伸びていくよ。次もいっしょにがんばろう！";
+}
+// 結果画面に添える：鳥のひとこと＋名言（seed が同じなら同じ名言）
+function cheerHTML(acc, seed){
+  const [en,ja,src]=quoteFor(seed);
+  return `<p class="cheer">${cheerOf(acc)}</p>
+    <div class="quote"><div class="qen en">“${esc(en)}”</div><div class="qja">${esc(ja)}</div><div class="qsrc">— ${esc(src)}</div></div>`;
+}
+// ホームの吹き出し
+function birdSay(){
+  const h=new Date().getHours(), today=DB.log[dayKey()]||0, due=srsDue().length;
+  let streak=0, t=new Date(); t.setHours(0,0,0,0); t=t.getTime(); if(!DB.log[dayKey(t)]) t-=86400000;
+  while(DB.log[dayKey(t)]){ streak++; t-=86400000; }
+  if(today) return streak>1 ? `${streak}日連続！今日もえらい！🔥` : "今日も練習できたね。えらい！";
+  if(due) return `ノートの復習が${due}件たまってるよ。まずはそこから始めよう！`;
+  if(streak) return `${streak}日連続中！今日も1つだけやってみよう 🔥`;
+  if(h<11) return "おはよう！朝の10分で、頭を英語にしよう。";
+  if(h>=21) return "おつかれさま！寝る前に基礎を5問だけどう？";
+  return "今日もいっしょにがんばろう！";
+}
 
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
