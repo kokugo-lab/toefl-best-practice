@@ -297,6 +297,7 @@
       <div class="setrow"><span>IELTS の試験日</span><input type="date" id="set-date-ielts"></div>
       <div class="setrow"><span>IELTS の目標バンド（0〜9）</span><input type="number" id="set-tgt-ielts" min="1" max="9" step="0.5"></div>
       <p class="tiny">CEFR B2 の目安は、TOEFL新形式でバンド4.0〜4.5前後、IELTSでバンド5.5〜6.5です。ホームの残り日数とおすすめに使います。</p>
+      <div class="setrow"><span>🔔 ボタンの効果音</span><label><input type="checkbox" id="set-sfx"> 鳴らす</label></div>
     </div>
   </section>
 
@@ -811,6 +812,33 @@ function toast(msg, goto, undo, undoLabel){
   document.body.appendChild(t); setTimeout(()=>t.remove(), 10000);
 }
 
+/* ================= 効果音（ボタン・正解・不正解） ================= */
+// Web Audio で短い音を作る（音声ファイルは使わない）。録音中は鳴らさない。設定で止められる（DB.ui.sfxOff）。
+let ACX=null, REC_ACTIVE=0;
+function sfx(kind){
+  if(DB.ui.sfxOff || REC_ACTIVE>0) return;
+  try{
+    ACX=ACX||new (window.AudioContext||window.webkitAudioContext)();
+    if(ACX.state==="suspended") ACX.resume();
+    const t=ACX.currentTime;
+    const tone=(f1,f2,start,dur,vol,type)=>{
+      const o=ACX.createOscillator(), g=ACX.createGain();
+      o.type=type||"sine"; o.frequency.setValueAtTime(f1,t+start); o.frequency.exponentialRampToValueAtTime(f2,t+start+dur);
+      g.gain.setValueAtTime(0.0001,t+start); g.gain.exponentialRampToValueAtTime(vol,t+start+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+start+dur);
+      o.connect(g); g.connect(ACX.destination); o.start(t+start); o.stop(t+start+dur+0.02);
+    };
+    if(kind==="ok"){ tone(2200,3100,0,0.09,0.09); tone(2500,3600,0.11,0.11,0.08); }   // 鳥のさえずり
+    else if(kind==="ng"){ tone(330,250,0,0.22,0.08,"triangle"); }
+    else tone(880,620,0,0.06,0.05);   // ぽん
+  }catch(e){}
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b || b.disabled) return;
+  const d=b.dataset;
+  if(d.mc || d.wua || d.icheck || d.bcheck || d.cwcheck) return;   // 採点のあるボタンは、採点したところで結果の音を鳴らす
+  sfx("tap");
+}, true);
+
 /* ================= notes ================= */
 function addNotes(kind, items){
   if(!Array.isArray(items)) return;
@@ -1274,7 +1302,7 @@ document.addEventListener("click", (e)=>{
     const [sec,pi,qi,i]=d.mc.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi], q=p.qs[+qi], k=pi+"-"+qi;
     if(mod.ans[k]!=null || st.phase==="s1done" || st.phase==="done") return;
     mod.ans[k]=+i;
-    const ok = +i===q.answer, now=Date.now();
+    const ok = +i===q.answer, now=Date.now(); sfx(ok?"ok":"ng");
     mod.times=mod.times||{}; mod.times[k]=Math.min(600, Math.round((now-(mod.lastAt||mod.started))/1000)); mod.lastAt=now;
     statAdd(sec==="reading"?"R":"L", q.tag, ok);
     if(!ok) addNotes("miss",[{section:SEC[sec].name, q: q.q || `（音声）${q.prompt}`, chosen:q.choices[+i], correct:q.choices[q.answer], why:q.why_wrong_ja[+i], trap:q.trap[+i]}]);
@@ -1286,7 +1314,7 @@ document.addEventListener("click", (e)=>{
     const [sec,pi]=d.cwcheck.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi];
     const blanks=p.ct.parts.filter(x=>x.t==null);
     p.res = blanks.map((x,i)=>(p.inputs[i]||"").trim().toLowerCase()===x.miss.toLowerCase());
-    p.checked=true;
+    p.checked=true; sfx(p.res.filter(Boolean).length/p.res.length>=0.5?"ok":"ng");
     p.sec=Math.min(900, Math.round((Date.now()-(mod.lastAt||mod.started))/1000)); mod.lastAt=Date.now();
     const gl=p.data.glossary||[];
     addNotes("word", blanks.filter((x,i)=>!p.res[i]).map(x=>{ const g=gl.find(g=>String(g.en).toLowerCase()===x.word.toLowerCase()); return {en:x.word, ja:g?g.ja:"（Complete the Words で間違えた語）"}; }));
@@ -1617,6 +1645,7 @@ const rLimit=(t)=>Math.min(16, Math.max(8, Math.round(6 + rTok(t).length*0.45)))
 
 /* 録音＋文字起こし（MediaRecorder と Web Speech API） */
 async function recStart(){
+  REC_ACTIVE++;
   const R={chunks:[], fin:"", interim:"", st:Date.now(), rec:null, stream:null, recog:null, recogEnd:null, micErr:""};
   try{
     R.stream=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -1638,6 +1667,7 @@ async function recStart(){
   return R;
 }
 async function recStop(R){
+  REC_ACTIVE=Math.max(0,REC_ACTIVE-1);
   const sec=Math.round((Date.now()-R.st)/1000);
   const blobP=new Promise(res=>{
     if(!R.rec || R.rec.state==="inactive") return res(null);
@@ -1798,7 +1828,7 @@ document.addEventListener("click", (e)=>{
     if(b.checked[i] || pl.length!==it.chunks.length) return;
     const mine=pl.map(id=>it.tiles[id].t);
     b.ok[i] = normS(mine.join(" "))===normS(it.chunks.join(" "));
-    b.checked[i]=true;
+    b.checked[i]=true; sfx(b.ok[i]?"ok":"ng");
     statAdd("B", it.tag, b.ok[i]);
     if(!b.ok[i]) addNotes("miss",[{section:"Writing", q:`（Build a Sentence）${it.context}`, chosen:bSentence(it,mine), correct:bSentence(it,it.chunks), why:it.grammar_ja, trap:it.tag}]);
     save(); bRerender(i); bFinish();
@@ -1835,12 +1865,14 @@ function applyMode(){
   $("#quick").innerHTML = order.map((v,i)=>`<button ${i?"":'class="primary"'} onclick="go('${v}')">${v[0].toUpperCase()+v.slice(1)}</button>`).join("");
 }
 function renderPick(){
+  $("#set-sfx").checked=!DB.ui.sfxOff;
   document.querySelectorAll(".pickbtn[data-exam]").forEach(b=>b.setAttribute("aria-pressed", DB.settings.exam===b.dataset.exam?"true":"false"));
   ["toefl","ielts"].forEach(m=>{ $(`#set-date-${m}`).value=DB.settings.date[m]||""; $(`#set-tgt-${m}`).value=DB.settings.target[m]||""; });
 }
 document.querySelectorAll(".pickbtn[data-exam]").forEach(b=>b.addEventListener("click", ()=>{
   DB.settings.exam=b.dataset.exam; save(); applyMode(); go("home"); stockWarm();
 }));
+$("#set-sfx").addEventListener("change", e=>{ DB.ui.sfxOff=!e.target.checked; save(); if(e.target.checked) sfx("ok"); });
 ["toefl","ielts"].forEach(m=>{
   $(`#set-date-${m}`).addEventListener("change", e=>{ DB.settings.date[m]=e.target.value; save(); });
   $(`#set-tgt-${m}`).addEventListener("change", e=>{ const v=parseFloat(e.target.value); if(v>0) DB.settings.target[m]=v; save(); });
@@ -2583,7 +2615,7 @@ function iCheck(sec, pi){
   const st=DB.cur[sec], p=st.parts[pi], S=ISEC[sec];
   if(p.checked) return;
   p.res=p.qs.map((q,qi)=>{ const v=p.ans[qi]; return q.type==="gap" ? gapOK(v||"",q.answer) : v===q.answer; });
-  p.checked=true; p.at=Date.now();
+  p.checked=true; p.at=Date.now(); sfx(p.res.filter(Boolean).length/p.res.length>=0.5?"ok":"ng");
   p.qs.forEach((q,qi)=>{
     statAdd(S.st, q.tag, p.res[qi]);
     if(!p.res[qi]){
@@ -3447,7 +3479,7 @@ document.addEventListener("click", e=>{
   else if(d.wuclose){ WU[d.wuclose]=null; wuRender(d.wuclose); }
   else if(d.wua){
     const [view,i,o]=d.wua.split("|"), st=WU[view]; if(!st || st.chosen[i]!=null) return;
-    const q=st.qs[+i], v=decodeURIComponent(o); st.chosen[i]=v;
+    const q=st.qs[+i], v=decodeURIComponent(o); st.chosen[i]=v; sfx(v===q.ans?"ok":"ng");
     if(v!==q.ans) addNotes("word",[{en:q.w[0], ja:`${q.w[1]}（例：${q.w[2]}）`}]);
     act(1); wuRender(view);
   }
@@ -3466,9 +3498,9 @@ const QUOTES=[
   ["Learning without thinking is useless; thinking without learning is dangerous.","学びて思わざれば則ち罔し、思いて学ばざれば則ち殆し。","孔子『論語』"],
   ["Blue comes from indigo, yet it is bluer than indigo.","青は藍より出でて藍より青し。","荀子『勧学』"],
   ["Pile up earth, and it becomes a mountain.","土を積みて山を成す。","荀子『勧学』"],
-  ["Where there is a will, the deed is done in the end.","志有る者は事竟に成る。","『後漢書』"],
-  ["Hearing a hundred times is not as good as seeing once.","百聞は一見に如かず。","『漢書』"],
-  ["Who knows whether a misfortune is a blessing?","人間万事塞翁が馬。","『淮南子』"],
+  ["Where there is a will, the deed is done in the end.","志有る者は事竟に成る。","光武帝（『後漢書』）"],
+  ["Hearing a hundred times is not as good as seeing once.","百聞は一見に如かず。","趙充国（『漢書』）"],
+  ["Who knows whether a misfortune is a blessing?","人間万事塞翁が馬。","『淮南子』の故事"],
   ["Live till old, learn till old.","活到老、学到老（生きている限り学び続ける）。","中国のことわざ"],
   // ---- 西洋の古典・哲学
   ["While we teach, we learn.","人は教えることで学ぶ。","セネカ『倫理書簡集』"],
@@ -3480,7 +3512,7 @@ const QUOTES=[
   ["Make haste slowly.","ゆっくり急げ。","アウグストゥス（スエトニウス『皇帝伝』）"],
   ["Through hardships to the stars.","困難を越えて星へ。","ラテン語の格言"],
   ["Repetition is the mother of learning.","くり返しは学びの母。","ラテン語の格言"],
-  ["There is no royal road to learning.","学問に王道なし。","ユークリッドの言葉として伝わる格言"],
+  ["There is no royal road to learning.","学問に王道なし。","ユークリッド（と伝わる言葉）"],
   ["Knowledge itself is power.","知識そのものが力である。","フランシス・ベーコン"],
   ["If I have seen further, it is by standing on the shoulders of giants.","私が遠くを見渡せたのは、巨人の肩に乗っていたからだ。","アイザック・ニュートン（フックへの手紙）"],
   ["The limits of my language mean the limits of my world.","私の言語の限界が、私の世界の限界を意味する。","ウィトゲンシュタイン『論理哲学論考』"],
@@ -3564,6 +3596,15 @@ const QUOTES=[
   ["Even a monkey falls from a tree.","猿も木から落ちる（誰でも間違える）。","日本のことわざ"],
   ["Haste makes waste.","急いては事を仕損じる。","英語のことわざ"],
 ];
+// 出典の文字列を「言った人」と「どこで」に分ける（例：孔子『論語』→ 孔子／『論語』、日本のことわざ → ことわざ（日本））
+function quoteWho(src){
+  let m=src.match(/^(.+?)のことわざ$/); if(m) return [`ことわざ（${m[1].replace(/^英語$/,"英語圏")}）`, ""];
+  if(/の格言$/.test(src)) return [src, ""];
+  if(/の故事$/.test(src)) return ["故事", src.replace(/の故事$/,"")];
+  if(/^イソップ寓話/.test(src)) return ["イソップ", src.replace(/^イソップ/,"")];
+  m=src.match(/^([^『（]+?)\s*([『（「].*)$/); if(m) return [m[1].trim(), m[2].replace(/^（(.*)）$/,"$1")];
+  return [src, ""];
+}
 const quoteFor=(seed)=>{ let h=0; String(seed).split("").forEach(c=>{ h=(h*31+c.charCodeAt(0))>>>0; }); return QUOTES[h%QUOTES.length]; };
 function cheerOf(acc){
   if(acc>=0.8) return "🦉 すばらしい！この調子でいこう！";
@@ -3572,9 +3613,9 @@ function cheerOf(acc){
 }
 // 結果画面に添える：鳥のひとこと＋名言（seed が同じなら同じ名言）
 function cheerHTML(acc, seed){
-  const [en,ja,src]=quoteFor(seed);
+  const [en,ja,src]=quoteFor(seed), [who,where]=quoteWho(src);
   return `<p class="cheer">${cheerOf(acc)}</p>
-    <div class="quote"><div class="qen en">“${esc(en)}”</div><div class="qja">${esc(ja)}</div><div class="qsrc">— ${esc(src)}</div></div>`;
+    <div class="quote"><div class="qen en">“${esc(en)}”</div><div class="qja">${esc(ja)}</div><div class="qsrc">— <strong>${esc(who)}</strong>${where?`　${esc(where)}`:""}</div></div>`;
 }
 // ホームの吹き出し
 function birdSay(){
