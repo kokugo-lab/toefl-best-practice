@@ -117,6 +117,7 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  button.quit{color:var(--warn); border-color:var(--warn); background:var(--card)}
   .xpbox{white-space:normal}
   .xs{padding:4px 0}
   .xs .ja, .dl .ja, .q .ja{font-size:.82rem; color:var(--sub); line-height:1.6; margin:1px 0 2px; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
@@ -970,7 +971,7 @@ function stagebarHTML(sec, st){
   return `<div class="stagebar"><div><strong>第${stageNo(st)}段階</strong> <span class="tag">${LV[mod.level].label}</span>
       <span class="muted">解答 ${c.done} / ${c.total}</span>
       <div class="progress" style="width:min(240px,50vw)"><i style="width:${c.total?c.done/c.total*100:0}%"></i></div></div>
-    <div class="timer" data-start="${mod.started}" data-limit="${SEC[sec].guide}" title="目安時間">–</div></div>`;
+    <div class="row" style="gap:6px"><div class="timer" data-start="${mod.started}" data-limit="${SEC[sec].guide}" title="目安時間">–</div>${quitBtnHTML(sec)}</div></div>`;
 }
 
 function summaryHTML(sec, st){
@@ -981,6 +982,7 @@ function summaryHTML(sec, st){
     return `<div class="card" id="${P}-summary"><h2>第1段階の結果</h2>
       <div class="sum-big">${Math.round(a*100)}%</div><p class="muted">${res.filter(r=>r.ok).length} / ${res.length} 問正解</p>
       <p>第2段階は <span class="tag">${LV[st.level2].label}</span> で出題します。</p>
+      <div style="float:right">${quitBtnHTML(sec)}</div>
       ${st.s2err?`<div class="err">${esc(st.s2err)}</div><button class="primary" data-s2retry="${sec}">もう一度作る</button>`:
         ready?`<button class="primary" data-s2go="${sec}">第2段階へ進む</button>`:`<p class="muted"><span class="spin"></span>第2段階の問題を作っています…（上の解説を見直して待てます）</p>`}
     </div>`;
@@ -1026,6 +1028,7 @@ function renderRL(sec){
   tickTimers();
 }
 function rerenderPart(sec, pi){
+  if(!DB.cur[sec]) return;   // 「やめる」のあとに届いた再生完了などは無視
   const st=DB.cur[sec], mod=curMod(st), el=$(`#${SEC[sec].p}-part-${pi}`);
   if(el) el.outerHTML = partHTML(sec,mod,pi);
   const bar=$(`#${SEC[sec].p}-body .stagebar`);
@@ -1277,6 +1280,7 @@ function setupWriter(o){
     draft();
   });
   el("save").onclick=()=>{ draft(); el("save").textContent="保存しました"; setTimeout(()=>el("save").textContent="下書きを保存",1500); };
+  { const q=document.createElement("button"); q.className="quit"; q.dataset.quit="w:"+P; q.textContent="やめる"; el("save").after(q); }
   el("submit").onclick = async ()=>{
     const text=el("text").value.trim();
     if(!text){ el("msg").innerHTML=`<div class="err">まだ何も書かれていません。</div>`; return; }
@@ -1297,7 +1301,12 @@ function setupWriter(o){
       arrived(box, `${label}の添削`, `writing|${tab}`);
     }catch(e){ fail(box, e, ()=>el("submit").click()); }
   };
-  WRITERS[P]={ rewrite(){
+  WRITERS[P]={ quit(){
+    clearInterval(timer); timer=null; task=null; last=null; rewriting=false; left=0;
+    el("text").value=""; el("count").textContent="0 語"; el("timer").textContent="–";
+    el("task").style.display="none"; el("task").innerHTML=""; el("editor").style.display="none"; el("result").innerHTML=""; el("msg").innerHTML="";
+    DB.draft[o.key]=null; save();
+  }, rewrite(){
     if(!last) return;
     rewriting=true; clearInterval(timer); timer=null; started=Date.now();
     el("text").value=last.text; el("count").textContent=words(last.text)+" 語";
@@ -1435,7 +1444,7 @@ function bBarHTML(st){
   const n=st.items.length, d=Object.keys(st.checked).length;
   return `<div class="stagebar"><div><strong>Build a Sentence</strong> <span class="muted">解答 ${d} / ${n}</span>
       <div class="progress" style="width:min(240px,50vw)"><i style="width:${d/n*100}%"></i></div></div>
-    <div class="timer" data-start="${st.started}" data-limit="${B_GUIDE}" title="目安時間">–</div></div>`;
+    <div class="row" style="gap:6px"><div class="timer" data-start="${st.started}" data-limit="${B_GUIDE}" title="目安時間">–</div>${quitBtnHTML("build")}</div></div>`;
 }
 function bSummaryHTML(st){
   const n=st.items.length, c=Object.values(st.ok).filter(Boolean).length;
@@ -1601,7 +1610,7 @@ function pRender(){
   if(!st){ body.innerHTML=""; return; }
   if(st.phase==="done"){ body.innerHTML=pSummaryHTML(st); return; }
   if(PR.i!==st.i){ Object.assign(PR,{i:st.i, phase:st.res[st.i]?"review":"ready", url:null, note:""}); }
-  body.innerHTML = `<div class="card"><p class="tiny">${esc(st.data.setting_ja||"")}</p>
+  body.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><p class="tiny" style="margin:0">${esc(st.data.setting_ja||"")}</p>${quitBtnHTML("repeat")}</div>
       <div class="progress"><i style="width:${st.i/st.data.sentences.length*100}%"></i></div></div>` + pCurHTML(st);
 }
 const pVoice=()=>[{sp:DB.cur.repeat.data.speaker==="M"?"M":"F", text:DB.cur.repeat.data.sentences[DB.cur.repeat.i].en}];
@@ -2031,7 +2040,7 @@ function spkRunHTML(key, st, T){
     ? `<div class="cue"><div class="qbig en">${esc(q.cue)}</div><ul class="en">${(q.points||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`
     : `<p class="qbig en">${esc(q.en)}</p>`;
   return `<div class="card">
-    <div class="part-h"><h2>${esc(M.title)}　${st.i+1} / ${n}</h2>${partTag}</div>
+    <div class="part-h"><h2>${esc(M.title)}　${st.i+1} / ${n}</h2><span>${partTag}${quitBtnHTML(key)}</span></div>
     <div class="progress"><i style="width:${st.i/n*100}%"></i></div>
     ${st.i===0&&M.theme_en?`<p class="en muted" style="margin-top:10px">${esc(M.theme_en)}</p>`:""}
     ${qbody}
@@ -2042,7 +2051,7 @@ function spkRunHTML(key, st, T){
 }
 function spkMeta(a){ const w=words(a.text||""); return `${a.sec||0}秒 ／ ${w}語 ／ 毎分約${a.sec?Math.round(w/a.sec*60):0}語`; }
 function spkReviewHTML(key, st, T){
-  return `<div class="card"><h2>文字起こしの確認</h2>
+  return `<div class="card"><div class="part-h"><h2>文字起こしの確認</h2>${quitBtnHTML(key)}</div>
     <p class="tiny">自動の文字起こしには認識ミスがあります。録音を聞いて、実際に話した内容に直してから評価に出してください（言い直しや言いよどみも、そのまま残してかまいません）。</p>
     ${T.note?`<div class="err">${esc(T.note)}</div>`:""}
     ${st.qs.map((q,i)=>{ const a=st.ans[i]||{text:"",sec:0};
@@ -2440,22 +2449,22 @@ function iBarHTML(sec, st){
   const tot=st.parts.reduce((a,p)=>a+p.qs.length,0), done=st.parts.reduce((a,p)=>a+(p.checked?p.qs.length:Object.keys(p.ans).filter(k=>p.ans[k]!=null&&p.ans[k]!=="").length),0);
   return `<div class="stagebar"><div><strong>IELTS Reading</strong> <span class="muted">解答 ${done} / ${tot}</span>
       <div class="progress" style="width:min(240px,50vw)"><i style="width:${done/tot*100}%"></i></div></div>
-    <div class="timer" data-start="${st.started}" data-limit="${st.limit}" title="残り時間の目安">–</div></div>`;
+    <div class="row" style="gap:6px"><div class="timer" data-start="${st.started}" data-limit="${st.limit}" title="残り時間の目安">–</div>${quitBtnHTML(sec)}</div></div>`;
 }
 function iRender(sec){
   const st=DB.cur[sec], P=ISEC[sec].p, body=$(`#${P}-body`);
   $(`#${P}-reset`).style.display = st ? "" : "none";
   if(!st){ body.innerHTML=""; return; }
   if(sec==="ilistening") st.parts.forEach((p,pi)=>{ if(p.play.n && !p.play.done && PLAYING[sec]!==`${pi}`) p.play.done=true; });
-  body.innerHTML = (st.phase==="done" ? iSummaryHTML(sec,st) : iBarHTML(sec,st)) + st.parts.map((_,pi)=>iPartHTML(sec,st,pi)).join("");
+  body.innerHTML = (st.phase==="done" ? iSummaryHTML(sec,st) : sec==="ilistening" ? `<div class="stagebar"><strong>IELTS Listening</strong>${quitBtnHTML(sec)}</div>` : iBarHTML(sec,st)) + st.parts.map((_,pi)=>iPartHTML(sec,st,pi)).join("");
   tickTimers();
 }
 function iUpdCtl(sec, pi){
-  const st=DB.cur[sec];
+  const st=DB.cur[sec]; if(!st) return;
   const a=$(`#${sec}-ctl-${pi}`), b=$(`#${sec}-ctl2-${pi}`);
   if(a) a.innerHTML=iCtlHTML(sec,st,pi);
   if(b) b.innerHTML=iCtl2HTML(sec,st,pi);
-  const bar=$(`#${ISEC[sec].p}-body .stagebar`); if(bar && st.phase!=="done") bar.outerHTML=iBarHTML(sec,st);
+  const bar=$(`#${ISEC[sec].p}-body .stagebar`); if(bar && sec==="ireading" && st.phase!=="done") bar.outerHTML=iBarHTML(sec,st);
   tickTimers();
 }
 function iCheck(sec, pi){
@@ -2632,7 +2641,7 @@ function cwdRender(){
         <p class="muted">かかった時間 ${mmss(st.sec||0)}（目安 3:00）・難しさ ${LV[mod.level].label}</p>
         <p class="tiny">次のドリルの難しさは、直近3回の正答率で自動で変わります（80%以上で難しめ、50%未満でやさしめ）。</p>
         <div class="row"><button class="primary" data-cwdnew="1">もう1回</button><button data-cwdclose="1">閉じる</button></div></div>`
-    : `<div class="stagebar"><div><strong>3分ドリル</strong> <span class="tag">${LV[mod.level].label}</span></div><div class="timer" data-start="${mod.started}" data-limit="180">–</div></div>`;
+    : `<div class="stagebar"><div><strong>3分ドリル</strong> <span class="tag">${LV[mod.level].label}</span></div><div class="row" style="gap:6px"><div class="timer" data-start="${mod.started}" data-limit="180">–</div>${quitBtnHTML("cwd")}</div></div>`;
   body.innerHTML = top + partHTML("cwd", mod, 0);
   tickTimers();
 }
@@ -2683,7 +2692,7 @@ function fitStepHTML(st){
   const A=st.ans, s=st.step;
   const head=`<div class="stagebar"><div><strong>${s+1} / ${FIT_STEPS.length}　${FIT_STEPS[s]}</strong>
     <div class="progress" style="width:min(240px,50vw)"><i style="width:${s/FIT_STEPS.length*100}%"></i></div></div>
-    <div class="timer" data-start="${st.started}" data-limit="600" title="目安10分">–</div></div>`;
+    <div class="row" style="gap:6px"><div class="timer" data-start="${st.started}" data-limit="600" title="目安10分">–</div>${quitBtnHTML("fit")}</div></div>`;
   let h="";
   if(s===0){
     if(!st.readStart) h=`<p class="tiny">約${fitWords(st.a.passage)}語の文章です。「読み始める」を押すと時間を計ります。読み終わったら「読み終わった」を押し、そのあと4問に答えます（文章は見返せます）。</p>
@@ -3050,6 +3059,34 @@ function xpThinkHTML(h, qi, num){
   return `<div class="think"><div class="mh">考え方${q.refs.length?`<span class="tiny">（根拠：赤字の Q${num(qi)} の文）</span>`:""}</div>${esc(q.think)}</div>`;
 }
 document.addEventListener("click", e=>{ const b=e.target.closest("[data-xp]"); if(b) xpFetch(b.dataset.xp); });
+
+/* ================= やめる（途中で終える） ================= */
+// 二度押しで確定（ダイアログは出さない）。音声・録音・時計を止め、その回の進行を破棄する（記録には入れない）。
+const quitBtnHTML=(key)=>`<button class="mini quit" data-quit="${key}">やめる</button>`;
+function stopAudio(){ try{ speechSynthesis.cancel(); }catch(e){} }
+async function quitSession(key){
+  stopAudio();
+  if(key==="reading"||key==="listening"){ PLAYING[key]=null; DB.cur[key]=null; save(); renderRL(key); }
+  else if(key==="cwd"){ DB.cur.cwd=null; save(); cwdRender(); }
+  else if(key==="build"){ DB.cur.build=null; save(); bRender(); }
+  else if(key==="repeat"){
+    clearInterval(PR.timer); const R=PR.R; PR.R=null; PR.phase="ready"; PR.i=-1; if(R) recStop(R);
+    DB.cur.repeat=null; save(); pRender();
+  }
+  else if(key==="iv"||key==="is"){
+    const T=spkT(key); clearInterval(T.timer); const R=T.R; T.R=null; T.phase="ready"; if(R) recStop(R);
+    DB.cur[key]=null; SPK[key]={phase:"ready", urls:[], note:""}; save(); spkRender(key);
+  }
+  else if(key==="ireading"||key==="ilistening"){ PLAYING[key]=null; DB.cur[key]=null; save(); iRender(key); }
+  else if(key==="fit"){ DB.cur.fit=null; save(); fitRender(); }
+  else if(key.startsWith("w:") && WRITERS[key.slice(2)]) WRITERS[key.slice(2)].quit();
+  window.scrollTo(0,0);
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("[data-quit]"); if(!b) return;
+  if(!armTwice(`[data-quit="${b.dataset.quit}"]`)) return;
+  quitSession(b.dataset.quit);
+});
 
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
