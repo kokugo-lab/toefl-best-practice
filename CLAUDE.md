@@ -5,14 +5,17 @@
 
 ## 構成
 - `index.html` … 画面すべて（CSS・JS込みの単一ファイル）。データは localStorage キー `toefl_bp_v1`（必ず try/catch）。
-- `netlify/functions/claude.js` … LLM呼び出し。`action` で処理を分岐。APIキーはサーバー側の環境変数のみ。
-- `netlify.toml` … publish `.`、functions `netlify/functions`、`/api/claude` → 関数へリダイレクト。
-- 公開URL: https://toefl-best-practice.netlify.app （main に push すると Netlify が自動デプロイ）
+- `lib/core.mjs` … LLM呼び出しの本体（プロンプト `TASKS`、Gemini/Claude 呼び出し、`handle()`）。`action` で処理を分岐。
+  APIキーはサーバー側の環境変数のみ（`env` 引数で受け取る。`process.env` は直接使わない）。
+- `functions/api/claude.js` … Cloudflare Pages Functions の入口（`/api/claude`、待ち時間50秒）。
+- `netlify/functions/claude.mjs` … Netlify Functions の入口（待ち時間25秒）。`netlify.toml` で `/api/claude` から転送。
+- 公開先：Cloudflare Pages（メイン。main に push すると自動デプロイ）。Netlify（https://toefl-best-practice.netlify.app）は
+  無料クレジットを使い切ると公開が止まるため予備。main への push はまとめて回数を減らす。
 
 ## LLM
 - 既定は Google Gemini 無料枠（`LLM_PROVIDER` 未設定＝gemini、`GEMINI_API_KEY` はNetlifyに設定済み）。
   主モデル `gemini-3.8-flash`、遅い・混雑時は `gemini-3.5-flash-lite` に切替。全体を約25秒に収める時間管理あり
-  （Netlify関数は約30秒で打ち切られる）。端末側 `api()` は時間切れ・混雑で1回自動リトライ。
+  （Netlify関数は約30秒で打ち切られるので25秒、Cloudflare は50秒）。端末側 `api()` は時間切れ・混雑で1回自動リトライ。
 - 生成は課題ごとに分けて並列に呼ぶ（1回の出力を小さく保つ）。出力は必ずJSON。
 - 費用は完全無料で運用する方針。有料APIを既定にしないこと。
 
@@ -47,7 +50,8 @@
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。
 - ブラウザのダイアログ（alert/confirm）は新たに増やさない。
-- 変更後は `node --check netlify/functions/claude.js` と、index.html の script が構文として通ることを確認してから push。
+- 変更後は `node --check lib/core.mjs functions/api/claude.js netlify/functions/claude.mjs` と、index.html の script が
+  構文として通ることを確認してから push。
 
 ## ユーザーへの返答
 日本語で。調査結果・選択肢の提示で終え、「次のステップ」「懸念」といった助言セクションは付けない。
