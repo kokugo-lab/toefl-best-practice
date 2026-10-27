@@ -1,22 +1,32 @@
 # TOEFL / IELTS Best Practice
 
 新形式TOEFL（2026年1月〜）と IELTS Academic の4技能練習アプリ。
-HTML単一ファイル＋サーバー関数（LLM呼び出し）。Cloudflare Pages と Netlify のどちらでも動く。
+HTML単一ファイル＋サーバー関数（LLM呼び出し）。Cloudflare Workers（メイン）・Cloudflare Pages・Netlify のどれでも動く。
 
 ## 構成
 
 ```
-index.html                    画面すべて（CSS・JS込み）
+public/index.html             画面すべて（CSS・JS込み）
 lib/core.mjs                  LLM 呼び出しの本体（プロンプト・Gemini/Claude 呼び出し。APIキーはサーバー側のみ）
+worker/index.mjs              Cloudflare Workers 用の入口（public/ を配信、/api/claude を処理）
+wrangler.jsonc                Cloudflare Workers の設定
 functions/api/claude.js       Cloudflare Pages Functions 用の入口（/api/claude）
 netlify/functions/claude.mjs  Netlify Functions 用の入口
 netlify.toml                  Netlify の publish / functions 設定、/api/claude へのリダイレクト
 ```
 
+## Cloudflare Workers での設定（無料・メイン）
+
+1. https://dash.cloudflare.com → Workers & Pages → Create → Import a repository → このリポジトリ
+2. Project name: `toefl-best-practice`（wrangler.jsonc の name と同じ）／Build command: 空欄／Deploy command: `npx wrangler deploy`
+3. デプロイ後、Worker の Settings → Variables and Secrets に `GEMINI_API_KEY` を Secret で追加（保存するとすぐ使われる）
+
+URL は `https://toefl-best-practice.<アカウントのサブドメイン>.workers.dev`。main に push すると自動で再デプロイされる。
+
 ## Cloudflare Pages での設定（無料）
 
 1. https://dash.cloudflare.com → Workers & Pages → Create → Pages → Connect to Git → このリポジトリ
-2. Production branch: `main`／Framework preset: None／Build command: 空欄／Build output directory: `/`
+2. Production branch: `main`／Framework preset: None／Build command: 空欄／Build output directory: `public`
 3. Settings → Variables and Secrets に `GEMINI_API_KEY` を Secret で追加し、Deployments から Retry deployment
    （任意で `GEMINI_MODEL`、`LLM_PROVIDER` なども同じ場所に追加）
 
@@ -25,7 +35,7 @@ netlify.toml                  Netlify の publish / functions 設定、/api/clau
 ## Netlify での設定
 
 1. Add new site → Import an existing project → GitHub → このリポジトリ
-2. Build command: 空欄／Publish directory: `.`／Functions directory: `netlify/functions`
+2. Build command: 空欄／Publish directory: `public`／Functions directory: `netlify/functions`
 3. Site configuration → Environment variables に `GEMINI_API_KEY` を追加し、Redeploy
 
 Netlify の関数は約30秒で打ち切られるので、生成は約25秒に収める。

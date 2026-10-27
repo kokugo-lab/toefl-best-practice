@@ -4,12 +4,13 @@
 元の仕様書は `docs/spec.md`。画面の説明文は日本語、出題と回答は英語。
 
 ## 構成
-- `index.html` … 画面すべて（CSS・JS込みの単一ファイル）。データは localStorage キー `toefl_bp_v1`（必ず try/catch）。
+- `public/index.html` … 画面すべて（CSS・JS込みの単一ファイル）。データは localStorage キー `toefl_bp_v1`（必ず try/catch）。
 - `lib/core.mjs` … LLM呼び出しの本体（プロンプト `TASKS`、Gemini/Claude 呼び出し、`handle()`）。`action` で処理を分岐。
   APIキーはサーバー側の環境変数のみ（`env` 引数で受け取る。`process.env` は直接使わない）。
-- `functions/api/claude.js` … Cloudflare Pages Functions の入口（`/api/claude`、待ち時間50秒）。
+- `worker/index.mjs`＋`wrangler.jsonc` … Cloudflare Workers の入口（`public/` を配信し `/api/claude` を処理、待ち時間50秒）。
+- `functions/api/claude.js` … Cloudflare Pages Functions を使う場合の入口（同じく50秒）。
 - `netlify/functions/claude.mjs` … Netlify Functions の入口（待ち時間25秒）。`netlify.toml` で `/api/claude` から転送。
-- 公開先：Cloudflare Pages（メイン。main に push すると自動デプロイ）。Netlify（https://toefl-best-practice.netlify.app）は
+- 公開先：Cloudflare Workers（メイン。main に push すると Workers Builds が `npx wrangler deploy` で自動デプロイ）。Netlify（https://toefl-best-practice.netlify.app）は
   無料クレジットを使い切ると公開が止まるため予備。main への push はまとめて回数を減らす。
 
 ## LLM
@@ -33,7 +34,7 @@
 - [ ] 4. 模試モード（全セクション一括生成→localStorage保存、本番順・制限時間・戻れない、成績画面、過去結果のグラフ）
 
 ## 実装上の約束
-- Reading/Listening の進行は `index.html` の「Reading / Listening 共通エンジン」（`genModule`, `renderRL`, `checkStage` など）。
+- Reading/Listening の進行は `public/index.html` の「Reading / Listening 共通エンジン」（`genModule`, `renderRL`, `checkStage` など）。
   選択肢は端末側でシャッフル（`normQ`）。誤答理由 `why_wrong_ja`・誤答タイプ `trap` は選択肢と同じ並び。
 - 第1段階の正答率 ≥70% → 難しめ、<40% → やさしめ。バンドは正答率と第2段階の難易度から算出（目安）。
 - 間違い・言い換え・未知語は `addNotes()` でノートに自動保存。
@@ -50,8 +51,8 @@
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。
 - ブラウザのダイアログ（alert/confirm）は新たに増やさない。
-- 変更後は `node --check lib/core.mjs functions/api/claude.js netlify/functions/claude.mjs` と、index.html の script が
-  構文として通ることを確認してから push。
+- 変更後は `node --check lib/core.mjs functions/api/claude.js netlify/functions/claude.mjs worker/index.mjs` と、
+  public/index.html の script が構文として通ることを確認してから push。
 
 ## ユーザーへの返答
 日本語で。調査結果・選択肢の提示で終え、「次のステップ」「懸念」といった助言セクションは付けない。
