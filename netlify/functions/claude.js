@@ -1,8 +1,11 @@
-// Claude API proxy for the TOEFL practice app.
-// The API key never reaches the browser: it lives in the Netlify env var ANTHROPIC_API_KEY.
+// LLM proxy for the TOEFL practice app.
+// The API key never reaches the browser: it lives in a Netlify environment variable.
+//
+// Provider is chosen with LLM_PROVIDER ("gemini" by default, or "anthropic").
+//   gemini    -> GEMINI_API_KEY   (+ optional GEMINI_MODEL, default gemini-3.8-flash)
+//   anthropic -> ANTHROPIC_API_KEY (+ optional CLAUDE_MODEL, default claude-sonnet-5-5)
 
-const API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5-5";
+const PROVIDER = (process.env.LLM_PROVIDER || "gemini").toLowerCase();
 
 const CORS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -159,18 +162,72 @@ function extractJson(text) {
   }
 }
 
+/* ---------- providers ---------- */
+
+async function callGemini(prompt, maxTokens) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw { user: "サーバーにAPIキーが設定されていません（Netlifyの環境変数 GEMINI_API_KEY を確認してください）", code: 500 };
+  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: maxTokens, temperature: 0.8 },
+      }),
+    }
+  );
+  if (!res.ok) {
+    const detail = await res.text();
+    throw {
+      user:
+        res.status === 429
+          ? "無料枠の上限に達したか混み合っています。少し待ってからもう一度お試しください。"
+          : "Gemini APIからエラーが返りました。",
+      code: 502,
+      detail: detail.slice(0, 500),
+      status: res.status,
+    };
+  }
+  const data = await res.json();
+  const cand = (data.candidates || [])[0] || {};
+  if (cand.finishReason === "SAFETY") throw { user: "内容が安全フィルタに触れました。別の課題でもう一度お試しください。", code: 502 };
+  return ((cand.content && cand.content.parts) || []).map((p) => p.text || "").join("");
+}
+
+async function callAnthropic(prompt, maxTokens) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw { user: "サーバーにAPIキーが設定されていません（Netlifyの環境変数 ANTHROPIC_API_KEY を確認してください）", code: 500 };
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: process.env.CLAUDE_MODEL || "claude-sonnet-5-5",
+      max_tokens: maxTokens,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw {
+      user: res.status === 429 ? "混み合っています。少し待ってからもう一度お試しください。" : "Claude APIからエラーが返りました。",
+      code: 502,
+      detail: detail.slice(0, 500),
+      status: res.status,
+    };
+  }
+  const data = await res.json();
+  return (data.content || []).map((b) => b.text || "").join("");
+}
+
+/* ---------- handler ---------- */
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
   if (event.httpMethod !== "POST")
     return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "POSTのみ受け付けます" }) };
-
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key)
-    return {
-      statusCode: 500,
-      headers: CORS,
-      body: JSON.stringify({ error: "サーバーにAPIキーが設定されていません（Netlifyの環境変数 ANTHROPIC_API_KEY を確認してください）" }),
-    };
 
   let body;
   try {
@@ -183,54 +240,28 @@ exports.handler = async (event) => {
   if (!task)
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: `未対応の処理です: ${body.action}` }) };
 
-  const payload = {
-    model: MODEL,
-    max_tokens: task.max_tokens,
-    messages: [{ role: "user", content: task.prompt(body.input || {}) }],
-  };
+  const prompt = task.prompt(body.input || {});
 
+  let text;
   try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      return {
-        statusCode: 502,
-        headers: CORS,
-        body: JSON.stringify({
-          error: res.status === 429 ? "混み合っています。少し待ってからもう一度お試しください。" : "Claude APIからエラーが返りました。",
-          status: res.status,
-          detail: detail.slice(0, 500),
-        }),
-      };
-    }
-
-    const data = await res.json();
-    const text = (data.content || []).map((b) => b.text || "").join("");
-    let parsed;
-    try {
-      parsed = extractJson(text);
-    } catch {
-      return {
-        statusCode: 502,
-        headers: CORS,
-        body: JSON.stringify({ error: "返答の形式が崩れていました。もう一度お試しください。", raw: text.slice(0, 500) }),
-      };
-    }
-    return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true, data: parsed }) };
+    text = PROVIDER === "anthropic" ? await callAnthropic(prompt, task.max_tokens) : await callGemini(prompt, task.max_tokens);
   } catch (e) {
+    if (e && e.user)
+      return { statusCode: e.code || 502, headers: CORS, body: JSON.stringify({ error: e.user, status: e.status, detail: e.detail }) };
     return {
       statusCode: 502,
       headers: CORS,
       body: JSON.stringify({ error: "通信に失敗しました。接続を確認してもう一度お試しください。", detail: String(e).slice(0, 300) }),
+    };
+  }
+
+  try {
+    return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true, data: extractJson(text) }) };
+  } catch {
+    return {
+      statusCode: 502,
+      headers: CORS,
+      body: JSON.stringify({ error: "返答の形式が崩れていました。もう一度お試しください。", raw: String(text).slice(0, 500) }),
     };
   }
 };

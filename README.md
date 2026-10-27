@@ -16,10 +16,22 @@ netlify.toml                publish / functions の設定、/api/claude への�
 1. Add new site → Import an existing project → GitHub → このリポジトリ
 2. Build command: 空欄／Publish directory: `.`／Functions directory: `netlify/functions`
 3. Site configuration → Environment variables に以下を追加し、Redeploy
-   - `ANTHROPIC_API_KEY`（必須）
-   - `CLAUDE_MODEL`（任意／既定は `claude-sonnet-5-5`）
+   - `GEMINI_API_KEY`（必須／既定のプロバイダ）
+   - `GEMINI_MODEL`（任意／既定は `gemini-3.8-flash`）
 
 APIキーはブラウザに一切渡らず、Netlify Functions の中だけで使われる。
+
+### プロバイダの切り替え
+
+`LLM_PROVIDER` で変更する。既定は `gemini`。
+
+| LLM_PROVIDER | 必要な環境変数 | モデル指定 |
+|---|---|---|
+| `gemini`（既定） | `GEMINI_API_KEY` | `GEMINI_MODEL`（既定 `gemini-3.8-flash`） |
+| `anthropic` | `ANTHROPIC_API_KEY` | `CLAUDE_MODEL`（既定 `claude-sonnet-5-5`） |
+
+Gemini は無料枠（1日あたり千数百リクエスト）で運用できる。キーは
+https://aistudio.google.com/apikey で発行する。画面側のコードはプロバイダに依存しない。
 
 ## 実装状況
 
