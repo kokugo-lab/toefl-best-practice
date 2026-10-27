@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TOEFL Best Practice</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#fffdf8; --ink:#23201b; --sub:#6b6459;
+    --line:#e2dccf; --accent:#1f6f5c; --accent-soft:#e3efe9;
+    --warn:#a8552f; --warn-soft:#f6e9e1; --shadow:0 1px 2px rgba(35,32,27,.06),0 8px 24px rgba(35,32,27,.05);
+    --r:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17191a; --card:#1f2223; --ink:#eae6de; --sub:#9d978c;
+      --line:#32373a; --accent:#6fc3a8; --accent-soft:#1d2d29;
+      --warn:#e09a76; --warn-soft:#2d2420; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17191a; --card:#1f2223; --ink:#eae6de; --sub:#9d978c;
+    --line:#32373a; --accent:#6fc3a8; --accent-soft:#1d2d29;
+    --warn:#e09a76; --warn-soft:#2d2420;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;
+    font-size:16px; line-height:1.75; -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 16px 120px}
+  header{padding:22px 0 10px}
+  h1{font-size:1.15rem; margin:0; letter-spacing:.04em; font-weight:650}
+  h1 small{display:block; font-size:.72rem; color:var(--sub); font-weight:400; letter-spacing:.08em; margin-top:2px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:18px; margin:14px 0; box-shadow:var(--shadow)}
+  .card h2{font-size:.95rem; margin:0 0 10px; letter-spacing:.03em}
+  .card h3{font-size:.85rem; margin:16px 0 6px; color:var(--sub); letter-spacing:.05em; text-transform:none}
+  .muted{color:var(--sub); font-size:.84rem}
+  .tiny{color:var(--sub); font-size:.74rem; line-height:1.6}
+  .countdown{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+  .countdown .n{font-size:2.6rem; font-weight:700; color:var(--accent); line-height:1}
+  button{font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:10px 16px; transition:.15s}
+  button:hover:not(:disabled){border-color:var(--accent)}
+  button:disabled{opacity:.45; cursor:default}
+  .primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+  .primary:hover:not(:disabled){filter:brightness(1.08)}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  nav{position:fixed; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--line); display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:50}
+  nav button{flex:1; border:0; border-radius:0; background:none; padding:12px 4px 14px; font-size:.72rem; color:var(--sub); display:flex; flex-direction:column; align-items:center; gap:3px}
+  nav button .ic{font-size:1.15rem; line-height:1}
+  nav button[aria-current="true"]{color:var(--accent); font-weight:600}
+  .view{display:none} .view.on{display:block}
+  textarea{width:100%; min-height:220px; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; line-height:1.7; resize:vertical}
+  input[type=text]{width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit}
+  .timer{font-variant-numeric:tabular-nums; font-size:1.5rem; font-weight:700; letter-spacing:.02em}
+  .timer.low{color:var(--warn)}
+  .band{display:inline-flex; align-items:baseline; gap:6px; background:var(--accent-soft); color:var(--accent); border-radius:10px; padding:6px 14px; font-weight:700; font-size:1.5rem}
+  .band span{font-size:.7rem; font-weight:500}
+  .bars{display:grid; gap:8px; margin:12px 0}
+  .bar{display:grid; grid-template-columns:5.5em 1fr 2em; align-items:center; gap:8px; font-size:.82rem}
+  .bar .track{height:7px; background:var(--line); border-radius:4px; overflow:hidden}
+  .bar .fill{height:100%; background:var(--accent); border-radius:4px}
+  ul{padding-left:1.2em; margin:6px 0}
+  li{margin:4px 0}
+  .corr{border-left:3px solid var(--warn); background:var(--warn-soft); padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:.88rem}
+  .corr del{color:var(--sub)} .corr ins{text-decoration:none; font-weight:600}
+  .para{border-left:3px solid var(--accent); background:var(--accent-soft); padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:.88rem}
+  .en{font-family:"SF Pro Text",-apple-system,"Segoe UI",sans-serif; line-height:1.8}
+  .note{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0; background:var(--bg)}
+  .note .k{font-weight:650} .note .v{color:var(--sub); font-size:.86rem}
+  .tag{display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:20px; background:var(--accent-soft); color:var(--accent); margin-right:6px}
+  .spin{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px; margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{background:var(--warn-soft); color:var(--warn); border:1px solid var(--warn); border-radius:10px; padding:10px 14px; margin:10px 0; font-size:.86rem}
+  .seg{display:flex; gap:0; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin:10px 0}
+  .seg button{flex:1; border:0; border-radius:0; background:var(--card); font-size:.85rem; padding:9px 6px}
+  .seg button[aria-pressed="true"]{background:var(--accent); color:#fff; font-weight:600}
+  audio{width:100%; margin:8px 0}
+  .disclaimer{text-align:center; padding:8px 4px 0}
+  hr{border:0; border-top:1px solid var(--line); margin:18px 0}
+  .kv{display:flex; justify-content:space-between; font-size:.84rem; padding:5px 0; border-bottom:1px dashed var(--line)}
+  .kv:last-child{border:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>TOEFL Best Practice<small>新形式（2026年1月〜）練習　Reading / Listening / Writing / Speaking</small></h1>
+  </header>
+
+  <!-- ============ ホーム ============ -->
+  <section id="v-home" class="view on">
+    <div class="card">
+      <h2>本番まで</h2>
+      <div class="countdown"><div class="n" id="days">–</div><div class="muted" id="daysSub">2026年11月29日（日）</div></div>
+    </div>
+
+    <div class="card">
+      <h2>今日のメニュー</h2>
+      <div id="menu"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" onclick="go('writing')">Writing を始める</button>
+        <button onclick="go('speaking')">Speaking を始める</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>直近の記録</h2>
+      <div id="recent" class="muted">まだ記録がありません。練習すると、ここにバンドの推移と苦手分野が出ます。</div>
+    </div>
+  </section>
+
+  <!-- ============ Writing ============ -->
+  <section id="v-writing" class="view">
+    <div class="card">
+      <h2>Writing — Write an Email</h2>
+      <p class="tiny">大学の事務室や教授あてのメールを書く課題です。制限時間は10分、90語以上が目安。</p>
+      <div id="w-start" class="row">
+        <button class="primary" id="w-gen">課題を出す</button>
+      </div>
+      <div id="w-task" style="display:none"></div>
+    </div>
+    <div class="card" id="w-editor" style="display:none">
+      <div class="row" style="justify-content:space-between">
+        <div class="timer" id="w-timer">10:00</div>
+        <div class="muted" id="w-count">0 語</div>
+      </div>
+      <textarea id="w-text" placeholder="Write your email here..." spellcheck="true"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="w-submit">提出して添削を受ける</button>
+        <button id="w-save">下書きを保存</button>
+      </div>
+      <p class="tiny" style="margin-top:8px">入力内容は自動で保存されます。通信に失敗しても文章は消えません。</p>
+    </div>
+    <div id="w-result"></div>
+  </section>
+
+  <!-- ============ Speaking ============ -->
+  <section id="v-speaking" class="view">
+    <div class="card">
+      <h2>Speaking — Take an Interview</h2>
+      <p class="tiny">質問を聞いて、準備15秒・解答60秒で話します。録音と文字起こしを行い、文字起こしは自分で直してから評価に出せます。</p>
+      <div class="row"><button class="primary" id="s-gen">質問を出す</button></div>
+      <div id="s-task" style="display:none"></div>
+    </div>
+    <div class="card" id="s-rec" style="display:none">
+      <div class="row" style="justify-content:space-between">
+        <div class="timer" id="s-timer">0:15</div>
+        <div class="muted" id="s-phase">準備中</div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="s-start">録音を始める</button>
+        <button id="s-stop" disabled>話し終わった</button>
+      </div>
+      <div id="s-after" style="display:none">
+        <audio id="s-audio" controls></audio>
+        <h3>文字起こし（間違いは直してください）</h3>
+        <textarea id="s-tr" style="min-height:140px" placeholder="自動で入ります。認識ミスがあれば手で直してから評価に出してください。"></textarea>
+        <div class="row" style="margin-top:8px">
+          <div class="muted" id="s-meta">–</div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="s-submit">評価を受ける</button>
+        </div>
+      </div>
+    </div>
+    <div id="s-result"></div>
+  </section>
+
+  <!-- ============ ノート ============ -->
+  <section id="v-notes" class="view">
+    <div class="card">
+      <h2>記録・ノート</h2>
+      <input type="text" id="n-q" placeholder="語句・日本語で検索">
+      <div class="seg" id="n-seg">
+        <button data-k="all" aria-pressed="true">すべて</button>
+        <button data-k="word" aria-pressed="false">未知語</button>
+        <button data-k="para" aria-pressed="false">言い換え</button>
+        <button data-k="fix" aria-pressed="false">直された点</button>
+      </div>
+      <div id="n-list"></div>
+    </div>
+    <div class="card">
+      <h2>復習クイズ</h2>
+      <p class="tiny">ノートに貯まった語句から、文脈で使えるかを試す5問を作ります。</p>
+      <div class="row"><button class="primary" id="n-quiz">クイズを作る</button></div>
+      <div id="n-quizbox"></div>
+    </div>
+    <div class="card">
+      <h2>練習の履歴</h2>
+      <div id="n-hist" class="muted">まだありません。</div>
+    </div>
+  </section>
+
+  <p class="disclaimer tiny">
+    ここで出題される問題はすべて、新形式を模して作成した練習問題です（公式問題ではありません）。<br>
+    バンドは目安であり、公式採点とは一致しません。課題名・問題数・時間は公式と細部が異なる場合があります。
+  </p>
+</div>
+
+<nav>
+  <button data-v="home" aria-current="true" onclick="go('home')"><span class="ic">◧</span>ホーム</button>
+  <button data-v="writing" onclick="go('writing')"><span class="ic">✎</span>Writing</button>
+  <button data-v="speaking" onclick="go('speaking')"><span class="ic">◉</span>Speaking</button>
+  <button data-v="notes" onclick="go('notes')"><span class="ic">▤</span>ノート</button>
+</nav>
+
+<script>
+/* ================= storage (全てtry/catch) ================= */
+const K = "toefl_bp_v1";
+let DB = { records: [], notes: [], draft: {} };
+function load(){ try{ const r = localStorage.getItem(K); if(r) DB = Object.assign(DB, JSON.parse(r)); }catch(e){ console.warn("読み込み失敗", e); } }
+function save(){ try{ localStorage.setItem(K, JSON.stringify(DB)); }catch(e){ console.warn("保存失敗", e); } }
+load();
+
+/* ================= helpers ================= */
+const $ = (s)=>document.querySelector(s);
+const esc = (s)=>String(s==null?"":s).replace(/[&<>"]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const words = (t)=>(String(t||"").trim().match(/[A-Za-z0-9'’\-]+/g)||[]).length;
+const mmss = (s)=>`${Math.floor(Math.max(0,s)/60)}:${String(Math.max(0,s)%60).padStart(2,"0")}`;
+
+function go(v){
+  document.querySelectorAll(".view").forEach(e=>e.classList.remove("on"));
+  $("#v-"+v).classList.add("on");
+  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current", b.dataset.v===v ? "true":"false"));
+  window.scrollTo(0,0);
+  if(v==="notes") renderNotes(), renderHist();
+  if(v==="home") renderHome();
+}
+
+async function api(action, input){
+  const res = await fetch("/api/claude", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({action, input})
+  });
+  let j = null;
+  try{ j = await res.json(); }catch(e){ throw new Error("サーバーの応答を読み取れませんでした。"); }
+  if(!res.ok || !j.ok) throw new Error((j && j.error) || "通信に失敗しました。");
+  return j.data;
+}
+const busy = (el, msg)=>{ el.innerHTML = `<div class="card"><span class="spin"></span>${esc(msg)}</div>`; };
+const fail = (el, e, retry)=>{
+  el.innerHTML = `<div class="err">${esc(e.message||String(e))}<br><span class="tiny">入力した内容はそのまま残っています。</span></div>`;
+  if(retry){ const b=document.createElement("button"); b.textContent="もう一度試す"; b.className="primary"; b.onclick=retry; el.appendChild(b); }
+};
+
+/* ================= notes ================= */
+function addNotes(kind, items){
+  if(!Array.isArray(items)) return;
+  const now = Date.now();
+  items.forEach(it=>{
+    if(!it) return;
+    const key = JSON.stringify([kind, it.en||it.from||it.before||""]).toLowerCase();
+    if(DB.notes.some(n=>n.key===key)) return;
+    DB.notes.push({key, kind, at:now, data:it});
+  });
+  save();
+}
+function renderNotes(){
+  const q = ($("#n-q").value||"").toLowerCase();
+  const k = $("#n-seg button[aria-pressed='true']").dataset.k;
+  const list = DB.notes.filter(n=>(k==="all"||n.kind===k) && JSON.stringify(n.data).toLowerCase().includes(q)).reverse();
+  $("#n-list").innerHTML = list.length ? list.map(n=>{
+    const d=n.data, label={word:"未知語",para:"言い換え",fix:"直された点"}[n.kind]||"";
+    if(n.kind==="word") return `<div class="note"><span class="tag">${label}</span><span class="k en">${esc(d.en)}</span><div class="v">${esc(d.ja)}</div></div>`;
+    if(n.kind==="para") return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.from)}</div><div class="k en">→ ${esc(d.to)}</div><div class="v">${esc(d.ja)}</div></div>`;
+    return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.before)}</div><div class="k en">→ ${esc(d.after)}</div><div class="v">${esc(d.why_ja)}</div></div>`;
+  }).join("") : `<p class="muted">該当するものはありません。</p>`;
+}
+$("#n-q").addEventListener("input", renderNotes);
+$("#n-seg").addEventListener("click", e=>{
+  if(e.target.tagName!=="BUTTON") return;
+  $("#n-seg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b===e.target?"true":"false"));
+  renderNotes();
+});
+
+function renderHist(){
+  const r = DB.records.slice().reverse();
+  $("#n-hist").innerHTML = r.length ? r.map(x=>
+    `<div class="kv"><span>${new Date(x.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}　${esc(x.kind)}</span><strong>${x.band?.toFixed ? x.band.toFixed(1) : x.band}</strong></div>`
+  ).join("") : `<p class="muted">まだありません。</p>`;
+}
+
+/* ================= home ================= */
+function renderHome(){
+  const exam = new Date(2026,10,29);
+  const d = Math.ceil((exam - new Date())/86400000);
+  $("#days").textContent = d>0 ? d : 0;
+  $("#daysSub").innerHTML = `日<br><span class="tiny">2026年11月29日が本番</span>`;
+
+  const w = DB.records.filter(r=>r.kind==="Writing");
+  const s = DB.records.filter(r=>r.kind==="Speaking");
+  $("#menu").innerHTML = `
+    <div class="kv"><span>Writing（Write an Email）10分 × 1本</span><span class="muted">${w.length ? "累計 "+w.length+"本" : "未着手"}</span></div>
+    <div class="kv"><span>Speaking（Take an Interview）60秒 × 2本</span><span class="muted">${s.length ? "累計 "+s.length+"本" : "未着手"}</span></div>
+    <div class="kv"><span>ノートの復習クイズ 5問</span><span class="muted">${DB.notes.length} 件たまっています</span></div>`;
+
+  if(!DB.records.length){ return; }
+  const last = DB.records.slice(-5);
+  const avg = (arr)=> arr.length ? (arr.reduce((a,b)=>a+(+b||0),0)/arr.length) : 0;
+  const dims = ["task_response","organization","grammar","vocabulary","content"];
+  const agg = {};
+  DB.records.forEach(r=>{ Object.entries(r.scores||{}).forEach(([k,v])=>{ (agg[k]=agg[k]||[]).push(+v); }); });
+  const labels = {task_response:"課題対応",organization:"構成",grammar:"文法",vocabulary:"語彙",content:"内容"};
+  const rows = Object.entries(agg).sort((a,b)=>avg(a[1])-avg(b[1]));
+  $("#recent").innerHTML = `
+    <div class="muted" style="margin-bottom:8px">直近${last.length}回の推定バンド平均 <strong style="color:var(--accent)">${avg(last.map(r=>r.band)).toFixed(1)}</strong></div>
+    <div class="bars">${rows.map(([k,v])=>{
+      const a=avg(v);
+      return `<div class="bar"><span>${labels[k]||k}</span><span class="track"><span class="fill" style="width:${(a/6*100).toFixed(0)}%"></span></span><span>${a.toFixed(1)}</span></div>`;
+    }).join("")}</div>
+    <p class="tiny">下にあるものほど伸ばしどころです。</p>`;
+}
+
+/* ================= Writing ================= */
+let wTask=null, wTimer=null, wLeft=600, wStarted=0;
+$("#w-gen").onclick = async ()=>{
+  const box = $("#w-task"); box.style.display="block"; busy(box,"課題を作っています…");
+  try{
+    wTask = await api("gen_email", {});
+    box.innerHTML = `
+      <hr>
+      <p class="en">${esc(wTask.situation_en)}</p>
+      <p class="muted">${esc(wTask.situation_ja)}</p>
+      <p class="en"><strong>${esc(wTask.instruction_en)}</strong></p>
+      <h3>必ず入れる内容</h3>
+      <ul class="en">${(wTask.points||[]).map(p=>`<li>${esc(p)}</li>`).join("")}</ul>
+      <h3>使える表現</h3>
+      <ul>${(wTask.useful_phrases||[]).map(p=>`<li><span class="en">${esc(p.en)}</span> <span class="muted">${esc(p.ja)}</span></li>`).join("")}</ul>`;
+    $("#w-editor").style.display="block";
+    $("#w-text").value = "";
+    startW(wTask.time_limit_sec||600);
+  }catch(e){ fail(box, e, ()=>$("#w-gen").click()); }
+};
+function startW(sec){
+  clearInterval(wTimer); wLeft=sec; wStarted=Date.now();
+  const t=$("#w-timer");
+  const tick=()=>{ t.textContent=mmss(wLeft); t.classList.toggle("low", wLeft<=60);
+    if(wLeft<=0){ clearInterval(wTimer); $("#w-submit").click(); } wLeft--; };
+  tick(); wTimer=setInterval(tick,1000);
+}
+$("#w-text").addEventListener("input", ()=>{
+  $("#w-count").textContent = words($("#w-text").value)+" 語";
+  DB.draft.writing = {text:$("#w-text").value, task:wTask}; save();
+});
+$("#w-save").onclick=()=>{ DB.draft.writing={text:$("#w-text").value, task:wTask}; save(); $("#w-save").textContent="保存しました"; setTimeout(()=>$("#w-save").textContent="下書きを保存",1500); };
+
+$("#w-submit").onclick = async ()=>{
+  const text=$("#w-text").value.trim();
+  if(!text){ alert("まだ何も書かれていません。"); return; }
+  clearInterval(wTimer);
+  const box=$("#w-result"); busy(box,"添削しています…");
+  const input={ task:(wTask&&wTask.instruction_en)||"", points:(wTask&&wTask.points)||[],
+                answer:text, words:words(text), seconds:Math.round((Date.now()-wStarted)/1000) };
+  try{
+    const r = await api("eval_writing", input);
+    box.innerHTML = renderEval(r, "Writing");
+    DB.records.push({at:Date.now(), kind:"Writing", band:+r.band||0, scores:r.scores||{}});
+    addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); addNotes("fix", r.corrections);
+    DB.draft.writing=null; save();
+  }catch(e){ fail(box, e, ()=>$("#w-submit").click()); }
+};
+
+/* ================= Speaking ================= */
+let sTask=null, sTimer=null, rec=null, chunks=[], sRecog=null, sTrans="", sSec=0;
+$("#s-gen").onclick = async ()=>{
+  const box=$("#s-task"); box.style.display="block"; busy(box,"質問を作っています…");
+  try{
+    sTask = await api("gen_interview", {});
+    box.innerHTML = `
+      <hr>
+      <p class="en" style="font-size:1.05rem"><strong>${esc(sTask.question_en)}</strong></p>
+      <p class="muted">${esc(sTask.question_ja)}</p>
+      <p class="tiny">${esc(sTask.hint_ja)}</p>
+      <div class="row"><button id="s-play">質問を読み上げる</button></div>
+      <h3>使える表現</h3>
+      <ul>${(sTask.useful_phrases||[]).map(p=>`<li><span class="en">${esc(p.en)}</span> <span class="muted">${esc(p.ja)}</span></li>`).join("")}</ul>`;
+    $("#s-play").onclick=()=>speak(sTask.question_en);
+    $("#s-rec").style.display="block"; $("#s-after").style.display="none"; $("#s-result").innerHTML="";
+    speak(sTask.question_en);
+  }catch(e){ fail(box, e, ()=>$("#s-gen").click()); }
+};
+function speak(t){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t); u.lang="en-US"; u.rate=.95;
+    const v=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));
+    if(v.length) u.voice=v[0];
+    speechSynthesis.speak(u);
+  }catch(e){ console.warn("読み上げ不可", e); }
+}
+$("#s-start").onclick = async ()=>{
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    chunks=[]; rec=new MediaRecorder(stream);
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=()=>{
+      const blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});
+      $("#s-audio").src=URL.createObjectURL(blob);
+      stream.getTracks().forEach(t=>t.stop());
+      $("#s-after").style.display="block";
+      $("#s-tr").value=sTrans.trim();
+      updMeta();
+    };
+    rec.start();
+    startRecog();
+    $("#s-start").disabled=true; $("#s-stop").disabled=false; $("#s-phase").textContent="解答中";
+    const limit=(sTask&&sTask.speak_sec)||60; let left=limit; const st=Date.now();
+    const t=$("#s-timer");
+    clearInterval(sTimer);
+    const tick=()=>{ t.textContent=mmss(left); t.classList.toggle("low",left<=10);
+      if(left<=0){ sSec=Math.round((Date.now()-st)/1000); $("#s-stop").click(); } left--; };
+    tick(); sTimer=setInterval(tick,1000);
+    rec._st=st;
+  }catch(e){ fail($("#s-result"), new Error("マイクを使えませんでした。ブラウザの許可設定を確認してください。（"+e.message+"）")); }
+};
+$("#s-stop").onclick=()=>{
+  clearInterval(sTimer);
+  if(rec && rec.state!=="inactive"){ sSec=Math.round((Date.now()-rec._st)/1000); rec.stop(); }
+  try{ if(sRecog) sRecog.stop(); }catch(e){}
+  $("#s-start").disabled=false; $("#s-stop").disabled=true; $("#s-phase").textContent="録音終了";
+};
+function startRecog(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  sTrans="";
+  if(!SR){ sTrans=""; return; }
+  try{
+    sRecog=new SR(); sRecog.lang="en-US"; sRecog.continuous=true; sRecog.interimResults=false;
+    sRecog.onresult=e=>{ for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal) sTrans+=e.results[i][0].transcript+" "; } $("#s-tr").value=sTrans.trim(); updMeta(); };
+    sRecog.onerror=()=>{};
+    sRecog.start();
+  }catch(e){ console.warn("音声認識が使えません", e); }
+}
+function updMeta(){
+  const w=words($("#s-tr").value);
+  const wpm = sSec ? Math.round(w/sSec*60) : 0;
+  $("#s-meta").textContent = `${sSec}秒 ／ ${w}語 ／ 毎分約${wpm}語`;
+}
+$("#s-tr").addEventListener("input", updMeta);
+
+$("#s-submit").onclick = async ()=>{
+  const tr=$("#s-tr").value.trim();
+  if(!tr){ alert("文字起こしが空です。自動認識が働かなかった場合は、話した内容を手で入力してください。"); return; }
+  const box=$("#s-result"); busy(box,"評価しています…");
+  try{
+    const r = await api("eval_speaking", {question:(sTask&&sTask.question_en)||"", transcript:tr, seconds:sSec, words:words(tr)});
+    box.innerHTML = renderEval(r, "Speaking");
+    DB.records.push({at:Date.now(), kind:"Speaking", band:+r.band||0, scores:r.scores||{}});
+    addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); save();
+  }catch(e){ fail(box, e, ()=>$("#s-submit").click()); }
+};
+
+/* ================= 評価の描画（共通） ================= */
+function renderEval(r, kind){
+  const labels={task_response:"課題対応",organization:"構成",grammar:"文法",vocabulary:"語彙",content:"内容"};
+  const bars=Object.entries(r.scores||{}).map(([k,v])=>
+    `<div class="bar"><span>${labels[k]||k}</span><span class="track"><span class="fill" style="width:${(+v/6*100).toFixed(0)}%"></span></span><span>${v}</span></div>`).join("");
+  const list=(a)=>`<ul>${(a||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  const secs=[["task_response_ja","課題への対応"],["content_ja","内容"],["organization_ja","構成"],["grammar_ja","文法"],["vocabulary_ja","語彙"],["delivery_ja","長さ・速さ"]]
+    .filter(([k])=>r[k]).map(([k,t])=>`<h3>${t}</h3><p>${esc(r[k])}</p>`).join("");
+  return `
+  <div class="card">
+    <h2>${kind} の講評</h2>
+    <div class="band">${(+r.band).toFixed(1)}<span>推定バンド</span></div>
+    <p class="tiny" style="margin-top:8px">${esc(r.band_note_ja||"")}</p>
+    <div class="bars">${bars}</div>
+    ${secs}
+    ${r.not_assessed_ja?`<p class="tiny" style="margin-top:10px">${esc(r.not_assessed_ja)}</p>`:""}
+    <h3>良かった点</h3>${list(r.good_points_ja)}
+    <h3>伸ばしどころ</h3>${list(r.improvements_ja)}
+    ${(r.corrections&&r.corrections.length)?`<h3>直したところ</h3>${r.corrections.map(c=>
+      `<div class="corr"><del class="en">${esc(c.before)}</del> → <ins class="en">${esc(c.after)}</ins><div class="muted">${esc(c.why_ja)}</div></div>`).join("")}`:""}
+    ${r.revised_en?`<h3>添削後の文章</h3><p class="en">${esc(r.revised_en).replace(/\n/g,"<br>")}</p>`:""}
+    ${(r.paraphrases&&r.paraphrases.length)?`<h3>B2らしい言い換え</h3>${r.paraphrases.map(p=>
+      `<div class="para"><span class="en">${esc(p.from)}</span> → <strong class="en">${esc(p.to)}</strong><div class="muted">${esc(p.ja)}</div></div>`).join("")}`:""}
+    ${r.model_answer_en?`<h3>模範回答の例</h3><p class="en">${esc(r.model_answer_en)}</p><p class="muted">${esc(r.model_answer_ja||"")}</p>`:""}
+    <p class="tiny" style="margin-top:14px">このバンドは目安です。公式採点とは一致しません。語句と言い換えはノートに自動で保存しました。</p>
+  </div>`;
+}
+
+/* ================= 復習クイズ ================= */
+$("#n-quiz").onclick = async ()=>{
+  const box=$("#n-quizbox");
+  const items=DB.notes.slice(-30).map(n=>n.data);
+  if(items.length<3){ box.innerHTML=`<p class="muted">ノートが3件以上たまるとクイズを作れます。</p>`; return; }
+  busy(box,"クイズを作っています…");
+  try{
+    const r=await api("gen_review",{items, count:5});
+    box.innerHTML=(r.questions||[]).map((q,i)=>`
+      <div class="card" style="box-shadow:none">
+        <p class="en"><strong>${i+1}.</strong> ${esc(q.prompt_en)}</p>
+        <div class="row">${(q.choices||[]).map((c,j)=>
+          `<button class="en" onclick="ans(this,${j===q.answer})">${esc(c)}</button>`).join("")}</div>
+        <p class="tiny" style="display:none">${esc(q.explain_ja)}</p>
+      </div>`).join("");
+  }catch(e){ fail(box, e, ()=>$("#n-quiz").click()); }
+};
+function ans(btn, ok){
+  const card=btn.closest(".card");
+  card.querySelectorAll("button").forEach(b=>b.disabled=true);
+  btn.style.background = ok ? "var(--accent)" : "var(--warn)";
+  btn.style.color="#fff";
+  card.querySelector(".tiny").style.display="block";
+}
+
+/* ================= 起動 ================= */
+try{
+  if(DB.draft && DB.draft.writing && DB.draft.writing.text){
+    wTask=DB.draft.writing.task; $("#w-text").value=DB.draft.writing.text;
+    $("#w-count").textContent=words(DB.draft.writing.text)+" 語";
+  }
+}catch(e){}
+renderHome();
+</script>
+</body>
+</html>
