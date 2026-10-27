@@ -148,6 +148,7 @@
   .choice.withsub{display:flex; justify-content:space-between; align-items:center; gap:10px}
   .choice .optsub{font-size:.84rem; color:var(--sub); font-weight:400; text-align:right; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
   .choice .optsub.en{font-family:inherit}
+  .choice.withja .optsub{display:block; text-align:left; margin-top:2px}
   .bandpill{display:inline-block; background:var(--accent-soft); color:var(--accent); border-radius:8px; padding:1px 9px; font-weight:700; font-size:.95em}
   .xlat{margin:10px 0; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); font-size:.9rem}
   .xlat .mh{font-weight:650; font-size:.78rem; color:var(--sub); margin-bottom:2px}
@@ -912,7 +913,7 @@ function normQ(q){
   const idx=[...Array(n).keys()];
   for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
   const al=(arr)=>idx.map(i=>Array.isArray(arr)?(arr[i]||""):"");
-  return Object.assign({}, q, {choices:idx.map(i=>String(q.choices[i])), why_wrong_ja:al(q.why_wrong_ja), trap:al(q.trap), answer:idx.indexOf(ans), tag:q.tag||"その他"});
+  return Object.assign({}, q, {choices:idx.map(i=>String(q.choices[i])), choices_ja:al(q.choices_ja), why_wrong_ja:al(q.why_wrong_ja), trap:al(q.trap), answer:idx.indexOf(ans), tag:q.tag||"その他"});
 }
 
 /* Complete the Words：1文目はそのまま、2文目以降の「1語おき」の語の後半を消す（最大10語） */
@@ -992,13 +993,21 @@ const curMod=(st)=> (st.phase==="s2"||st.phase==="done") ? st.s2 : st.s1;
 const stageNo=(st)=> (st.phase==="s2"||st.phase==="done") ? 2 : 1;
 
 /* ---------- 描画 ---------- */
+// 答えたあとの選択肢の日本語訳（生成時の choices_ja、なければ全文訳と一緒に作った訳）
+const TFNG_JA=["正しい（本文と一致）","誤り（本文と矛盾）","書かれていない"];
+function choiceJa(q, i, holder, qi){
+  if(q.type==="tfng") return TFNG_JA[i];
+  const a=q.choices_ja && q.choices_ja[i]; if(a) return a;
+  const x=holder && holder.xp && holder.xp.qs[qi]; return (x && x.cja && x.cja[i]) || "";
+}
 function mcHTML(sec, pi, qi, q, chosen, o={}){
   const answered = chosen!=null;
   const btns = q.choices.map((c,i)=>{
     let cls="choice en";
     if(answered){ if(i===q.answer) cls+=" ok"; else if(i===chosen) cls+=" ng"; }
     if(o.hide) cls+=" hidden";
-    return `<button class="${cls}" ${answered?"disabled":""} data-mc="${sec}|${pi}|${qi}|${i}">${String.fromCharCode(65+i)}. ${esc(c)}</button>`;
+    const ja = answered ? choiceJa(q, i, sec!=="cwd"&&DB.cur[sec] ? curMod(DB.cur[sec]).parts[pi] : null, qi) : "";
+    return `<button class="${cls}${ja?" withja":""}" ${answered?"disabled":""} data-mc="${sec}|${pi}|${qi}|${i}"><span>${String.fromCharCode(65+i)}. ${esc(c)}</span>${ja?`<span class="optsub">${esc(ja)}</span>`:""}</button>`;
   }).join("");
   let fb="";
   if(answered){
@@ -2519,7 +2528,8 @@ function iQHTML(sec, st, pi, qi){
     body=`<div class="qt en">${num}. ${esc(q.q)}</div>`+q.choices.map((c,i)=>{
       let cls="choice en";
       if(ch){ if(i===q.answer) cls+=" ok"; else if(i===v) cls+=" ng"; } else if(i===v) cls+=" sel";
-      return `<button class="${cls}" ${ch?"disabled":""} data-ich="${sec}|${pi}|${qi}|${i}">${q.type==="tfng"?"":String.fromCharCode(65+i)+". "}${esc(c)}</button>`;
+      const ja = ch ? choiceJa(q, i, p, qi) : "";
+      return `<button class="${cls}${ja?" withja":""}" ${ch?"disabled":""} data-ich="${sec}|${pi}|${qi}|${i}"><span>${q.type==="tfng"?"":String.fromCharCode(65+i)+". "}${esc(c)}</span>${ja?`<span class="optsub">${esc(ja)}</span>`:""}</button>`;
     }).join("");
   }
   let fb="";
@@ -3177,7 +3187,7 @@ async function xpFetch(key){
       const r2=await api("explain_part",{exam:g.exam, kind:g.kind+"（訳の補い）", sentences:miss.map(i=>({sp:"", en:g.segs[i].t})), questions:[]});
       (r2.ja||[]).forEach((x,k)=>{ const n=x&&typeof x==="object" ? +x.i : k, t=x&&typeof x==="object" ? x.t : x; if(n>=0 && n<miss.length && t) ja[miss[n]]=String(t); });
     }catch(e){}
-    g.h.xp={segs:g.segs, off:g.off, ja, qs:(r.questions||[]).map(q=>({refs:(q.refs||[]).map(Number).filter(n=>n>=0&&n<g.segs.length), key:String(q.key_en||""), think:String(q.think_ja||"")}))};
+    g.h.xp={segs:g.segs, off:g.off, ja, qs:(r.questions||[]).map(q=>({refs:(q.refs||[]).map(Number).filter(n=>n>=0&&n<g.segs.length), key:String(q.key_en||""), think:String(q.think_ja||""), cja:Array.isArray(q.choices_ja)?q.choices_ja.map(String):[]}))};
   }catch(e){ g.h.xpErr=e.message; }
   XPX[key]=false; save(); xpRerender(key);
 }
