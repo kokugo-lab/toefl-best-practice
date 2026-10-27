@@ -164,10 +164,9 @@ function extractJson(text) {
 
 /* ---------- providers ---------- */
 
-async function callGemini(prompt, maxTokens) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw { user: "サーバーにAPIキーが設定されていません（Netlifyの環境変数 GEMINI_API_KEY を確認してください）", code: 500 };
-  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function geminiOnce(model, key, prompt, maxTokens) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
     {
@@ -181,20 +180,59 @@ async function callGemini(prompt, maxTokens) {
   );
   if (!res.ok) {
     const detail = await res.text();
-    throw {
-      user:
-        res.status === 429
-          ? "無料枠の上限に達したか混み合っています。少し待ってからもう一度お試しください。"
-          : "Gemini APIからエラーが返りました。",
-      code: 502,
-      detail: detail.slice(0, 500),
-      status: res.status,
-    };
+    const err = new Error("gemini");
+    err.status = res.status;
+    err.detail = detail.slice(0, 500);
+    throw err;
   }
   const data = await res.json();
   const cand = (data.candidates || [])[0] || {};
   if (cand.finishReason === "SAFETY") throw { user: "内容が安全フィルタに触れました。別の課題でもう一度お試しください。", code: 502 };
   return ((cand.content && cand.content.parts) || []).map((p) => p.text || "").join("");
+}
+
+async function callGemini(prompt, maxTokens) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw { user: "サーバーにAPIキーが設定されていません（Netlifyの環境変数 GEMINI_API_KEY を確認してください）", code: 500 };
+
+  // 混雑(503)や瞬間的な超過(429)に備え、同じモデルで一度待って再試行し、
+  // それでも駄目なら軽いモデルに切り替える。
+  const primary = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  const fallback = process.env.GEMINI_MODEL_FALLBACK || "gemini-3.5-flash-lite";
+  const chain = [
+    { model: primary, wait: 0 },
+    { model: primary, wait: 1500 },
+    { model: fallback, wait: 500 },
+    { model: fallback, wait: 2500 },
+  ];
+
+  let last = null;
+  for (const step of chain) {
+    if (step.wait) await sleep(step.wait);
+    try {
+      return await geminiOnce(step.model, key, prompt, maxTokens);
+    } catch (e) {
+      if (e && e.user) throw e;
+      last = e;
+      if (e.status === 503 || e.status === 429 || e.status >= 500) continue;
+      break;
+    }
+  }
+
+  const st = last && last.status;
+  throw {
+    user:
+      st === 429
+        ? "無料枠の上限に達したか混み合っています。少し待ってからもう一度お試しください。"
+        : st === 503
+        ? "Gemini側が混み合っています。1分ほど待ってからもう一度お試しください。"
+        : st === 400 || st === 403
+        ? "APIキーが正しくないか、権限がありません。Netlifyの環境変数 GEMINI_API_KEY を確認してください。"
+        : "Gemini APIからエラーが返りました。",
+    code: 502,
+    status: st,
+    detail: last && last.detail,
+  };
 }
 
 async function callAnthropic(prompt, maxTokens) {
