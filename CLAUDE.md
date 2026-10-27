@@ -22,6 +22,11 @@
         Listening（Choose a Response／Conversation／Announcement／Academic Talk）。どちらも2段階アダプティブ
 - [x] 3. Listen and Repeat（Speaking・7文、端末側で語の再現率を採点）、Build a Sentence（10問、端末側で採点）、
         Write for an Academic Discussion（Writing・`eval_discussion` で添削）
+- [x] 学習効果の追加（2026-10）：ノートの間隔反復（SRS）、苦手タグを生成に渡す（`focus`）、Writing の書き直しループ、
+        Listening の文ごとの聞き直し・書き取り・くり返し、Interview 本番形式（4問×45秒）と答え直し、1問ごとの時間記録、
+        Complete the Words 3分ドリル、学習カレンダー、バックアップ（JSON書き出し・読み込み）
+- [x] IELTS Academic モード（初回に TOEFL／IELTS を選ぶ。右上の「試験」で切替）：Listening 4パート、Reading 3パッセージ、
+        Writing Task 1（図表をSVGで描画）・Task 2、Speaking Part 1〜3。バンドは0〜9
 - [ ] 4. 模試モード（全セクション一括生成→localStorage保存、本番順・制限時間・戻れない、成績画面、過去結果のグラフ）
 
 ## 実装上の約束
@@ -32,6 +37,12 @@
 - Writing・Speaking は画面上部のタブで課題を切り替え（`segSwitch`）。Email と Academic Discussion は `setupWriter()` を共用し、
   下書きは `DB.draft.email` / `DB.draft.disc`。Build・Repeat の進行状態は `DB.cur.build` / `DB.cur.repeat`。
 - 記録 `DB.records` には `task`（build / email / disc / repeat / interview）を付ける。古い記録は `taskOf()` で補う。
+- 試験は `DB.settings.exam`（toefl / ielts）。`go()` が IELTS のときは `v-ireading` などへ振り替える。記録には `exam` を付け
+  （古い記録は toefl）、`recs()` で今の試験の分だけ取り出す。ノート・SRS は共通。記録は必ず `addRecord()` で追加（学習ログも付く）。
+- 苦手の集計は `statAdd()`／`weakTags()`（`DB.stats`）。生成時に `focus` として渡すと、関数側の `focus(i)` がプロンプトに足す。
+- Speaking は共通エンジン（`spkInit`/`spkRender`、状態は `DB.cur.iv`／`DB.cur.is`）。録音と文字起こしは `recStart`/`recStop`。
+- IELTS Reading/Listening は `iStart`/`iRender`/`iCheck`（`DB.cur.ireading`／`DB.cur.ilistening`）。正答数を40問換算してバンドの目安を出す。
+- 書き直し・答え直しは記録（バンドの推移）に入れない。`previous` を渡すと関数側の `rw(i)` が `rewrite_ja` を返させる。
 - 音声は SpeechSynthesis（男女2声、同じ声しかなければ pitch で区別）、文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。

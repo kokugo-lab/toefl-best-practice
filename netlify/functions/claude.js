@@ -22,6 +22,12 @@ Everything you produce is ORIGINAL practice material modelled on the new format,
 All Japanese explanations must be encouraging but concrete and specific - never vague praise.
 Always reply with a single valid JSON object and nothing else: no markdown fences, no preamble.`;
 
+const IELTS_COMMON = `You are an experienced IELTS Academic examiner and teacher who knows the public band descriptors.
+The learner is a Japanese adult preparing for graduate school admission (CEFR B2, aiming at about band 6.0-6.5).
+Everything you produce is ORIGINAL practice material modelled on IELTS Academic, never actual official test content.
+All Japanese explanations must be encouraging but concrete and specific - never vague praise.
+Always reply with a single valid JSON object and nothing else: no markdown fences, no preamble.`;
+
 
 const LEVEL = {
   easy: "CEFR B1 level: shorter sentences, high-frequency vocabulary, answers stated fairly explicitly, distractors clearly wrong on careful reading.",
@@ -44,6 +50,24 @@ const QSCHEMA = `{
 const QRULES = `Rules for questions: exactly 4 choices; vary the position of the correct answer; every distractor must be
 wrong for a reason you can state; never make two choices both defensible; why_wrong_ja and trap arrays have
 exactly 4 entries aligned with choices.`;
+
+// 学習者が苦手な設問タイプ・文法項目を多めに出す（端末側の正答率から選んだもの）
+const focus = (i) =>
+  Array.isArray(i.focus) && i.focus.length
+    ? `\nThe learner is weak at these question types / grammar points (written exactly as the Japanese tag names used in "tag"): ${i.focus
+        .slice(0, 3)
+        .join(", ")}. Make about half of the questions target them where the format allows, and keep the tag field accurate.`
+    : "";
+
+// 書き直し・答え直しの評価
+const rw = (i) =>
+  i.previous
+    ? `\nThis is a REWRITE / SECOND ATTEMPT of the same task. The earlier attempt was estimated at band ${
+        i.previous.band
+      }; earlier feedback: ${(i.previous.improvements || []).join(" / ")}. Score this attempt independently and honestly
+(do not raise the score just because it is a rewrite), and ADD a field "rewrite_ja" to the JSON: 2-3 Japanese sentences
+on which earlier problems were fixed and which remain.`
+    : "";
 
 const TASKS = {
   // ---- generation -------------------------------------------------
@@ -88,6 +112,24 @@ JSON shape:
 }`,
   },
 
+  gen_interview_set: {
+    max_tokens: 1200,
+    prompt: (i) => `${COMMON}
+
+Create one "Take an Interview" set in the new TOEFL format: an interviewer asks 4 questions in a row about
+ONE theme (${i.topic || "a university research study on student life"}). The learner answers each in about 45
+seconds without preparation time. Order the questions: (1) the learner's own experience, (2) a preference with
+a reason, (3) an opinion on a related issue, (4) a broader question about society or the future.${focus(i)}
+
+JSON shape:
+{
+ "theme_en": "one sentence the interviewer says to introduce the theme",
+ "theme_ja": "テーマの説明（日本語1文）",
+ "questions": [{"question_en": "question", "question_ja": "日本語訳"}, ...4 items],
+ "useful_phrases": [{"en":"phrase","ja":"意味"}, ...4 items]
+}`,
+  },
+
   // ---- evaluation -------------------------------------------------
   eval_writing: {
     max_tokens: 2000,
@@ -101,7 +143,7 @@ LEARNER'S E-MAIL:
 """
 ${i.answer || ""}
 """
-Word count: ${i.words || 0}. Time used: ${i.seconds || 0} seconds.
+Word count: ${i.words || 0}. Time used: ${i.seconds || 0} seconds.${rw(i)}
 
 JSON shape (all Japanese fields in natural Japanese):
 {
@@ -135,7 +177,7 @@ ${i.transcript || ""}
 """
 Spoken for ${i.seconds || 0} seconds, ${i.words || 0} words
 (speaking rate ${i.seconds ? Math.round(((i.words || 0) / i.seconds) * 60) : 0} words per minute).
-Comment on whether the length and rate suit a 45-60 second answer.
+Comment on whether the length and rate suit an answer of about ${i.limit || 60} seconds.${rw(i)}
 
 JSON shape:
 {
@@ -151,7 +193,7 @@ JSON shape:
  "good_points_ja": ["良かった点1", "良かった点2"],
  "improvements_ja": ["改善点1", "改善点2"],
  "paraphrases": [{"from":"学習者の表現","to":"B2らしい言い換え","ja":"ニュアンス"}, ...3],
- "model_answer_en": "模範回答の例（45-60秒で話せる長さ、英語）",
+ "model_answer_en": "模範回答の例（${i.limit || 60}秒で話せる長さ、英語）",
  "model_answer_ja": "模範回答の日本語訳",
  "unknown_words": [{"en":"覚えたい語句","ja":"意味"}, ...up to 5]
 }`,
@@ -183,7 +225,7 @@ Create one "Read in Daily Life" task. Difficulty: ${lv(i)}
 Text type: ${i.topic || "a notice posted on campus"}.
 The text is a realistic non-academic text from university life, 90-150 words, with line breaks where the
 real thing would have them (headings, sender, times, bullet-like lines). Then write 3 questions.
-${QRULES}
+${QRULES}${focus(i)}
 
 JSON shape:
 {"genre_ja": "掲示／メール／SNS投稿 など", "title": "short English title", "text": "the text with \\n line breaks",
@@ -200,7 +242,7 @@ Topic: ${i.topic || "an academic subject"}.
 Write an expository passage of about 200 words in 2-3 paragraphs (separate paragraphs with \\n\\n), like an
 introductory university textbook. Then write 5 questions covering: the main idea, two details, one
 vocabulary-in-context question, and one inference or purpose question.
-${QRULES}
+${QRULES}${focus(i)}
 
 JSON shape:
 {"title": "English title", "passage": "the passage",
@@ -238,7 +280,7 @@ Setting: ${i.topic || "two students talking on campus"}.
 Write a natural everyday conversation between a woman (F) and a man (M), 8-12 turns, about 130-170 words in
 total, with natural spoken features (hesitations like "Well," "Actually," short reactions). Then 2 questions
 (one about the main topic or problem, one about a detail, intention, or what a speaker will do next).
-${QRULES}
+${QRULES}${focus(i)}
 
 JSON shape:
 {"setting_ja": "場面の説明（日本語1文）",
@@ -255,7 +297,7 @@ Create one "Listen to an Announcement" task. Difficulty: ${lv(i)}
 Context: ${i.topic || "a professor making an announcement at the start of class"}.
 One speaker, 90-130 words, spoken style. Then 2 questions (purpose of the announcement, and a detail or
 what listeners must do).
-${QRULES}
+${QRULES}${focus(i)}
 
 JSON shape:
 {"speaker": "F or M", "context_ja": "場面（日本語1文）", "text": "the announcement",
@@ -272,7 +314,7 @@ Topic: ${i.topic || "an academic subject"}.
 A lecture excerpt by one professor, 180-240 words, spoken style (signposting such as "Now, let's turn to...",
 "So why does this matter?", a concrete example). Then 4 questions: main topic, two details, and one about the
 purpose of something the professor says or an inference.
-${QRULES}
+${QRULES}${focus(i)}
 
 JSON shape:
 {"speaker": "F or M", "title": "English title", "text": "the talk",
@@ -316,7 +358,7 @@ assembled by the learner from word chunks.
 - "distractor": one extra chunk that looks tempting but makes the sentence ungrammatical if used
   (e.g. "does" inside an embedded question, a wrong preposition, a wrong verb form), or "" for none.
 Target grammar a B2 learner must control: embedded questions, relative clauses, passive voice, perfect tenses,
-conditionals, comparatives, infinitives and gerunds, phrasal verbs. Use a different grammar point per item.
+conditionals, comparatives, infinitives and gerunds, phrasal verbs. Use a different grammar point per item.${focus(i)}
 
 JSON shape:
 {"items": [{
@@ -367,7 +409,7 @@ LEARNER'S POST:
 """
 ${i.answer || ""}
 """
-Word count: ${i.words || 0}. Time used: ${i.seconds || 0} seconds.
+Word count: ${i.words || 0}. Time used: ${i.seconds || 0} seconds.${rw(i)}
 Judge especially: a clear position that answers the professor's question; a reason supported by a specific
 example or explanation; whether it engages with the classmates' ideas AND adds a new point instead of
 repeating them; coherence; grammar; range and precision of vocabulary; length (about 100 words or more).
@@ -386,6 +428,210 @@ JSON shape (all Japanese fields in natural Japanese):
  "corrections": [{"before":"原文の該当箇所","after":"直した形","why_ja":"直した理由"}, ...up to 6],
  "revised_en": "添削後の全文（英語）",
  "paraphrases": [{"from":"学習者の表現","to":"B2らしい言い換え","ja":"ニュアンスの違い"}, ...3],
+ "unknown_words": [{"en":"覚えたい語句","ja":"意味"}, ...up to 5]
+}`,
+  },
+
+  // ==================================================================
+  // IELTS Academic
+  // ==================================================================
+  gen_i_read_passage: {
+    max_tokens: 1800,
+    prompt: (i) => `${IELTS_COMMON}
+
+Write one IELTS Academic Reading passage. Topic: ${i.topic || "an academic subject"}.
+About 650-750 words in 6 paragraphs (separate paragraphs with \\n\\n), in the style of a magazine or journal
+article for a general educated audience: specific details, dates, researchers' views, contrasts and some
+hedged claims (the kind of content that supports TRUE / FALSE / NOT GIVEN questions). Do not write questions.
+
+JSON shape:
+{"title": "English title", "passage": "the passage", "summary_ja": "要旨（日本語1-2文）"}`,
+  },
+
+  gen_i_read_qs: {
+    max_tokens: 2600,
+    prompt: (i) => `${IELTS_COMMON}
+
+Write 13 IELTS Academic Reading questions for the passage below, in the order the information appears within
+each group.
+- 5 items of type "tfng": a statement; answer is "TRUE", "FALSE" or "NOT GIVEN" (use each at least once).
+- 4 items of type "mcq": 4 choices, one correct.
+- 4 items of type "gap": a sentence with "____" to complete with NO MORE THAN TWO WORDS taken exactly from the
+  passage; "answer" lists the accepted answer(s) (lower case).${focus(i)}
+
+PASSAGE:
+"""
+${String(i.passage || "").slice(0, 7000)}
+"""
+
+JSON shape:
+{"questions": [
+ {"type": "tfng", "q": "statement", "answer": "TRUE", "tag": "TFNG", "explain_ja": "根拠と判断の理由（日本語1-2文）", "evidence": "本文の該当箇所（英語の引用）"},
+ {"type": "mcq", "q": "question", "choices": ["A","B","C","D"], "answer": 0, "tag": "多肢選択", "explain_ja": "...", "evidence": "...",
+  "why_wrong_ja": ["各選択肢がなぜ誤りか。正解の位置は空文字", "", "", ""]},
+ {"type": "gap", "q": "sentence with ____", "answer": ["word"], "tag": "文完成", "explain_ja": "...", "evidence": "..."}
+],
+ "key_words": [{"en": "word", "ja": "意味"}, ...5 items]}`,
+  },
+
+  gen_i_listen: {
+    max_tokens: 2600,
+    prompt: (i) => {
+      const P = {
+        1: `Part 1: a conversation between two people (F and M) in an everyday social context (${i.topic ||
+          "booking or enquiring about a service"}), about 350-420 words. One speaker gives personal details, times, prices
+or addresses, and spells at least one name letter by letter (e.g. "That's B-R-O-W-N").
+Questions: 10 items of type "gap" (form or note completion, ONE WORD AND/OR A NUMBER).`,
+        2: `Part 2: a monologue by one speaker in an everyday social context (${i.topic ||
+          "a guide introducing a local facility"}), about 400-480 words.
+Questions: 5 items of type "mcq" then 5 items of type "gap" (note completion, ONE WORD ONLY).`,
+        3: `Part 3: a conversation between a student and a tutor, or two students (F and M), about an academic assignment
+(${i.topic || "planning a research project"}), about 420-500 words, with opinions, agreement and disagreement.
+Questions: 6 items of type "mcq" then 4 items of type "gap" (NO MORE THAN TWO WORDS).`,
+        4: `Part 4: a lecture by one speaker on an academic subject (${i.topic || "an academic subject"}), about 500-600
+words, with clear signposting.
+Questions: 10 items of type "gap" (note completion, ONE WORD ONLY). The notes follow the order of the lecture.`,
+      }[i.part || 1];
+      return `${IELTS_COMMON}
+
+Create one IELTS Listening section.
+${P}
+Every answer must be heard clearly in the script, in the same order as the questions. For "gap" items the
+answer must be words actually spoken; give accepted variants (e.g. "15" and "fifteen"). Write numbers in the
+script as words so text-to-speech reads them naturally.${focus(i)}
+
+JSON shape:
+{"context_ja": "場面の説明（日本語1文）",
+ "lines": [{"sp": "F or M", "text": "..."}],
+ "limit": "ONE WORD AND/OR A NUMBER など、gap の語数制限（英語）",
+ "questions": [
+  {"type": "gap", "q": "note or form line with ____", "answer": ["accepted", "variant"], "tag": "メモ完成", "explain_ja": "スクリプトのどこで言われたか（日本語）"},
+  {"type": "mcq", "q": "question", "choices": ["A","B","C"], "answer": 0, "tag": "多肢選択", "explain_ja": "...", "why_wrong_ja": ["", "", ""]}
+ ],
+ "key_words": [{"en": "word or phrase", "ja": "意味"}, ...4 items]}`;
+    },
+  },
+
+  gen_i_task1: {
+    max_tokens: 1400,
+    prompt: (i) => `${IELTS_COMMON}
+
+Create one IELTS Academic Writing Task 1 prompt with its data. Chart type: ${i.chart || "bar"}.
+Subject: ${i.topic || "a social or economic statistic"}.
+The data must be realistic, have clear main features (a highest/lowest, a trend, a notable exception) and
+be small enough to describe in 150 words: 3-6 categories (or 5-7 time points for a line chart) and 1-4 series.
+For "pie", use exactly one series whose values add up to 100.
+
+JSON shape:
+{"chart": {"type": "bar | line | pie | table", "title": "chart title", "unit": "e.g. %, million, hours",
+   "x_label": "label of the categories axis", "categories": ["..."],
+   "series": [{"name": "series name", "values": [numbers, one per category]}]},
+ "prompt_en": "The chart below shows ... Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+ "prompt_ja": "日本語訳",
+ "key_features_ja": ["書くべき主な特徴1", "特徴2", "特徴3"],
+ "time_limit_sec": 1200, "min_words": 150,
+ "useful_phrases": [{"en":"phrase","ja":"意味"}, ...4 items]}`,
+  },
+
+  gen_i_task2: {
+    max_tokens: 1000,
+    prompt: (i) => `${IELTS_COMMON}
+
+Create one IELTS Academic Writing Task 2 prompt. Question type: ${i.kind || "agree or disagree"}.
+Topic area: ${i.topic || "education"}. A statement of 1-2 sentences followed by the task instruction, in the
+usual IELTS wording, ending with "Give reasons for your answer and include any relevant examples from your own
+knowledge or experience."
+
+JSON shape:
+{"prompt_en": "the full prompt", "prompt_ja": "日本語訳", "type_ja": "設問のタイプ（賛否／両論／問題と解決策 など）",
+ "plan_ja": "構成の例（序論→本論2段落→結論）を日本語2-3文で",
+ "time_limit_sec": 2400, "min_words": 250,
+ "useful_phrases": [{"en":"phrase","ja":"意味"}, ...4 items]}`,
+  },
+
+  eval_i_writing: {
+    max_tokens: 2400,
+    prompt: (i) => `${IELTS_COMMON}
+
+Evaluate this IELTS Academic Writing Task ${i.task || 2} response with the four public band descriptors
+(Task ${i.task == 1 ? "Achievement" : "Response"}, Coherence and Cohesion, Lexical Resource, Grammatical Range and Accuracy).
+
+PROMPT: ${i.prompt || ""}
+${i.chart ? `DATA SHOWN TO THE CANDIDATE: ${JSON.stringify(i.chart).slice(0, 2500)}` : ""}
+RESPONSE:
+"""
+${i.answer || ""}
+"""
+Word count: ${i.words || 0} (minimum ${i.task == 1 ? 150 : 250}). Time used: ${i.seconds || 0} seconds.
+${i.task == 1 ? "Check: an overview of the main features, accurate data, comparisons, no opinion." : "Check: a clear position throughout, developed and supported ideas, paragraphing."}${rw(i)}
+
+JSON shape (all Japanese fields in natural Japanese, bands 0-9 in steps of 0.5):
+{
+ "band": 6.0,
+ "band_note_ja": "公式採点とは一致しない概算である旨を一文で",
+ "scores": {"task": 6, "coherence": 6, "lexical": 6, "grammar": 5.5},
+ "task_response_ja": "課題の達成度の講評（2-3文）",
+ "organization_ja": "一貫性とつながりの講評（2-3文）",
+ "vocabulary_ja": "語彙の講評（2-3文）",
+ "grammar_ja": "文法の講評（2-3文）",
+ "good_points_ja": ["良かった点1", "良かった点2"],
+ "improvements_ja": ["次のバンドに上がるための改善点1", "改善点2"],
+ "corrections": [{"before":"原文の該当箇所","after":"直した形","why_ja":"直した理由"}, ...up to 6],
+ "revised_en": "添削後の全文（英語）",
+ "paraphrases": [{"from":"学習者の表現","to":"より高いバンドの言い換え","ja":"ニュアンスの違い"}, ...3],
+ "unknown_words": [{"en":"覚えたい語句","ja":"意味"}, ...up to 5]
+}`,
+  },
+
+  gen_i_speaking: {
+    max_tokens: 1400,
+    prompt: (i) => `${IELTS_COMMON}
+
+Create one IELTS Speaking test.
+Part 1: 4 short questions on a familiar topic (${i.topic1 || "home town, studies or work, daily routine"}).
+Part 2: one cue card "Describe ..." (${i.topic2 || "a person, place, object or experience"}) with 4 bullet prompts,
+the last starting "and explain ...".
+Part 3: 4 discussion questions that develop the Part 2 theme into abstract, societal issues.
+
+JSON shape:
+{"part1": {"topic": "topic", "questions": [{"en": "question", "ja": "日本語訳"}, ...4]},
+ "part2": {"cue_en": "Describe ...", "ja": "日本語訳", "points": ["You should say: what ...", "when ...", "why ...", "and explain ..."]},
+ "part3": {"questions": [{"en": "question", "ja": "日本語訳"}, ...4]},
+ "useful_phrases": [{"en":"phrase","ja":"意味"}, ...4 items]}`,
+  },
+
+  eval_i_speaking: {
+    max_tokens: 2400,
+    prompt: (i) => `${IELTS_COMMON}
+
+Evaluate this IELTS Speaking performance. The input is a TRANSCRIPT, so you must NOT judge Pronunciation
+(or intonation, stress, pausing) - say so in "not_assessed_ja" and give no pronunciation score. Assess Fluency and
+Coherence only from what a transcript shows (length, development, linking, self-correction, fillers).
+
+${(i.items || [])
+  .map(
+    (x, k) => `[${k + 1}] Part ${x.part} - QUESTION: ${x.question}
+TRANSCRIPT (${x.seconds || 0} s, ${x.words || 0} words): """${x.transcript || ""}"""`
+  )
+  .join("\n")
+  .slice(0, 9000)}${rw(i)}
+
+JSON shape (bands 0-9 in steps of 0.5):
+{
+ "band": 6.0,
+ "band_note_ja": "公式採点とは一致しない概算で、発音を含まない旨を一文で",
+ "scores": {"fluency": 6, "lexical": 6, "grammar": 5.5},
+ "content_ja": "各パートの答えの内容・展開の講評（2-3文）",
+ "organization_ja": "流暢さと一貫性（つなぎ言葉・話の展開）の講評（2-3文）",
+ "vocabulary_ja": "語彙の講評（2-3文）",
+ "grammar_ja": "文法の講評（2-3文）",
+ "delivery_ja": "長さ・話す速さのコメント（Part 2 が2分近く話せているか等、2文）",
+ "not_assessed_ja": "発音は文字起こしから判定できないため評価していない旨",
+ "good_points_ja": ["良かった点1", "良かった点2"],
+ "improvements_ja": ["次のバンドに上がるための改善点1", "改善点2"],
+ "paraphrases": [{"from":"学習者の表現","to":"より高いバンドの言い換え","ja":"ニュアンス"}, ...3],
+ "model_answer_en": "Part 2（なければ最初の質問）の模範回答例（英語）",
+ "model_answer_ja": "模範回答の日本語訳",
  "unknown_words": [{"en":"覚えたい語句","ja":"意味"}, ...up to 5]
 }`,
   },
