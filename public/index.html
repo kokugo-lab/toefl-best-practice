@@ -796,9 +796,9 @@ function arrived(el, label, goto){
   if(v && v.classList.contains("on") && el.offsetParent!==null) window.scrollTo(0, el.offsetTop-10);   // 同じ画面でも別のタブを開いていればお知らせ
   else toast(`${label}ができました`, goto);
 }
-function toast(msg, goto, undo){
+function toast(msg, goto, undo, undoLabel){
   const t=document.createElement("div"); t.className="toast";
-  t.innerHTML=`<span>${esc(msg)}</span>${goto?`<button data-goto="${goto}">開く</button>`:""}${undo?`<button class="undo">元に戻す</button>`:""}`;
+  t.innerHTML=`<span>${esc(msg)}</span>${goto?`<button data-goto="${goto}">開く</button>`:""}${undo?`<button class="undo">${esc(undoLabel||"元に戻す")}</button>`:""}`;
   if(undo) t.querySelector(".undo").addEventListener("click", undo);
   t.addEventListener("click", ()=>t.remove());
   document.body.appendChild(t); setTimeout(()=>t.remove(), 10000);
@@ -3447,21 +3447,112 @@ document.addEventListener("change", e=>{ const t=e.target; if(t.dataset && t.dat
 /* ================= 鳥のひとこと・世界の名言 ================= */
 // 名言は出典がはっきりしているものだけ（誤って広まった「〜の言葉」は入れない）。
 const QUOTES=[
+  // ---- 東洋の古典
   ["A journey of a thousand miles begins with a single step.","千里の道も一歩から。","老子『道徳経』"],
   ["Is it not a pleasure to learn and to practice what you have learned?","学びて時に之を習う、亦た説ばしからずや。","孔子『論語』"],
+  ["To make a mistake and not correct it is the real mistake.","過ちて改めざる、是を過ちと謂う。","孔子『論語』"],
+  ["Those who know it are not equal to those who love it; those who love it are not equal to those who delight in it.","之を知る者は之を好む者に如かず、之を好む者は之を楽しむ者に如かず。","孔子『論語』"],
+  ["Review the old, and you will learn the new.","故きを温ねて新しきを知る。","孔子『論語』"],
+  ["Learning without thinking is useless; thinking without learning is dangerous.","学びて思わざれば則ち罔し、思いて学ばざれば則ち殆し。","孔子『論語』"],
+  ["Blue comes from indigo, yet it is bluer than indigo.","青は藍より出でて藍より青し。","荀子『勧学』"],
+  ["Pile up earth, and it becomes a mountain.","土を積みて山を成す。","荀子『勧学』"],
+  ["Where there is a will, the deed is done in the end.","志有る者は事竟に成る。","『後漢書』"],
+  ["Hearing a hundred times is not as good as seeing once.","百聞は一見に如かず。","『漢書』"],
+  ["Who knows whether a misfortune is a blessing?","人間万事塞翁が馬。","『淮南子』"],
+  ["Live till old, learn till old.","活到老、学到老（生きている限り学び続ける）。","中国のことわざ"],
+  // ---- 西洋の古典・哲学
   ["While we teach, we learn.","人は教えることで学ぶ。","セネカ『倫理書簡集』"],
-  ["The limits of my language mean the limits of my world.","私の言語の限界が、私の世界の限界を意味する。","ウィトゲンシュタイン『論理哲学論考』"],
+  ["It is not because things are difficult that we do not dare; it is because we do not dare that they are difficult.","難しいからやらないのではない。やらないから難しいのだ。","セネカ『倫理書簡集』"],
+  ["The unexamined life is not worth living.","吟味されない人生は生きるに値しない。","ソクラテス（プラトン『ソクラテスの弁明』）"],
+  ["The things we have to learn before we can do them, we learn by doing them.","やり方を学ばなければならないことは、やってみることで学ぶ。","アリストテレス『ニコマコス倫理学』"],
+  ["One swallow does not make a summer.","ツバメ一羽で夏にはならない（一度で決まるものではない）。","アリストテレス『ニコマコス倫理学』"],
+  ["Fortune favors the bold.","幸運は勇気ある者に味方する。","ウェルギリウス『アエネーイス』"],
+  ["Make haste slowly.","ゆっくり急げ。","アウグストゥス（スエトニウス『皇帝伝』）"],
+  ["Through hardships to the stars.","困難を越えて星へ。","ラテン語の格言"],
+  ["Repetition is the mother of learning.","くり返しは学びの母。","ラテン語の格言"],
+  ["There is no royal road to learning.","学問に王道なし。","ユークリッドの言葉として伝わる格言"],
   ["Knowledge itself is power.","知識そのものが力である。","フランシス・ベーコン"],
+  ["If I have seen further, it is by standing on the shoulders of giants.","私が遠くを見渡せたのは、巨人の肩に乗っていたからだ。","アイザック・ニュートン（フックへの手紙）"],
+  ["The limits of my language mean the limits of my world.","私の言語の限界が、私の世界の限界を意味する。","ウィトゲンシュタイン『論理哲学論考』"],
+  ["Man errs as long as he strives.","人は努力する限り迷うものだ。","ゲーテ『ファウスト』"],
+  // ---- 文学
+  ["Our doubts are traitors, and make us lose the good we oft might win by fearing to attempt.","疑いは裏切り者だ。やってみるのを恐れさせ、手に入ったはずのものを失わせる。","シェイクスピア『尺には尺を』"],
+  ["Our remedies oft in ourselves do lie.","救いの手立ては、たいてい自分の中にある。","シェイクスピア『終わりよければすべてよし』"],
+  ["The fault is not in our stars, but in ourselves.","運命が悪いのではない、私たち自身にかかっている。","シェイクスピア『ジュリアス・シーザー』"],
+  ["This above all: to thine own self be true.","何よりも、自分自身に正直であれ。","シェイクスピア『ハムレット』"],
+  ["To err is human; to forgive, divine.","過つは人の常、許すは神の業。","アレキサンダー・ポープ『批評論』"],
+  ["A little learning is a dangerous thing.","生兵法は大けがのもと（浅い学びは危うい）。","アレキサンダー・ポープ『批評論』"],
+  ["Trust thyself.","自分を信じよ。","エマソン『自己信頼』"],
+  ["If one advances confidently in the direction of his dreams, he will meet with a success unexpected in common hours.","自信をもって夢の方向へ進めば、思いがけない成功に出会う。","ソロー『森の生活』"],
+  ["I took the one less traveled by, and that has made all the difference.","私は人の通らない道を選んだ。それがすべてを変えた。","ロバート・フロスト「選ばなかった道」"],
+  ["'Hope' is the thing with feathers.","「希望」は羽をもつもの。","エミリー・ディキンソン"],
+  ["Still I rise.","それでも私は立ち上がる。","マヤ・アンジェロウ「それでも私は立ち上がる」"],
+  ["Sometimes I've believed as many as six impossible things before breakfast.","朝ごはんの前に、ありえないことを6つも信じたことがあるわ。","ルイス・キャロル『鏡の国のアリス』"],
+  ["What is essential is invisible to the eye.","大切なものは目に見えない。","サン＝テグジュペリ『星の王子さま』"],
+  ["How wonderful it is that nobody need wait a single moment before starting to improve the world.","世界をよくし始めるのに、誰も一瞬たりとも待つ必要がないのは、なんてすばらしいことだろう。","アンネ・フランク『アンネの日記』"],
+  ["Optimism is the faith that leads to achievement.","楽観主義は、達成へと導く信念である。","ヘレン・ケラー『楽観主義』"],
+  ["Unbeaten by the rain, unbeaten by the wind.","雨ニモマケズ、風ニモマケズ。","宮沢賢治「雨ニモマケズ」"],
+  ["The pen is mightier than the sword.","ペンは剣よりも強し。","ブルワー＝リットン『リシュリュー』"],
+  ["Well done is better than well said.","うまく言うより、うまくやるほうがいい。","ベンジャミン・フランクリン『貧しいリチャードの暦』"],
+  ["Lost time is never found again.","失った時間は二度と見つからない。","ベンジャミン・フランクリン『貧しいリチャードの暦』"],
+  ["Early to bed and early to rise makes a man healthy, wealthy, and wise.","早寝早起きは、人を健康に、豊かに、賢くする。","ベンジャミン・フランクリン『貧しいリチャードの暦』"],
+  ["Time is money.","時は金なり。","ベンジャミン・フランクリン『若き商人への手紙』"],
+  ["If you can do it, it will be done; if you don't, it won't. That is true of everything.","為せば成る、為さねば成らぬ何事も。","上杉鷹山"],
+  // ---- スピーチ・人物
   ["Stay hungry, stay foolish.","ハングリーであれ、愚かであれ。","スティーブ・ジョブズ（スタンフォード大学卒業式の講演）"],
+  ["The only way to do great work is to love what you do.","すばらしい仕事をする唯一の方法は、自分のすることを愛することだ。","スティーブ・ジョブズ（スタンフォード大学卒業式の講演）"],
+  ["We choose to go to the Moon not because it is easy, but because it is hard.","私たちが月へ行くと決めたのは、それが簡単だからではなく、難しいからだ。","ジョン・F・ケネディ（ライス大学での演説）"],
+  ["Never give in, never give in, never, never, never.","決してあきらめるな、決して、決して、決して。","ウィンストン・チャーチル（ハロー校での演説）"],
+  ["One child, one teacher, one book and one pen can change the world.","1人の子ども、1人の先生、1冊の本、そして1本のペンが、世界を変えられる。","マララ・ユスフザイ（国連での演説）"],
+  ["It is impossible to live without failing at something.","何かに失敗せずに生きることはできない。","J・K・ローリング（ハーバード大学卒業式の講演）"],
+  ["I've failed over and over and over again in my life. And that is why I succeed.","私は人生で何度も何度も失敗してきた。だから成功できるのだ。","マイケル・ジョーダン（ナイキのCM）"],
+  ["Float like a butterfly, sting like a bee.","蝶のように舞い、蜂のように刺す。","モハメド・アリ"],
+  // ---- 映画・物語
   ["Do. Or do not. There is no try.","やるか、やらないかだ。「試し」などない。","ヨーダ（『スター・ウォーズ 帝国の逆襲』）"],
+  ["All we have to decide is what to do with the time that is given us.","私たちが決めるべきなのは、与えられた時間をどう使うかだけだ。","ガンダルフ（『指輪物語』）"],
+  ["It does not do to dwell on dreams and forget to live.","夢にふけって生きることを忘れてはいけない。","ダンブルドア（『ハリー・ポッターと賢者の石』）"],
+  ["Happiness can be found even in the darkest of times, if one only remembers to turn on the light.","どんなに暗いときでも、明かりをつけることさえ忘れなければ、幸せは見つかる。","ダンブルドア（映画『ハリー・ポッターとアズカバンの囚人』）"],
+  ["Just keep swimming.","とにかく泳ぎ続けて。","ドリー（『ファインディング・ニモ』）"],
+  ["To infinity and beyond!","無限の彼方へ、さあ行くぞ！","バズ・ライトイヤー（『トイ・ストーリー』）"],
+  ["Anyone can cook.","誰でも料理はできる。","グストー（『レミーのおいしいレストラン』）"],
+  ["Yesterday is history, tomorrow is a mystery, but today is a gift.","昨日は過去、明日は謎、でも今日は贈り物。","ウーグウェイ導師（『カンフー・パンダ』）"],
+  ["Carpe diem. Seize the day.","カルペ・ディエム。今日という日をつかめ。","キーティング先生（『いまを生きる』）"],
+  ["It ain't about how hard you hit. It's about how hard you can get hit and keep moving forward.","どれだけ強く打てるかじゃない。どれだけ打たれても前に進み続けられるかだ。","ロッキー（『ロッキー・ザ・ファイナル』）"],
   ["Slow and steady wins the race.","ゆっくりでも着実な者が勝つ。","イソップ寓話「ウサギとカメ」"],
+  ["Little by little does the trick.","少しずつが、うまくいくこつ。","イソップ寓話「カラスと水差し」"],
+  // ---- 世界のことわざ
+  ["Little by little, the bird builds its nest.","少しずつ、鳥は巣を作る。","フランスのことわざ"],
+  ["He who goes slowly goes safely and goes far.","ゆっくり行く者は、無事に遠くまで行ける。","イタリアのことわざ"],
+  ["Practice makes the master.","練習が名人をつくる。","ドイツのことわざ"],
   ["Little by little, one goes far.","少しずつ進めば、遠くまで行ける。","スペインのことわざ"],
   ["Rome was not built in a day.","ローマは一日にして成らず。","ヨーロッパのことわざ"],
   ["Practice makes perfect.","練習が完璧をつくる。","英語のことわざ"],
   ["Where there's a will, there's a way.","意志あるところに道は開ける。","英語のことわざ"],
-  ["Fall seven times, stand up eight.","七転び八起き。","日本のことわざ"],
   ["Well begun is half done.","始めよければ半ば成功。","英語のことわざ"],
   ["Every day is a new beginning.","毎日が新しい始まり。","英語のことわざ"],
+  ["The early bird catches the worm.","早起きの鳥は虫を捕まえる。","英語のことわざ"],
+  ["A bird in the hand is worth two in the bush.","手の中の1羽は、やぶの中の2羽に値する。","英語のことわざ"],
+  ["Actions speak louder than words.","行動は言葉よりも雄弁だ。","英語のことわざ"],
+  ["No pain, no gain.","苦労なくして得るものなし。","英語のことわざ"],
+  ["Every cloud has a silver lining.","どんな雲にも銀の裏地がある（悪いことにもよい面がある）。","英語のことわざ"],
+  ["Strike while the iron is hot.","鉄は熱いうちに打て。","英語のことわざ"],
+  ["Better late than never.","遅くてもやらないよりまし。","英語のことわざ"],
+  ["Nothing ventured, nothing gained.","思い切ってやらなければ何も得られない。","英語のことわざ"],
+  ["Necessity is the mother of invention.","必要は発明の母。","英語のことわざ"],
+  ["Hope for the best, prepare for the worst.","最善を望み、最悪に備えよ。","英語のことわざ"],
+  ["Little strokes fell great oaks.","小さな一打ちでも、大きなカシの木を倒す。","ベンジャミン・フランクリン『貧しいリチャードの暦』"],
+  ["Fall seven times, stand up eight.","七転び八起き。","日本のことわざ"],
+  ["Persistence is power.","継続は力なり。","日本のことわざ"],
+  ["Three years on a cold stone will warm it.","石の上にも三年。","日本のことわざ"],
+  ["Even dust, when piled up, becomes a mountain.","塵も積もれば山となる。","日本のことわざ"],
+  ["When in a hurry, take the long way round.","急がば回れ。","日本のことわざ"],
+  ["Failure is the foundation of success.","失敗は成功のもと。","日本のことわざ"],
+  ["What one likes, one does well.","好きこそ物の上手なれ。","日本のことわざ"],
+  ["Getting used to it is better than being taught.","習うより慣れよ。","日本のことわざ"],
+  ["After the rain, the ground hardens.","雨降って地固まる。","日本のことわざ"],
+  ["Doing it is easier than worrying about it.","案ずるより産むが易し。","日本のことわざ"],
+  ["Even a monkey falls from a tree.","猿も木から落ちる（誰でも間違える）。","日本のことわざ"],
+  ["Haste makes waste.","急いては事を仕損じる。","英語のことわざ"],
 ];
 const quoteFor=(seed)=>{ let h=0; String(seed).split("").forEach(c=>{ h=(h*31+c.charCodeAt(0))>>>0; }); return QUOTES[h%QUOTES.length]; };
 function cheerOf(acc){
@@ -3520,6 +3611,20 @@ bRender(); pRender();   // 起動時の描画はすべての関数を定義し�
 iRender("ireading"); iRender("ilistening"); cwdRender();
 go(DB.settings.exam ? "home" : "pick");
 stockBadges(); stockWarm();
+// 新しい版が公開されていたら知らせる（開いたとき・アプリに戻ったとき）。画面の script を比べるので版番号の管理は要らない
+const hashStr=(t)=>{ let h=0; for(let i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))>>>0; return h; };
+const MY_HASH=hashStr((document.querySelector("script")||{}).textContent||"");
+let UPD_SHOWN=false;
+async function checkUpdate(){
+  if(UPD_SHOWN) return;
+  try{
+    const html=await (await fetch(location.pathname+"?v="+Date.now(), {cache:"no-store"})).text();
+    const m=html.match(/<script>([\s\S]*?)<\/script>/);
+    if(m && hashStr(m[1])!==MY_HASH){ UPD_SHOWN=true; toast("🐦 新しい版があります", null, ()=>location.reload(), "更新する"); }
+  }catch(e){}
+}
+setTimeout(checkUpdate, 5000);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") checkUpdate(); });
 </script>
 </body>
 </html>
