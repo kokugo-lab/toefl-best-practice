@@ -117,6 +117,17 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  .xpbox{white-space:normal}
+  .xs{padding:4px 0}
+  .xs .ja, .dl .ja, .q .ja{font-size:.82rem; color:var(--sub); line-height:1.6; margin:1px 0 2px; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
+  .xs.hit .en, .dl.hit{color:#c62828}
+  :root[data-theme="dark"] .xs.hit .en, :root[data-theme="dark"] .dl.hit{color:#ff8a80}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .xs.hit .en, :root:not([data-theme="light"]) .dl.hit{color:#ff8a80} }
+  .xs mark, .dl mark{background:none; color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px}
+  .xpara{height:10px}
+  .qref{display:inline-block; font-size:.66rem; font-weight:700; color:#fff; background:#c62828; border-radius:6px; padding:0 6px; margin-right:5px; vertical-align:2px; font-family:-apple-system,sans-serif}
+  .think{margin-top:8px; padding:8px 12px; border-left:3px solid #c62828; background:var(--bg); border-radius:0 8px 8px 0; font-size:.88rem}
+  .think .mh{font-weight:650; font-size:.78rem; color:var(--sub)}
   .cwrow{padding:8px 0; border-bottom:1px dashed var(--line); font-size:.9rem}
   .cwrow.ng strong{color:var(--warn)} .cwrow.ok strong{color:var(--accent)}
   .more{margin-top:8px; padding:10px 12px; border:1px dashed var(--line); border-radius:10px; background:var(--card); font-size:.88rem}
@@ -607,6 +618,7 @@ const $ = (s)=>document.querySelector(s);
 const esc = (s)=>String(s==null?"":s).replace(/[&<>"]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const words = (t)=>(String(t||"").trim().match(/[A-Za-z0-9'’\-]+/g)||[]).length;
 const SEGS = {};   // タブ切り替え（segSwitch が登録する）
+const XPX={}, CWX={}, MOREX={};   // 解説を作っている途中のもの（保存しない。起動時の描画より前に用意する）
 const mmss = (s)=>`${Math.floor(Math.max(0,s)/60)}:${String(Math.max(0,s)%60).padStart(2,"0")}`;
 
 const IVIEW={reading:"ireading", listening:"ilistening", writing:"iwriting", speaking:"ispeaking"};
@@ -879,6 +891,7 @@ function mcHTML(sec, pi, qi, q, chosen, o={}){
       <div>${esc(q.explain_ja||"")}</div>
       ${(pp.from&&pp.to)?`<div class="para"><span class="muted">言い換え</span>　<span class="en">${esc(pp.from)}</span> → <strong class="en">${esc(pp.to)}</strong></div>`:""}
       ${!ok?`<div class="corr"><strong>間違えた原因</strong>${q.trap[chosen]?`【${esc(q.trap[chosen])}】`:""}<br>${esc(q.why_wrong_ja[chosen]||"")}</div>`:""}
+      ${sec!=="cwd"&&DB.cur[sec]?xpThinkHTML(curMod(DB.cur[sec]).parts[pi], qi, (k)=>k+1):""}
       ${sec!=="cwd"?moreHTML(`rl|${sec}|${pi}|${qi}`):""}
     </div>`;
   }
@@ -917,12 +930,14 @@ function partHTML(sec, mod, pi){
     const text = p.type==="daily" ? p.data.text : p.data.passage;
     const allDone = p.qs.every((q,qi)=>mod.ans[pi+"-"+qi]!=null);
     inner = `${p.data.genre_ja?`<p class="tiny">${esc(p.data.genre_ja)}</p>`:""}
-      <div class="passage en"><strong>${esc(p.data.title||"")}</strong>\n\n${esc(text||"")}</div>
+      ${p.xp ? xpPassageHTML(`rl|${sec}|${pi}`, p, p.data.title, (k)=>k+1) : `<div class="passage en"><strong>${esc(p.data.title||"")}</strong>\n\n${esc(text||"")}</div>`}
+      ${allDone?xpStatusHTML(`rl|${sec}|${pi}`, p, "全文訳"):""}
       ${p.qs.map((q,qi)=>mcHTML(sec,pi,qi,q,mod.ans[pi+"-"+qi],{num:qi+1})).join("")}
       ${allDone?kwHTML(p.data.key_words):""}`;
   }
   else if(p.type==="response"){
     inner = `<p class="tiny">短い発話を聞き、最も自然な応答を選びます。発話の文字は表示されません。</p>` +
+      (p.qs.every((q,qi)=>mod.ans[pi+"-"+qi]!=null) ? xpStatusHTML(`rl|${sec}|${pi}`, p, "発話の訳") : "") +
       p.qs.map((q,qi)=>{
         const k=pi+"-"+qi, st=p.play[qi], chosen=mod.ans[k];
         const playing = PLAYING[sec]===`${pi}|${qi}`;
@@ -932,7 +947,7 @@ function partHTML(sec, mod, pi){
         else head += `<span class="muted tiny">再生済み</span>`;
         head += `</div>`;
         let tail="";
-        if(chosen!=null) tail = drillScriptHTML(`${sec}-${pi}-${qi}`, [{sp:q.speaker, text:q.prompt}, {sp:q.speaker==="M"?"F":"M", text:q.choices[q.answer]}]);
+        if(chosen!=null) tail = drillScriptHTML(`${sec}-${pi}-${qi}`, [{sp:q.speaker, text:q.prompt}, {sp:q.speaker==="M"?"F":"M", text:q.choices[q.answer]}], p.xp, p.xp&&p.xp.off?p.xp.off[qi]:0, (k)=>k+1, true);
         return mcHTML(sec,pi,qi,q,chosen,{head, hide: st!=="done" && chosen==null}) + tail;
       }).join("");
   }
@@ -945,7 +960,7 @@ function partHTML(sec, mod, pi){
     else if(playing) ctl=`<span class="playbtn playing muted"><span class="dot"></span>再生中…　設問は再生後に表示されます</span>`;
     inner = `<p class="tiny">${esc(ctx)}</p>${ctl}
       ${pl.done ? p.qs.map((q,qi)=>mcHTML(sec,pi,qi,q,mod.ans[pi+"-"+qi],{num:qi+1})).join("") : ""}
-      ${allDone ? `<h3>スクリプト</h3><button data-replay="${sec}|${pi}|all">全体を聞き直す</button>${drillScriptHTML(`${sec}-${pi}`, segsOf(p,0))}${kwHTML(p.data.key_words)}` : ""}`;
+      ${allDone ? `<h3>スクリプトと訳</h3>${xpStatusHTML(`rl|${sec}|${pi}`, p, "スクリプトの訳")}<button data-replay="${sec}|${pi}|all">全体を聞き直す</button>${drillScriptHTML(`${sec}-${pi}`, segsOf(p,0), p.xp, 0, (k)=>k+1)}${kwHTML(p.data.key_words)}` : ""}`;
   }
   return `<div class="card" id="${SEC[sec].p}-part-${pi}"><div class="part-h"><h2>${esc(p.title)}</h2></div>${inner}</div>`;
 }
@@ -1160,6 +1175,7 @@ document.addEventListener("click", (e)=>{
     if(!ok) addNotes("miss",[{section:SEC[sec].name, q: q.q || `（音声）${q.prompt}`, chosen:q.choices[+i], correct:q.choices[q.answer], why:q.why_wrong_ja[+i], trap:q.trap[+i]}]);
     if(q.paraphrase && q.paraphrase.from && q.paraphrase.to) addNotes("para",[{from:q.paraphrase.from, to:q.paraphrase.to, ja:`${SEC[sec].name}「${(q.q||"").slice(0,40)}」より`}]);
     save(); rerenderPart(sec,+pi); checkStage(sec);
+    if(p.qs.every((x,j)=>mod.ans[pi+"-"+j]!=null)) xpFetch(`rl|${sec}|${pi}`);
   }
   else if(d.cwcheck){
     const [sec,pi]=d.cwcheck.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi];
@@ -1401,6 +1417,8 @@ function bItemHTML(st, i){
       ${!ok?`<div class="corr"><strong>あなたの答え</strong><br><span class="en">${esc(bSentence(it, pl.map(id=>it.tiles[id].t)))}</span></div>`:""}
       <div style="margin-top:6px">${esc(it.grammar_ja)}</div>
       ${it.distractor?`<div class="tiny" style="margin-top:4px">使わない語：<span class="en">${esc(it.distractor)}</span></div>`:""}
+      ${st.xp?`<div class="tiny">A の訳：${esc(st.xp.ja[st.xp.off[i]]||"")}　／　B の訳：${esc(st.xp.ja[st.xp.off[i]+1]||"")}</div>`:""}
+      ${xpThinkHTML(st, i, (k)=>k+1)}
       ${moreHTML(`b|build|0|${i}`)}
     </div>`;
   }
@@ -1438,7 +1456,7 @@ function bRender(){
   $("#b-reset").style.display = st ? "" : "none";
   $("#b-start").style.display = (st && st.phase!=="done") ? "none" : "";
   if(!st){ body.innerHTML=""; return; }
-  body.innerHTML = (st.phase==="done" ? bSummaryHTML(st) : bBarHTML(st)) +
+  body.innerHTML = (st.phase==="done" ? bSummaryHTML(st)+`<div class="card">${xpStatusHTML("b|build", st, "会話の訳")}</div>` : bBarHTML(st)) +
     `<div class="card">${st.items.map((_,i)=>bItemHTML(st,i)).join("")}</div>`;
   tickTimers();
 }
@@ -1456,6 +1474,7 @@ function bFinish(){
   const tags={}; st.items.forEach((it,i)=>{ (tags[it.tag]=tags[it.tag]||[0,0]); tags[it.tag][1]++; if(st.ok[i]) tags[it.tag][0]++; });
   const scores={}; Object.entries(tags).forEach(([t,[k,m]])=>scores[`W・${t}`]=+(k/m*6).toFixed(1));
   addRecord({kind:"Writing", task:"build", band:st.band, scores});
+  setTimeout(()=>xpFetch("b|build"), 0);
   save(); bRender(); window.scrollTo(0, $("#b-body").offsetTop-10);
 }
 $("#b-start").onclick=bStart;
@@ -1680,7 +1699,6 @@ document.addEventListener("click", (e)=>{
   }
   else if(d.pnew){ DB.cur.repeat=null; PR.i=-1; save(); pStart(); }
 });
-bRender(); pRender();
 
 /* ================= 試験モード（TOEFL／IELTS）・設定 ================= */
 const MODE=()=>DB.settings.exam||"toefl";
@@ -2199,16 +2217,21 @@ function rateBarHTML(){
   const r=drillRate();
   return `<div class="row tiny" style="gap:6px;margin:8px 0">聞き直しの速さ <div class="seg mini">${[0.8,1].map(x=>`<button data-rate="${x}" aria-pressed="${r===x}">${x===1?"1倍":"0.8倍"}</button>`).join("")}</div></div>`;
 }
-function drillScriptHTML(id, segs){
-  return rateBarHTML() + `<div class="script">${splitSegs(segs).map((s,j)=>{ const lid=`${id}-${j}`; LINES[lid]=s; return drillLineHTML(lid); }).join("")}</div>
+function drillScriptHTML(id, segs, xp, off, num, compact){
+  off=off||0;
+  const lines=splitSegs(segs).map((s,j)=>{ const lid=`${id}-${j}`, g=off+j, refs=xp?xpRefs(xp,g):[];
+    LINES[lid]=Object.assign({}, s, xp?{ja:xp.ja[g]||"", refs, badges:xpBadges(refs,num||((k)=>k+1)), mark:xpMark(s.t,xp,refs)}:{}); return drillLineHTML(lid); }).join("");
+  if(compact) return `<div class="script">${lines}</div>`;
+  return rateBarHTML() + `<div class="script">${lines}</div>${xp?`<p class="tiny">赤字の文が、設問（Q番号）の答えを決める箇所です。各文の下が日本語訳です。</p>`:""}
     <p class="tiny">▶ で1文ずつ再生。「書き取り」は文を隠して聞き取った英語を入力、「くり返す」は聞いたあとに声に出して、どれだけ再現できたかを出します。再現率85%未満の文はノートに保存します。</p>`;
 }
 function drillLineHTML(lid){
   const s=LINES[lid], d=DRILL[lid]||{}, hide=d.mode==="dict" && !d.res;
-  let h=`<div class="ln en dl" id="dl-${lid}"><span class="sp ${s.sp}">${s.sp==="M"?"M":"W"}</span>${hide?`<span class="muted">（文を隠しています）</span>`:esc(s.t)}
+  let h=`<div class="ln en dl ${s.refs&&s.refs.length&&!hide?"hit":""}" id="dl-${lid}">${hide?"":s.badges||""}<span class="sp ${s.sp}">${s.sp==="M"?"M":"W"}</span>${hide?`<span class="muted">（文を隠しています）</span>`:(s.mark||esc(s.t))}
     <span class="dbtns"><button class="mini" data-say="${lid}" title="再生">▶</button><button class="mini" data-dict="${lid}">書き取り</button><button class="mini" data-shadow="${lid}">くり返す</button></span>`;
   if(d.mode==="dict" && !d.res) h+=`<div class="drill"><input type="text" data-dictin="${lid}" placeholder="聞き取った英語を入力" value="${esc(d.v||"")}" autocapitalize="off" autocorrect="off" spellcheck="false"><button class="primary mini" data-dictok="${lid}">答え合わせ</button></div>`;
   if(d.mode==="shadow" && !d.res) h+=`<div class="drill">${d.rec?`<span class="muted">録音中…</span><button class="primary mini" data-shstop="${lid}">言い終わった</button>`:`<span class="muted">${esc(d.msg||"再生のあとに録音が始まります")}</span>`}</div>`;
+  if(s.ja && !hide) h+=`<div class="ja">${esc(s.ja)}</div>`;
   if(d.res) h+=`<div class="drill"><span class="tag">${Math.round(d.res.acc*100)}%</span><span class="rp-tok">${pTokHTML(d.res)}</span>${d.res.said?`<div class="tiny" style="width:100%">あなた：${esc(d.res.said)}</div>`:""}</div>`;
   return h+`</div>`;
 }
@@ -2354,6 +2377,7 @@ function iQHTML(sec, st, pi, qi){
       <div>${esc(q.explain_ja)}</div>
       ${q.evidence?`<div class="para"><span class="muted">根拠</span>　<span class="en">${esc(q.evidence)}</span></div>`:""}
       ${!ok && q.type==="mcq" && v!=null && q.why_wrong_ja[v]?`<div class="corr"><strong>間違えた原因</strong><br>${esc(q.why_wrong_ja[v])}</div>`:""}
+      ${xpThinkHTML(p, qi, (k)=>iNum(st,pi,k))}
       ${moreHTML(`il|${sec}|${pi}|${qi}`)}</div>`;
   }
   return `<div class="q" id="iq-${sec}-${pi}-${qi}">${body}${fb}</div>`;
@@ -2388,10 +2412,10 @@ const iCtl2HTML=(sec, st, pi)=> sec==="ilistening" && !st.parts[pi].play.done ? 
 function iPartHTML(sec, st, pi){
   const p=st.parts[pi];
   const head = sec==="ireading"
-    ? `<div class="part-h"><h2>Passage ${pi+1}</h2></div><div class="passage long en"><strong>${esc(p.title)}</strong>\n\n${esc(p.passage)}</div>`
+    ? `<div class="part-h"><h2>Passage ${pi+1}</h2></div>${p.xp ? xpPassageHTML(`il|${sec}|${pi}`, p, p.title, (k)=>iNum(st,pi,k), "long") : `<div class="passage long en"><strong>${esc(p.title)}</strong>\n\n${esc(p.passage)}</div>`}`
     : `<div class="part-h"><h2>${esc(p.title)}</h2></div><p class="tiny">${esc(p.context_ja)}</p>`;
-  const res = p.checked ? `<div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${p.qs.length} 問正解</div>${p.summary_ja?`<div>${esc(p.summary_ja)}</div>`:""}</div>` : "";
-  const after = p.checked ? (sec==="ilistening" ? `<h3>スクリプト</h3>${drillScriptHTML(`${sec}-${pi}`, p.lines)}` : "") + kwHTML(p.key_words) : "";
+  const res = p.checked ? `<div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${p.qs.length} 問正解</div>${p.summary_ja?`<div>${esc(p.summary_ja)}</div>`:""}</div>${xpStatusHTML(`il|${sec}|${pi}`, p)}` : "";
+  const after = p.checked ? (sec==="ilistening" ? `<h3>スクリプトと訳</h3>${drillScriptHTML(`${sec}-${pi}`, p.lines, p.xp, 0, (k)=>iNum(st,pi,k))}` : "") + kwHTML(p.key_words) : "";
   return `<div class="card" id="${ISEC[sec].p}-part-${pi}">${head}<div id="${sec}-ctl-${pi}">${iCtlHTML(sec,st,pi)}</div>${res}
     ${sec==="ilistening"&&!p.play.n&&!p.checked?`<p class="tiny">設問（音声を聞く前に読めます）</p>`:""}
     ${iGroupsHTML(sec,st,pi)}
@@ -2448,6 +2472,7 @@ function iCheck(sec, pi){
     }
   });
   addNotes("word", p.key_words);
+  setTimeout(()=>xpFetch(`il|${sec}|${pi}`), 0);
   if(st.parts.every(x=>x.checked)){
     st.raw=st.parts.reduce((a,x)=>a+x.res.filter(Boolean).length,0);
     st.total=st.parts.reduce((a,x)=>a+x.qs.length,0);
@@ -2763,17 +2788,19 @@ function fitResultHTML(st){
 }
 function fitReviewHTML(st){
   const A=st.ans, mark=(ok)=>ok?`<span class="tag">正解</span>`:`<span class="tag" style="background:var(--warn-soft);color:var(--warn)">不正解</span>`;
-  const tf=st.tf.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.q)}</div><div class="tiny">${mark(A.tf[qi]===q.answer)}正解：${q.choices[q.answer]}　あなた：${A.tf[qi]!=null?q.choices[A.tf[qi]]:"（未解答）"}</div><div class="muted">${esc(q.explain_ja)}</div></div>`).join("");
+  const one=(n)=>n+1;
+  const tf=(st.a.xp?xpPassageHTML("fit|a", st.a, st.a.title, one, "long"):xpStatusHTML("fit|a", st.a, "本文の訳"))+st.tf.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.q)}</div><div class="tiny">${mark(A.tf[qi]===q.answer)}正解：${q.choices[q.answer]}　あなた：${A.tf[qi]!=null?q.choices[A.tf[qi]]:"（未解答）"}</div><div class="muted">${esc(q.explain_ja)}</div>${xpThinkHTML(st.a, qi, one)}</div>`).join("");
   const bs=st.build.map((it,i)=>{ const mine=bSentence(it,(A.placed[i]||[]).map(id=>it.tiles[id].t)), ok=normS(mine)===normS(bSentence(it,it.chunks));
     return `<div class="q"><div class="ex en"><span class="sp">A</span>${esc(it.context)}</div><div class="en"><strong>${esc(bSentence(it,it.chunks))}</strong></div><div class="tiny">${mark(ok)}あなた：<span class="en">${esc(mine)}</span></div><div class="muted">${esc(it.ja)}　${esc(it.grammar_ja)}</div></div>`; }).join("");
-  const gp=st.gaps.map((q,qi)=>`<div class="q en">${qi+1}. ${esc(q.q.replace(/_{2,}/,"［"+q.answer[0]+"］"))}<div class="tiny">${mark(gapOK(A.gap[qi]||"",q.answer))}あなた：${esc(A.gap[qi]||"（空欄）")}</div></div>`).join("");
-  const rs=st.resp.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.prompt||"")}</div><div class="en"><strong>→ ${esc(q.choices[q.answer])}</strong></div><div class="tiny">${mark(A.resp[qi]===q.answer)}あなた：<span class="en">${A.resp[qi]!=null?esc(q.choices[A.resp[qi]]):"（未解答）"}</span></div></div>`).join("");
+  const gp=st.gaps.map((q,qi)=>`<div class="q en">${qi+1}. ${esc(q.q.replace(/_{2,}/,"［"+q.answer[0]+"］"))}<div class="tiny">${mark(gapOK(A.gap[qi]||"",q.answer))}あなた：${esc(A.gap[qi]||"（空欄）")}</div>${xpThinkHTML(st.mono, qi, one)}</div>`).join("");
+  const rh=st.rh||{};
+  const rs=st.resp.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.prompt||"")}</div>${rh.xp?`<div class="ja">${esc(rh.xp.ja[rh.xp.off[qi]]||"")}</div>`:""}<div class="en"><strong>→ ${esc(q.choices[q.answer])}</strong></div>${rh.xp?`<div class="ja">${esc(rh.xp.ja[rh.xp.off[qi]+1]||"")}</div>`:""}<div class="tiny">${mark(A.resp[qi]===q.answer)}あなた：<span class="en">${A.resp[qi]!=null?esc(q.choices[A.resp[qi]]):"（未解答）"}</span></div>${xpThinkHTML(rh, qi, one)}</div>`).join("");
   return `<h3>答えの確認</h3>
     <details open><summary>① 長文読解（TRUE / FALSE / NOT GIVEN）</summary>${tf}</details>
     <details><summary>② Complete the Words</summary>${st.cwp?cwTableHTML("fit", st.cwp):""}</details>
     <details><summary>③ Build a Sentence</summary>${bs}</details>
-    <details><summary>④ メモ完成（スクリプトつき）</summary><div class="script"><div class="ln en">${esc(st.mono.text)}</div></div>${gp}</details>
-    <details><summary>⑤ 応答の選択</summary>${rs}</details>`;
+    <details><summary>④ メモ完成（スクリプトつき）</summary>${st.mono.xp?xpPassageHTML("fit|m", st.mono, "", one):`<div class="script"><div class="ln en">${esc(st.mono.text)}</div></div>${xpStatusHTML("fit|m", st.mono, "スクリプトの訳")}`}${gp}</details>
+    <details><summary>⑤ 応答の選択</summary>${(st.rh||{}).xp?"":xpStatusHTML("fit|r", st.rh||{}, "発話の訳")}${rs}</details>`;
 }
 function fitRender(){
   const st=DB.cur.fit, box=$("#fit-body");
@@ -2797,7 +2824,7 @@ document.addEventListener("click", e=>{
     else { st.result=fitScore(st);
       const blanks=st.ct.parts.filter(x=>x.t==null);
       st.cwp={ct:st.ct, inputs:A.cw, res:blanks.map((x,i)=>(A.cw[i]||"").trim().toLowerCase()===x.miss.toLowerCase())};
-      setTimeout(()=>cwExplain("fit"), 0); DB.fitLog=(DB.fitLog||[]).concat([{at:Date.now(), toefl:st.result.toefl, ielts:st.result.ielts}]); act(2); window.scrollTo(0, $("#fit-body").offsetTop-10); } }
+      setTimeout(()=>{ cwExplain("fit"); xpFetch("fit|a"); xpFetch("fit|m"); xpFetch("fit|r"); }, 0); DB.fitLog=(DB.fitLog||[]).concat([{at:Date.now(), toefl:st.result.toefl, ielts:st.result.ielts}]); act(2); window.scrollTo(0, $("#fit-body").offsetTop-10); } }
   else if(d.fit==="mono"){ if(st.play.mono) return; st.play.mono=1; save(); fitRender();
     speakSeq([st.mono], .94, ()=>{ st.play.mono=2; save(); if(st.step===3) fitRender(); }); return; }
   else if(d.fitplay!=null){ const qi=+d.fitplay; if(st.play.resp[qi]) return; st.play.resp[qi]=1; save(); fitRender();
@@ -2820,7 +2847,6 @@ document.addEventListener("input", e=>{
 
 /* ================= 答え合わせ後の詳しい解説 ================= */
 // Complete the Words：1語ずつの答え・意味・手がかりと全文訳（答え合わせのあと自動で作る）
-const CWX={};   // 作っている途中のもの（保存しない）
 function cwP(key){
   const [k,sec,pi]=key.split("|");
   if(k==="fit") return DB.cur.fit && DB.cur.fit.cwp;
@@ -2857,7 +2883,6 @@ async function cwExplain(key){
 }
 
 // そのほかの設問：「詳しい解説」ボタンで、設問の訳・根拠の文と訳・各選択肢の訳と理由・コツを作る
-const MOREX={};
 function moreCtx(key){
   const [k,sec,a,b]=key.split("|"), pi=+a, qi=+b;
   if(k==="rl"){
@@ -2921,6 +2946,103 @@ document.addEventListener("click", e=>{
   else if(b.dataset.cwexp) cwExplain(b.dataset.cwexp);
 });
 
+/* ================= 全文訳・根拠の赤字・1問ごとの考え方 ================= */
+// 本文（スクリプト）を文に分け、設問の答えを決める文を赤字＋「Q番号」で示し、各文の下に日本語訳を出す。
+// 解答がそろった時点で自動で作る（explain_part）。結果は、その本文を持つオブジェクトの xp に保存する。
+function readSegs(text){   // 読解文：段落（改行）ごとに文へ分ける
+  const out=[];
+  String(text||"").split(/\n+/).forEach((para,pi)=>{ (para.match(/[^.!?]+[.!?]+["')]?|[^.!?]+$/g)||[]).forEach(t=>{ t=t.trim(); if(t) out.push({t, para:pi}); }); });
+  return out;
+}
+const otherSp=(sp)=>sp==="M"?"F":"M";
+function xpGet(key){
+  const [k,sec,a]=key.split("|"), pi=+a;
+  const mcq=(q,chosen)=>({q:q.q||"(Choose the best response to what you hear.)", choices:q.choices, answer:q.choices[q.answer], chosen:chosen!=null?q.choices[chosen]:""});
+  if(k==="rl"){
+    const st=DB.cur[sec]; if(!st) return null;
+    const mod=curMod(st), p=mod.parts[pi]; if(!p || !p.qs) return null;
+    let segs, off=null;
+    if(p.type==="daily"||p.type==="academic") segs=readSegs(p.type==="daily"?p.data.text:p.data.passage);
+    else if(p.type==="response"){ segs=[]; off=[]; p.qs.forEach(q=>{ off.push(segs.length); segs.push(...splitSegs([{sp:q.speaker, text:q.prompt},{sp:otherSp(q.speaker), text:q.choices[q.answer]}])); }); }
+    else segs=splitSegs(segsOf(p,0));
+    return {h:p, segs, off, exam:"toefl", kind:`TOEFL ${SEC[sec].name} — ${p.title}`, num:(qi)=>qi+1,
+      questions:p.qs.map((q,qi)=>mcq(q, mod.ans[pi+"-"+qi]))};
+  }
+  if(k==="il"){
+    const st=DB.cur[sec]; if(!st) return null;
+    const p=st.parts[pi]; if(!p) return null;
+    return {h:p, segs: sec==="ireading" ? readSegs(p.passage) : splitSegs(p.lines), off:null, exam:"ielts", kind:`IELTS ${ISEC[sec].name} — ${p.title}`,
+      num:(qi)=>iNum(st,pi,qi),
+      questions:p.qs.map((q,qi)=>{ const v=p.ans[qi]; return q.type==="gap" ? {q:q.q, answer:q.answer.join(" / "), chosen:v||""} : mcq(q, v); })};
+  }
+  if(k==="b"){
+    const st=DB.cur.build; if(!st) return null;
+    const segs=[], off=[];
+    st.items.forEach(it=>{ off.push(segs.length); segs.push({sp:"F", t:it.context}, {sp:"M", t:bSentence(it,it.chunks)}); });
+    return {h:st, segs, off, exam:"toefl", kind:"TOEFL Writing — Build a Sentence (speaker A's line, then the correct reply B the learner had to assemble)", num:(qi)=>qi+1,
+      questions:st.items.map((it,i)=>({q:`Arrange the chunks ${it.tiles.map(t=>`[${t.t}]`).join(" ")} into B's reply.`, answer:bSentence(it,it.chunks), chosen:bSentence(it,(st.placed[i]||[]).map(id=>it.tiles[id].t))}))};
+  }
+  if(k==="fit"){
+    const st=DB.cur.fit; if(!st) return null; const A=st.ans;
+    if(sec==="a") return {h:st.a, segs:readSegs(st.a.passage), off:null, exam:"ielts", kind:"Reading — TRUE / FALSE / NOT GIVEN", num:(qi)=>qi+1,
+      questions:st.tf.map((q,qi)=>mcq(q, A.tf[qi]))};
+    if(sec==="m") return {h:st.mono, segs:splitSegs([st.mono]), off:null, exam:"ielts", kind:"Listening — note completion", num:(qi)=>qi+1,
+      questions:st.gaps.map((q,qi)=>({q:q.q, answer:q.answer.join(" / "), chosen:A.gap[qi]||""}))};
+    if(sec==="r"){ st.rh=st.rh||{}; const segs=[], off=[];
+      st.resp.forEach((q,qi)=>{ off.push(segs.length); segs.push(...splitSegs([{sp:qi%2?"M":"F", text:q.prompt||""},{sp:qi%2?"F":"M", text:q.choices[q.answer]}])); });
+      return {h:st.rh, segs, off, exam:"toefl", kind:"Listening — choose a response", num:(qi)=>qi+1, questions:st.resp.map((q,qi)=>mcq(q, A.resp[qi]))}; }
+  }
+  return null;
+}
+function xpRerender(key){
+  const [k,sec,a]=key.split("|"), pi=+a;
+  if(k==="rl"){ if(DB.cur[sec]) rerenderPart(sec,pi); }
+  else if(k==="il"){ const st=DB.cur[sec], el=$(`#${ISEC[sec].p}-part-${pi}`); if(st && el) el.outerHTML=iPartHTML(sec,st,pi); }
+  else if(k==="b") bRender();
+  else if(k==="fit") fitRender();
+}
+async function xpFetch(key){
+  const g=xpGet(key); if(!g || g.h.xp || XPX[key]) return;
+  XPX[key]=true; g.h.xpErr=null; xpRerender(key);
+  try{
+    const r=await api("explain_part",{exam:g.exam, kind:g.kind, sentences:g.segs.map(x=>({sp:x.sp?(x.sp==="M"?"Man":"Woman"):"", en:x.t})), questions:g.questions});
+    const ja=Array.isArray(r.ja)?r.ja:[];
+    g.h.xp={segs:g.segs, off:g.off, ja:g.segs.map((_,i)=>String(ja[i]||"")), qs:(r.questions||[]).map(q=>({refs:(q.refs||[]).map(Number).filter(n=>n>=0&&n<g.segs.length), key:String(q.key_en||""), think:String(q.think_ja||"")}))};
+  }catch(e){ g.h.xpErr=e.message; }
+  XPX[key]=false; save(); xpRerender(key);
+}
+// 文 i を根拠にしている設問の番号
+const xpRefs=(xp,i)=>xp ? xp.qs.map((q,k)=>q.refs.includes(i)?k:-1).filter(k=>k>=0) : [];
+function xpMark(t, xp, refs){   // 根拠の語句を強調
+  let h=esc(t);
+  refs.forEach(k=>{ const w=xp.qs[k].key.trim(); if(w.length>1){ const e=esc(w); const at=h.indexOf(e); if(at>=0) h=h.slice(0,at)+`<mark>${e}</mark>`+h.slice(at+e.length); } });
+  return h;
+}
+function xpBadges(refs, num){ return refs.map(k=>`<span class="qref">Q${num(k)}</span>`).join(""); }
+function xpStatusHTML(key, h, what){
+  if(XPX[key]) return `<p class="muted tiny"><span class="spin"></span>${what||"全文訳"}と1問ごとの考え方を作っています…</p>`;
+  if(h && h.xpErr) return `<div class="err">${esc(h.xpErr)}</div><button data-xp="${key}">全文訳と考え方をもう一度作る</button>`;
+  if(h && !h.xp) return `<button data-xp="${key}" class="mini">全文訳と1問ごとの考え方を見る</button>`;
+  return "";
+}
+// 読解文：文ごとに訳をつけ、根拠の文を赤字に
+function xpPassageHTML(key, h, title, num, cls){
+  const xp=h.xp; let last=-1, body="";
+  xp.segs.forEach((s,i)=>{
+    if(s.para!==last && last!==-1) body+=`<div class="xpara"></div>`; last=s.para;
+    const refs=xpRefs(xp,i);
+    body+=`<div class="xs ${refs.length?"hit":""}">${xpBadges(refs,num)}<span class="en">${xpMark(s.t,xp,refs)}</span><div class="ja">${esc(xp.ja[i])}</div></div>`;
+  });
+  return `<div class="passage ${cls||""} xpbox">${title?`<div class="en"><strong>${esc(title)}</strong></div>`:""}${body}</div>
+    <p class="tiny">赤字の文が、設問（Q番号）の答えを決める箇所です。各文の下が日本語訳です。</p>`;
+}
+// 1問ごとの考え方
+function xpThinkHTML(h, qi, num){
+  const q=h && h.xp && h.xp.qs[qi]; if(!q || !q.think) return "";
+  return `<div class="think"><div class="mh">考え方${q.refs.length?`<span class="tiny">（根拠：赤字の Q${num(qi)} の文）</span>`:""}</div>${esc(q.think)}</div>`;
+}
+document.addEventListener("click", e=>{ const b=e.target.closest("[data-xp]"); if(b) xpFetch(b.dataset.xp); });
+
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
   const box=$("#n-quizbox");
@@ -2948,6 +3070,7 @@ function ans(btn, ok){
 
 /* ================= 起動 ================= */
 applyMode();
+bRender(); pRender();   // 起動時の描画はすべての関数を定義し終えてから行う
 ["iv","is"].forEach(spkRender);
 iRender("ireading"); iRender("ilistening"); cwdRender();
 go(DB.settings.exam ? "home" : "pick");
