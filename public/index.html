@@ -117,6 +117,9 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  .bandpill{display:inline-block; background:var(--accent-soft); color:var(--accent); border-radius:8px; padding:1px 9px; font-weight:700; font-size:.95em}
+  .xlat{margin:10px 0; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); font-size:.9rem}
+  .xlat .mh{font-weight:650; font-size:.78rem; color:var(--sub); margin-bottom:2px}
   button.noterm{color:var(--warn); border-color:var(--warn)}
   .note .noterm{margin-top:6px}
   .toast .undo{background:transparent; border:1px solid var(--bg); color:var(--bg)}
@@ -953,7 +956,8 @@ function wordsHTML(sec, pi, p){
   return `<p class="tiny">段落の2文目から、1語おきに語の後半が消えています。消えた文字を入れてください（${ct.n}語）。下線1本が1文字です。</p>
     <div class="passage cw en">${esc(ct.first)}${body}</div>
     ${!p.checked?`<button class="primary" data-cwcheck="${sec}|${pi}">答え合わせ</button>`:`
-      <div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${ct.n} 語 正解</div>
+      ${cwTransHTML(`rl|${sec}|${pi}`, p)}
+      <div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${ct.n} 語 正解　${bandPill(SEC[sec].name, partBand(p.res.filter(Boolean).length/ct.n, levelOf(sec)))}</div>
       <div>${esc(p.data.summary_ja||"")}</div>
       ${cwTableHTML(`rl|${sec}|${pi}`, p)}
       ${gl.length?`<h3>この段落の語句</h3><ul>${gl.map(g=>`<li><span class="en">${esc(g.en)}</span>　<span class="muted">${esc(g.ja)}</span></li>`).join("")}</ul>`:""}</div>`}`;
@@ -1003,7 +1007,12 @@ function partHTML(sec, mod, pi){
       ${pl.done ? p.qs.map((q,qi)=>mcHTML(sec,pi,qi,q,mod.ans[pi+"-"+qi],{num:qi+1})).join("") : ""}
       ${allDone ? `<h3>スクリプトと訳</h3>${xpStatusHTML(`rl|${sec}|${pi}`, p, "スクリプトの訳")}<button data-replay="${sec}|${pi}|all">全体を聞き直す</button>${drillScriptHTML(`${sec}-${pi}`, segsOf(p,0), p.xp, 0, (k)=>k+1)}${kwHTML(p.data.key_words)}` : ""}`;
   }
-  return `<div class="card" id="${SEC[sec].p}-part-${pi}"><div class="part-h"><h2>${esc(p.title)}</h2>${PTYPE2GUIDE[p.type]?guideBtnHTML(PTYPE2GUIDE[p.type]):""}</div>${inner}</div>`;
+  let done="";
+  if(p.type!=="words" && p.qs && p.qs.length && p.qs.every((q,qi)=>mod.ans[pi+"-"+qi]!=null)){
+    const ok=p.qs.filter((q,qi)=>mod.ans[pi+"-"+qi]===q.answer).length;
+    done=`<div class="fb"><div class="h ${ok===p.qs.length?"ok":"ng"}">${ok} / ${p.qs.length} 問正解　${bandPill(SEC[sec].name, partBand(ok/p.qs.length, mod.level))}</div></div>`;
+  }
+  return `<div class="card" id="${SEC[sec].p}-part-${pi}"><div class="part-h"><h2>${esc(p.title)}</h2>${PTYPE2GUIDE[p.type]?guideBtnHTML(PTYPE2GUIDE[p.type]):""}</div>${inner}${done}</div>`;
 }
 
 function stagebarHTML(sec, st){
@@ -1020,7 +1029,7 @@ function summaryHTML(sec, st){
     const res=results(st.s1), a=accOf(res);
     const ready=!!st.s2pre;
     return `<div class="card" id="${P}-summary"><h2>第1段階の結果</h2>
-      <div class="sum-big">${Math.round(a*100)}%</div><p class="muted">${res.filter(r=>r.ok).length} / ${res.length} 問正解</p>
+      <div class="sum-big">${Math.round(a*100)}%</div><p class="muted">${res.filter(r=>r.ok).length} / ${res.length} 問正解　${bandPill(SEC[sec].name, partBand(a, st.s1.level))}</p>
       <p>第2段階は <span class="tag">${LV[st.level2].label}</span> で出題します。</p>
       <div style="float:right">${quitBtnHTML(sec)}</div>
       ${st.s2err?`<div class="err">${esc(st.s2err)}</div><button class="primary" data-s2retry="${sec}">もう一度作る</button>`:
@@ -1130,6 +1139,12 @@ function checkStage(sec){
     save(); renderRL(sec); window.scrollTo(0, $("#"+SEC[sec].p+"-body").offsetTop-10);
   }
 }
+
+/* ---------- 課題ごとの目安のバンド ---------- */
+// 正答率と、その課題の難しさ（LV の lo〜hi）から出す。1〜6・0.5刻み。
+const partBand=(acc, level)=>{ const L=LV[level]||LV.standard; return Math.min(6, Math.max(1, Math.round((L.lo+(L.hi-L.lo)*acc)*2)/2)); };
+const bandPill=(name, b)=>`<span class="bandpill">${esc(name)} ${(+b).toFixed(1)}</span><span class="tiny muted">（目安）</span>`;
+function levelOf(sec){ const st=DB.cur[sec]; if(!st) return "standard"; return sec==="cwd" ? st.s1.level : (curMod(st).level||"standard"); }
 
 /* ---------- 1問あたりの時間 ---------- */
 function timesOf(mod){
@@ -2464,7 +2479,7 @@ function iPartHTML(sec, st, pi){
   const head = sec==="ireading"
     ? `<div class="part-h"><h2>Passage ${pi+1}</h2></div>${p.xp ? xpPassageHTML(`il|${sec}|${pi}`, p, p.title, (k)=>iNum(st,pi,k), "long") : `<div class="passage long en"><strong>${esc(p.title)}</strong>\n\n${esc(p.passage)}</div>`}`
     : `<div class="part-h"><h2>${esc(p.title)}</h2></div><p class="tiny">${esc(p.context_ja)}</p>`;
-  const res = p.checked ? `<div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${p.qs.length} 問正解</div>${p.summary_ja?`<div>${esc(p.summary_ja)}</div>`:""}</div>${xpStatusHTML(`il|${sec}|${pi}`, p)}` : "";
+  const res = p.checked ? `<div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${p.qs.length} 問正解　${bandPill(ISEC[sec].name, rawBand(sec, p.res.filter(Boolean).length/p.qs.length*40))}</div>${p.summary_ja?`<div>${esc(p.summary_ja)}</div>`:""}</div>${xpStatusHTML(`il|${sec}|${pi}`, p)}` : "";
   const after = p.checked ? (sec==="ilistening" ? `<h3>スクリプトと訳</h3>${drillScriptHTML(`${sec}-${pi}`, p.lines, p.xp, 0, (k)=>iNum(st,pi,k))}` : "") + kwHTML(p.key_words) : "";
   return `<div class="card" id="${ISEC[sec].p}-part-${pi}">${head}<div id="${sec}-ctl-${pi}">${iCtlHTML(sec,st,pi)}</div>${res}
     ${sec==="ilistening"&&!p.play.n&&!p.checked?`<p class="tiny">設問（音声を聞く前に読めます）</p>`:""}
@@ -2679,6 +2694,7 @@ function cwdRender(){
   const mod=st.s1, p=mod.parts[0];
   const top = p.checked
     ? `<div class="card"><h2>3分ドリルの結果</h2><div class="sum-big">${p.res.filter(Boolean).length} / ${p.ct.n}</div>
+        <p>${bandPill("Reading", partBand(p.res.filter(Boolean).length/p.ct.n, mod.level))}</p>
         <p class="muted">かかった時間 ${mmss(st.sec||0)}（目安 3:00）・難しさ ${LV[mod.level].label}</p>
         <p class="tiny">次のドリルの難しさは、直近3回の正答率で自動で変わります（80%以上で難しめ、50%未満でやさしめ）。</p>
         <div class="row"><button class="primary" data-cwdnew="1">もう1回</button><button data-cwdclose="1">閉じる</button></div></div>`
@@ -2847,7 +2863,7 @@ function fitReviewHTML(st){
   const rs=st.resp.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.prompt||"")}</div>${rh.xp?`<div class="ja">${esc(rh.xp.ja[rh.xp.off[qi]]||"")}</div>`:""}<div class="en"><strong>→ ${esc(q.choices[q.answer])}</strong></div>${rh.xp?`<div class="ja">${esc(rh.xp.ja[rh.xp.off[qi]+1]||"")}</div>`:""}<div class="tiny">${mark(A.resp[qi]===q.answer)}あなた：<span class="en">${A.resp[qi]!=null?esc(q.choices[A.resp[qi]]):"（未解答）"}</span></div>${xpThinkHTML(rh, qi, one)}</div>`).join("");
   return `<h3>答えの確認</h3>
     <details open><summary>① 長文読解（TRUE / FALSE / NOT GIVEN）</summary>${tf}</details>
-    <details><summary>② Complete the Words</summary>${st.cwp?cwTableHTML("fit", st.cwp):""}</details>
+    <details><summary>② Complete the Words</summary>${st.cwp?cwTransHTML("fit", st.cwp)+cwTableHTML("fit", st.cwp):""}</details>
     <details><summary>③ Build a Sentence</summary>${bs}</details>
     <details><summary>④ メモ完成（スクリプトつき）</summary>${st.mono.xp?xpPassageHTML("fit|m", st.mono, "", one):`<div class="script"><div class="ln en">${esc(st.mono.text)}</div></div>${xpStatusHTML("fit|m", st.mono, "スクリプトの訳")}`}${gp}</details>
     <details><summary>⑤ 応答の選択</summary>${(st.rh||{}).xp?"":xpStatusHTML("fit|r", st.rh||{}, "発話の訳")}${rs}</details>`;
@@ -2918,7 +2934,14 @@ function cwTableHTML(key, p){
   const tail = CWX[key] ? `<p class="muted"><span class="spin"></span>1語ずつの解説と全文訳を作っています…</p>`
     : p.expErr ? `<div class="err">${esc(p.expErr)}</div><button data-cwexp="${key}">解説をもう一度作る</button>`
     : !p.exp ? `<button data-cwexp="${key}">1語ずつの解説と全文訳を見る</button>` : "";
-  return `<h3>答えと解説</h3>${rows}${tail}${E.translation_ja?`<h3>全文訳</h3><p>${esc(E.translation_ja)}</p>`:""}`;
+  return `<h3>答えと解説</h3>${rows}${tail}`;
+}
+// 全文訳（答え合わせの結果の上に出す）
+function cwTransHTML(key, p){
+  const t=p.exp && p.exp.translation_ja;
+  if(t) return `<div class="xlat"><div class="mh">全文訳</div><div>${esc(t)}</div></div>`;
+  if(CWX[key]) return `<div class="xlat"><span class="spin"></span>全文訳を作っています…</div>`;
+  return "";
 }
 async function cwExplain(key){
   const p=cwP(key); if(!p || p.exp || CWX[key]) return;

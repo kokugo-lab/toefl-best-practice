@@ -63,6 +63,8 @@
 - コツと単語（TOEFL のみ）：中身は `GUIDE`（単元ごとの形式・コツ・落とし穴・単語[英,意味,例文]）に固定で書く。`data-guide="単元"` の
   ボタンで下からシートが開く（`guideOpen`）。単語は `addNotes("word")` でノート・SRS に入る。
 - ノートから外す：`removeNotes(pred)`（お知らせは出さない）。ノート一覧・今日の復習・コツと単語から使う。
+- 課題ごとの目安バンド：`partBand(正答率, 難しさ)`＋`bandPill("Reading", b)`。TOEFL の各パート・第1段階・3分ドリル、IELTS の各パート（`rawBand`）に表示。
+- Complete the Words の全文訳は結果（○/10 語 正解）の上に出す（`cwTransHTML`）。
 - 音声は SpeechSynthesis（男女2声、同じ声しかなければ pitch で区別）、文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。
