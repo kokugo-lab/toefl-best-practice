@@ -117,6 +117,13 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  .cwrow{padding:8px 0; border-bottom:1px dashed var(--line); font-size:.9rem}
+  .cwrow.ng strong{color:var(--warn)} .cwrow.ok strong{color:var(--accent)}
+  .more{margin-top:8px; padding:10px 12px; border:1px dashed var(--line); border-radius:10px; background:var(--card); font-size:.88rem}
+  .more .mh{font-weight:650; font-size:.78rem; color:var(--sub); margin-top:8px}
+  .more .mh:first-child{margin-top:0}
+  .more ol,.more ul{margin:4px 0}
+  .chl{list-style:none; padding-left:0} .chl li{margin:6px 0}
   button.ready::after{content:"・準備済み"; font-weight:500; font-size:.74em; opacity:.85}
   .toast{position:fixed; left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom)); z-index:60; max-width:736px; margin:0 auto;
     background:var(--ink); color:var(--bg); padding:10px 14px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;
@@ -872,6 +879,7 @@ function mcHTML(sec, pi, qi, q, chosen, o={}){
       <div>${esc(q.explain_ja||"")}</div>
       ${(pp.from&&pp.to)?`<div class="para"><span class="muted">言い換え</span>　<span class="en">${esc(pp.from)}</span> → <strong class="en">${esc(pp.to)}</strong></div>`:""}
       ${!ok?`<div class="corr"><strong>間違えた原因</strong>${q.trap[chosen]?`【${esc(q.trap[chosen])}】`:""}<br>${esc(q.why_wrong_ja[chosen]||"")}</div>`:""}
+      ${sec!=="cwd"?moreHTML(`rl|${sec}|${pi}|${qi}`):""}
     </div>`;
   }
   return `<div class="q">${o.head||""}${q.q?`<div class="qt en">${o.num?o.num+". ":""}${esc(q.q)}</div>`:""}${btns}${fb}</div>`;
@@ -885,7 +893,7 @@ function wordsHTML(sec, pi, p){
     if(!p.checked)
       return `<span class="w">${esc(x.pre+x.keep)}<input data-cw="${sec}|${pi}|${i}" maxlength="${x.miss.length}" style="width:${x.miss.length*1.4}ch" aria-label="${x.miss.length}文字" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v)}">${esc(x.post)}</span>`;
     const ok=p.res[i];
-    return `<span class="w">${esc(x.pre+x.keep)}<input class="${ok?"ok":"ng"}" disabled value="${esc(v)}" style="width:${Math.max(x.miss.length,v.length)*1.4}ch">${ok?"":`<span class="fix">${esc(x.miss)}</span>`}${esc(x.post)}</span>`;
+    return `<span class="w">${esc(x.pre+x.keep)}<input class="${ok?"ok":"ng"}" disabled value="${esc(v)}" style="width:${Math.max(x.miss.length,v.length)*1.4}ch">${ok?"":`<span class="fix">→${esc(x.word)}</span>`}${esc(x.post)}</span>`;
   }).join("");
   const gl=(p.data.glossary||[]);
   return `<p class="tiny">段落の2文目から、1語おきに語の後半が消えています。消えた文字を入れてください（${ct.n}語）。下線1本が1文字です。</p>
@@ -893,6 +901,7 @@ function wordsHTML(sec, pi, p){
     ${!p.checked?`<button class="primary" data-cwcheck="${sec}|${pi}">答え合わせ</button>`:`
       <div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${ct.n} 語 正解</div>
       <div>${esc(p.data.summary_ja||"")}</div>
+      ${cwTableHTML(`rl|${sec}|${pi}`, p)}
       ${gl.length?`<h3>この段落の語句</h3><ul>${gl.map(g=>`<li><span class="en">${esc(g.en)}</span>　<span class="muted">${esc(g.ja)}</span></li>`).join("")}</ul>`:""}</div>`}`;
 }
 
@@ -1160,7 +1169,7 @@ document.addEventListener("click", (e)=>{
     p.sec=Math.min(900, Math.round((Date.now()-(mod.lastAt||mod.started))/1000)); mod.lastAt=Date.now();
     const gl=p.data.glossary||[];
     addNotes("word", blanks.filter((x,i)=>!p.res[i]).map(x=>{ const g=gl.find(g=>String(g.en).toLowerCase()===x.word.toLowerCase()); return {en:x.word, ja:g?g.ja:"（Complete the Words で間違えた語）"}; }));
-    save(); rerenderPart(sec,+pi); checkStage(sec);
+    save(); rerenderPart(sec,+pi); checkStage(sec); cwExplain(`rl|${sec}|${pi}`);
   }
   else if(d.play){
     const [sec,pi,qi]=d.play.split("|"); const st=DB.cur[sec], mod=curMod(st), p=mod.parts[+pi];
@@ -1392,6 +1401,7 @@ function bItemHTML(st, i){
       ${!ok?`<div class="corr"><strong>あなたの答え</strong><br><span class="en">${esc(bSentence(it, pl.map(id=>it.tiles[id].t)))}</span></div>`:""}
       <div style="margin-top:6px">${esc(it.grammar_ja)}</div>
       ${it.distractor?`<div class="tiny" style="margin-top:4px">使わない語：<span class="en">${esc(it.distractor)}</span></div>`:""}
+      ${moreHTML(`b|build|0|${i}`)}
     </div>`;
   }
   return `<div class="q" id="b-it-${i}">
@@ -2343,7 +2353,8 @@ function iQHTML(sec, st, pi, qi){
     fb=`<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"正解":"不正解"}　<span class="tag">${esc(q.tag)}</span>${ok?"":`<span class="en">正解：${esc(right)}</span>`}</div>
       <div>${esc(q.explain_ja)}</div>
       ${q.evidence?`<div class="para"><span class="muted">根拠</span>　<span class="en">${esc(q.evidence)}</span></div>`:""}
-      ${!ok && q.type==="mcq" && v!=null && q.why_wrong_ja[v]?`<div class="corr"><strong>間違えた原因</strong><br>${esc(q.why_wrong_ja[v])}</div>`:""}</div>`;
+      ${!ok && q.type==="mcq" && v!=null && q.why_wrong_ja[v]?`<div class="corr"><strong>間違えた原因</strong><br>${esc(q.why_wrong_ja[v])}</div>`:""}
+      ${moreHTML(`il|${sec}|${pi}|${qi}`)}</div>`;
   }
   return `<div class="q" id="iq-${sec}-${pi}-${qi}">${body}${fb}</div>`;
 }
@@ -2743,11 +2754,26 @@ function fitResultHTML(st){
     <h3>IELTS 向きの力（長文・長い音声の正確さ）　${pc(r.ielts)}</h3>
     <div class="bars">${bar("TRUE/FALSE/NOT GIVEN", r.tf, "書いてある／違う／書いていないを見分ける")}${bar("メモ完成", r.gap, "聞いた語を正しいつづりで書く")}${bar("読む速さ", r.speed, `${r.wpm}語/分（200語/分で満点。IELTS Reading は約2,700語を60分で読む）`)}</div>
     <h3>アンケート</h3>${prefTxt}
+    ${fitReviewHTML(st)}
     <p class="tiny" style="margin-top:10px">アンケートの答えは、結果に少しだけ（各4〜6点）加えています。問題数が少ないため、1問の差で結果が変わることがあります。目安として使い、迷うときは何度か受けたり、両方の練習モードを試したりしてください。公式の診断ではありません。</p>
     <div class="row" style="margin-top:8px">
       <button class="primary" data-fit="use|${goExam}">${EXAMNAME[goExam]} で練習を始める</button>
       <button data-fit="again">もう一度受ける</button></div>
   </div>`;
+}
+function fitReviewHTML(st){
+  const A=st.ans, mark=(ok)=>ok?`<span class="tag">正解</span>`:`<span class="tag" style="background:var(--warn-soft);color:var(--warn)">不正解</span>`;
+  const tf=st.tf.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.q)}</div><div class="tiny">${mark(A.tf[qi]===q.answer)}正解：${q.choices[q.answer]}　あなた：${A.tf[qi]!=null?q.choices[A.tf[qi]]:"（未解答）"}</div><div class="muted">${esc(q.explain_ja)}</div></div>`).join("");
+  const bs=st.build.map((it,i)=>{ const mine=bSentence(it,(A.placed[i]||[]).map(id=>it.tiles[id].t)), ok=normS(mine)===normS(bSentence(it,it.chunks));
+    return `<div class="q"><div class="ex en"><span class="sp">A</span>${esc(it.context)}</div><div class="en"><strong>${esc(bSentence(it,it.chunks))}</strong></div><div class="tiny">${mark(ok)}あなた：<span class="en">${esc(mine)}</span></div><div class="muted">${esc(it.ja)}　${esc(it.grammar_ja)}</div></div>`; }).join("");
+  const gp=st.gaps.map((q,qi)=>`<div class="q en">${qi+1}. ${esc(q.q.replace(/_{2,}/,"［"+q.answer[0]+"］"))}<div class="tiny">${mark(gapOK(A.gap[qi]||"",q.answer))}あなた：${esc(A.gap[qi]||"（空欄）")}</div></div>`).join("");
+  const rs=st.resp.map((q,qi)=>`<div class="q"><div class="en">${qi+1}. ${esc(q.prompt||"")}</div><div class="en"><strong>→ ${esc(q.choices[q.answer])}</strong></div><div class="tiny">${mark(A.resp[qi]===q.answer)}あなた：<span class="en">${A.resp[qi]!=null?esc(q.choices[A.resp[qi]]):"（未解答）"}</span></div></div>`).join("");
+  return `<h3>答えの確認</h3>
+    <details open><summary>① 長文読解（TRUE / FALSE / NOT GIVEN）</summary>${tf}</details>
+    <details><summary>② Complete the Words</summary>${st.cwp?cwTableHTML("fit", st.cwp):""}</details>
+    <details><summary>③ Build a Sentence</summary>${bs}</details>
+    <details><summary>④ メモ完成（スクリプトつき）</summary><div class="script"><div class="ln en">${esc(st.mono.text)}</div></div>${gp}</details>
+    <details><summary>⑤ 応答の選択</summary>${rs}</details>`;
 }
 function fitRender(){
   const st=DB.cur.fit, box=$("#fit-body");
@@ -2768,7 +2794,10 @@ document.addEventListener("click", e=>{
   else if(d.fit==="readdone"){ st.readSec=Math.max(1,Math.round((Date.now()-st.readStart)/1000)); }
   else if(d.fit==="next"){ if(!fitReady(st)) return;
     if(st.step<FIT_STEPS.length-1){ st.step++; window.scrollTo(0, $("#fit-body").offsetTop-10); }
-    else { st.result=fitScore(st); DB.fitLog=(DB.fitLog||[]).concat([{at:Date.now(), toefl:st.result.toefl, ielts:st.result.ielts}]); act(2); window.scrollTo(0, $("#fit-body").offsetTop-10); } }
+    else { st.result=fitScore(st);
+      const blanks=st.ct.parts.filter(x=>x.t==null);
+      st.cwp={ct:st.ct, inputs:A.cw, res:blanks.map((x,i)=>(A.cw[i]||"").trim().toLowerCase()===x.miss.toLowerCase())};
+      setTimeout(()=>cwExplain("fit"), 0); DB.fitLog=(DB.fitLog||[]).concat([{at:Date.now(), toefl:st.result.toefl, ielts:st.result.ielts}]); act(2); window.scrollTo(0, $("#fit-body").offsetTop-10); } }
   else if(d.fit==="mono"){ if(st.play.mono) return; st.play.mono=1; save(); fitRender();
     speakSeq([st.mono], .94, ()=>{ st.play.mono=2; save(); if(st.step===3) fitRender(); }); return; }
   else if(d.fitplay!=null){ const qi=+d.fitplay; if(st.play.resp[qi]) return; st.play.resp[qi]=1; save(); fitRender();
@@ -2787,6 +2816,109 @@ document.addEventListener("input", e=>{
   if(t.dataset.fitcw!=null){ t.value=t.value.replace(/[^A-Za-z]/g,""); st.ans.cw[t.dataset.fitcw]=t.value; save();
     if(t.value.length>=t.maxLength){ const all=[...document.querySelectorAll("input[data-fitcw]")]; const nx=all[all.indexOf(t)+1]; if(nx) nx.focus(); } }
   else if(t.dataset.fitgap!=null){ st.ans.gap[t.dataset.fitgap]=t.value; save(); }
+});
+
+/* ================= 答え合わせ後の詳しい解説 ================= */
+// Complete the Words：1語ずつの答え・意味・手がかりと全文訳（答え合わせのあと自動で作る）
+const CWX={};   // 作っている途中のもの（保存しない）
+function cwP(key){
+  const [k,sec,pi]=key.split("|");
+  if(k==="fit") return DB.cur.fit && DB.cur.fit.cwp;
+  if(sec==="cwd") return DB.cur.cwd && DB.cur.cwd.s1.parts[0];   // 3分ドリルは答え合わせのあと phase が done になる
+  const st=DB.cur[sec]; return st && curMod(st).parts[+pi];
+}
+function cwRerender(key){
+  const [k,sec,pi]=key.split("|");
+  if(k==="fit") return fitRender();
+  if(sec==="cwd") return cwdRender();
+  if(DB.cur[sec]) rerenderPart(sec,+pi);
+}
+function cwTableHTML(key, p){
+  const blanks=p.ct.parts.filter(x=>x.t==null), E=p.exp||{}, it=(E.items)||[];
+  const rows=blanks.map((x,i)=>{ const e=it[i]||{}, ok=p.res[i], mine=x.keep+(p.inputs[i]||"");
+    return `<div class="cwrow ${ok?"ok":"ng"}"><div><strong class="en">${esc(x.word)}</strong>${e.pos_ja?` <span class="tag">${esc(e.pos_ja)}</span>`:""} <span class="muted">${esc(e.ja||"")}</span></div>
+      <div class="tiny">${ok?"✓ 正解":`✗ あなたの答え：<span class="en">${esc(mine)}</span>`}</div>
+      ${e.why_ja?`<div>${esc(e.why_ja)}</div>`:""}${!ok&&e.user_ja?`<div class="corr">${esc(e.user_ja)}</div>`:""}</div>`; }).join("");
+  const tail = CWX[key] ? `<p class="muted"><span class="spin"></span>1語ずつの解説と全文訳を作っています…</p>`
+    : p.expErr ? `<div class="err">${esc(p.expErr)}</div><button data-cwexp="${key}">解説をもう一度作る</button>`
+    : !p.exp ? `<button data-cwexp="${key}">1語ずつの解説と全文訳を見る</button>` : "";
+  return `<h3>答えと解説</h3>${rows}${tail}${E.translation_ja?`<h3>全文訳</h3><p>${esc(E.translation_ja)}</p>`:""}`;
+}
+async function cwExplain(key){
+  const p=cwP(key); if(!p || p.exp || CWX[key]) return;
+  CWX[key]=true; p.expErr=null; cwRerender(key);
+  const blanks=p.ct.parts.filter(x=>x.t==null);
+  const para=p.ct.first+p.ct.parts.map(x=>x.t!=null?x.t:(x.pre+x.word+x.post)).join("");
+  try{
+    p.exp=await api("explain_ctest",{paragraph:para, blanks:blanks.map((x,i)=>({shown:x.keep+"_".repeat(x.miss.length), correct:x.word, user:x.keep+(p.inputs[i]||"")}))});
+  }catch(e){ p.expErr=e.message; }
+  CWX[key]=false; save();
+  if(cwP(key)===p) cwRerender(key);
+}
+
+// そのほかの設問：「詳しい解説」ボタンで、設問の訳・根拠の文と訳・各選択肢の訳と理由・コツを作る
+const MOREX={};
+function moreCtx(key){
+  const [k,sec,a,b]=key.split("|"), pi=+a, qi=+b;
+  if(k==="rl"){
+    const st=DB.cur[sec]; if(!st) return null;
+    const mod=curMod(st), p=mod.parts[pi], q=p&&p.qs[qi]; if(!q) return null;
+    const ctx = p.type==="daily" ? p.data.text : p.type==="academic" ? p.data.passage
+      : p.type==="response" ? `Speaker ${q.speaker==="M"?"(man)":"(woman)"} says: "${q.prompt}"`
+      : p.type==="conversation" ? (p.data.lines||[]).map(l=>`${l.sp==="M"?"Man":"Woman"}: ${l.text}`).join("\n") : p.data.text;
+    const c=mod.ans[pi+"-"+qi];
+    return {q, labels:q.choices.map((_,i)=>String.fromCharCode(65+i)), answerIdx:q.answer, chosenIdx:c,
+      input:{exam:"toefl", kind:`TOEFL ${SEC[sec].name} — ${p.title}`, context:ctx, question:q.q||"Choose the best response.", choices:q.choices, answer:q.choices[q.answer], chosen:c!=null?q.choices[c]:""}};
+  }
+  if(k==="il"){
+    const st=DB.cur[sec]; if(!st) return null;
+    const p=st.parts[pi], q=p&&p.qs[qi]; if(!q) return null;
+    const v=p.ans[qi], gap=q.type==="gap";
+    const ctx = sec==="ireading" ? p.passage : p.lines.map(l=>`${l.sp==="M"?"Man":"Woman"}: ${l.text}`).join("\n");
+    return {q, labels: q.type==="tfng" ? q.choices : gap ? [] : q.choices.map((_,i)=>String.fromCharCode(65+i)), answerIdx: gap?null:q.answer, chosenIdx: gap?null:v,
+      input:{exam:"ielts", kind:`IELTS ${ISEC[sec].name} — ${q.type==="tfng"?"TRUE / FALSE / NOT GIVEN":gap?"completion (word limit)":"multiple choice"}`, context:ctx, question:q.q,
+        choices: gap?[]:q.choices, answer: gap?q.answer.join(" / "):q.choices[q.answer], chosen: gap?(v||""):(v!=null?q.choices[v]:"")}};
+  }
+  if(k==="b"){
+    const st=DB.cur.build; if(!st) return null;
+    const it=st.items[qi], pl=st.placed[qi]||[]; if(!it) return null;
+    return {q:it, labels:[], answerIdx:null, chosenIdx:null,
+      input:{exam:"toefl", kind:"TOEFL Writing — Build a Sentence (arrange the word chunks into speaker B's reply)",
+        context:`A: ${it.context}\nChunks given to the learner: ${it.tiles.map(t=>`[${t.t}]`).join(" ")}${it.distractor?` (one of them, "${it.distractor}", is a distractor)`:""}`,
+        question:"Arrange the chunks to make B's reply. Explain the word order chunk by chunk.", choices:[], answer:bSentence(it,it.chunks), chosen:bSentence(it, pl.map(id=>it.tiles[id].t))}};
+  }
+  return null;
+}
+const moreId=(key)=>"more-"+key.replace(/\|/g,"-");
+function moreHTML(key){
+  const c=moreCtx(key); if(!c) return "";
+  const r=c.q.more;
+  if(!r){
+    if(MOREX[key]) return `<div class="more" id="${moreId(key)}"><span class="spin"></span>詳しい解説を作っています…</div>`;
+    return `<div id="${moreId(key)}"><button class="mini" data-more="${key}" style="margin-top:8px">詳しい解説（訳・根拠・各選択肢）</button>${c.q.moreErr?`<span class="tiny" style="color:var(--warn)">　${esc(c.q.moreErr)}</span>`:""}</div>`;
+  }
+  const ch=(r.choices||[]).map((x,i)=>`<li>${c.labels[i]?`<strong class="en">${esc(c.labels[i])}</strong> `:""}${esc(x.ja||"")}${i===c.answerIdx?` <span class="tag">正解</span>`:""}${i===c.chosenIdx&&i!==c.answerIdx?` <span class="tag" style="background:var(--warn-soft);color:var(--warn)">あなた</span>`:""}<div class="muted">${esc(x.why_ja||"")}</div></li>`).join("");
+  return `<div class="more" id="${moreId(key)}">
+    ${r.question_ja?`<div class="mh">設問の訳</div><div>${esc(r.question_ja)}</div>`:""}
+    ${r.evidence_en?`<div class="mh">答えの根拠</div><div class="para"><span class="en">${esc(r.evidence_en)}</span><div class="muted">${esc(r.evidence_ja||"")}</div></div>`:""}
+    ${(r.steps_ja||[]).length?`<div class="mh">解き方</div><ol>${r.steps_ja.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`:""}
+    ${ch?`<div class="mh">選択肢</div><ul class="chl">${ch}</ul>`:""}
+    ${r.learner_ja?`<div class="mh">あなたの答えについて</div><div>${esc(r.learner_ja)}</div>`:""}
+    ${r.tip_ja?`<div class="mh">コツ</div><div>${esc(r.tip_ja)}</div>`:""}
+  </div>`;
+}
+async function moreFetch(key){
+  const c=moreCtx(key); if(!c || c.q.more || MOREX[key]) return;
+  MOREX[key]=true; c.q.moreErr=null;
+  const upd=()=>{ const el=$("#"+moreId(key)); if(el) el.outerHTML=moreHTML(key); };
+  upd();
+  try{ c.q.more=await api("explain_q", c.input); }catch(e){ c.q.moreErr=e.message; }
+  MOREX[key]=false; save(); upd();
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.more) moreFetch(b.dataset.more);
+  else if(b.dataset.cwexp) cwExplain(b.dataset.cwexp);
 });
 
 /* ================= 復習クイズ ================= */
