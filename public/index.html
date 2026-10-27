@@ -3006,8 +3006,10 @@ async function xpFetch(key){
   XPX[key]=true; g.h.xpErr=null; xpRerender(key);
   try{
     const r=await api("explain_part",{exam:g.exam, kind:g.kind, sentences:g.segs.map(x=>({sp:x.sp?(x.sp==="M"?"Man":"Woman"):"", en:x.t})), questions:g.questions});
-    const ja=Array.isArray(r.ja)?r.ja:[];
-    g.h.xp={segs:g.segs, off:g.off, ja:g.segs.map((_,i)=>String(ja[i]||"")), qs:(r.questions||[]).map(q=>({refs:(q.refs||[]).map(Number).filter(n=>n>=0&&n<g.segs.length), key:String(q.key_en||""), think:String(q.think_ja||"")}))};
+    // 訳は文番号つきで受け取り、番号で合わせる（1文抜けても後ろがずれないように）
+    const ja=g.segs.map(()=>"");
+    (Array.isArray(r.ja)?r.ja:[]).forEach((x,k)=>{ if(x && typeof x==="object"){ const n=+x.i; if(n>=0 && n<ja.length) ja[n]=String(x.t||""); } else if(typeof x==="string" && k<ja.length) ja[k]=x; });
+    g.h.xp={segs:g.segs, off:g.off, ja, qs:(r.questions||[]).map(q=>({refs:(q.refs||[]).map(Number).filter(n=>n>=0&&n<g.segs.length), key:String(q.key_en||""), think:String(q.think_ja||"")}))};
   }catch(e){ g.h.xpErr=e.message; }
   XPX[key]=false; save(); xpRerender(key);
 }
