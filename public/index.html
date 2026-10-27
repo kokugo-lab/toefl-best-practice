@@ -117,6 +117,9 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  button.noterm{color:var(--warn); border-color:var(--warn)}
+  .note .noterm{margin-top:6px}
+  .toast .undo{background:transparent; border:1px solid var(--bg); color:var(--bg)}
   .sheet{position:fixed; inset:0; background:rgba(0,0,0,.38); z-index:70; display:flex; align-items:flex-end; justify-content:center}
   .sheet[hidden]{display:none}
   .sheet-in{background:var(--card); color:var(--ink); width:100%; max-width:760px; max-height:88vh; overflow:auto; border-radius:16px 16px 0 0; padding:0 16px calc(24px + env(safe-area-inset-bottom))}
@@ -149,7 +152,7 @@
   .more ol,.more ul{margin:4px 0}
   .chl{list-style:none; padding-left:0} .chl li{margin:6px 0}
   button.ready::after{content:"・準備済み"; font-weight:500; font-size:.74em; opacity:.85}
-  .toast{position:fixed; left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom)); z-index:60; max-width:736px; margin:0 auto;
+  .toast{position:fixed; left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom)); z-index:80; max-width:736px; margin:0 auto;
     background:var(--ink); color:var(--bg); padding:10px 14px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;
     box-shadow:0 8px 24px rgba(0,0,0,.25); font-size:.88rem}
   .toast button{background:var(--accent); color:#fff; border:0; padding:6px 14px; font-weight:600}
@@ -752,9 +755,10 @@ function arrived(el, label, goto){
   if(v && v.classList.contains("on") && el.offsetParent!==null) window.scrollTo(0, el.offsetTop-10);   // 同じ画面でも別のタブを開いていればお知らせ
   else toast(`${label}ができました`, goto);
 }
-function toast(msg, goto){
+function toast(msg, goto, undo){
   const t=document.createElement("div"); t.className="toast";
-  t.innerHTML=`<span>${esc(msg)}</span>${goto?`<button data-goto="${goto}">開く</button>`:""}`;
+  t.innerHTML=`<span>${esc(msg)}</span>${goto?`<button data-goto="${goto}">開く</button>`:""}${undo?`<button class="undo">元に戻す</button>`:""}`;
+  if(undo) t.querySelector(".undo").addEventListener("click", undo);
   t.addEventListener("click", ()=>t.remove());
   document.body.appendChild(t); setTimeout(()=>t.remove(), 10000);
 }
@@ -771,19 +775,35 @@ function addNotes(kind, items){
   });
   save();
 }
+// ノートから外す。外したものは「元に戻す」で同じ位置に戻せる。
+function removeNotes(pred, label){
+  const removed=[]; DB.notes=DB.notes.filter((n,i)=>{ if(pred(n)){ removed.push([i,n]); return false; } return true; });
+  if(!removed.length) return;
+  save(); noteViewsRefresh();
+  toast(label || (removed.length>1?`${removed.length}件をノートから外しました`:"ノートから外しました"), null, ()=>{
+    removed.forEach(([i,n])=>{ if(!DB.notes.some(x=>x.key===n.key)) DB.notes.splice(Math.min(i,DB.notes.length),0,n); });
+    save(); noteViewsRefresh();
+  });
+}
+function noteViewsRefresh(){
+  if($("#v-notes").classList.contains("on")){ renderNotes(); if(!SRSQ) renderSRS(); }
+  if(!$("#guide").hidden) guideRender();
+}
+const noteBtn=(n)=>`<button class="mini noterm" data-noterm="${encodeURIComponent(n.key)}">外す</button>`;
 function renderNotes(){
   const q = ($("#n-q").value||"").toLowerCase();
   const k = $("#n-seg button[aria-pressed='true']").dataset.k;
   const list = DB.notes.filter(n=>(k==="all"||n.kind===k) && JSON.stringify(n.data).toLowerCase().includes(q)).reverse();
   $("#n-list").innerHTML = list.length ? list.map(n=>{
     const d=n.data, label={word:"未知語",para:"言い換え",fix:"直された点",miss:"間違い"}[n.kind]||"";
-    if(n.kind==="miss") return `<div class="note"><span class="tag">${label}・${esc(d.section||"")}</span><div class="k en">${esc(d.q)}</div><div class="v">あなたの答え：<span class="en">${esc(d.chosen)}</span></div><div class="v">正解：<span class="en">${esc(d.correct)}</span></div><div class="v">${esc(d.trap?("【"+d.trap+"】"):"")}${esc(d.why)}</div></div>`;
-    if(n.kind==="word") return `<div class="note"><span class="tag">${label}</span><span class="k en">${esc(d.en)}</span><div class="v">${esc(d.ja)}</div></div>`;
-    if(n.kind==="para") return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.from)}</div><div class="k en">→ ${esc(d.to)}</div><div class="v">${esc(d.ja)}</div></div>`;
-    return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.before)}</div><div class="k en">→ ${esc(d.after)}</div><div class="v">${esc(d.why_ja)}</div></div>`;
+    if(n.kind==="miss") return `<div class="note"><span class="tag">${label}・${esc(d.section||"")}</span><div class="k en">${esc(d.q)}</div><div class="v">あなたの答え：<span class="en">${esc(d.chosen)}</span></div><div class="v">正解：<span class="en">${esc(d.correct)}</span></div><div class="v">${esc(d.trap?("【"+d.trap+"】"):"")}${esc(d.why)}</div>${noteBtn(n)}</div>`;
+    if(n.kind==="word") return `<div class="note"><span class="tag">${label}</span><span class="k en">${esc(d.en)}</span><div class="v">${esc(d.ja)}</div>${noteBtn(n)}</div>`;
+    if(n.kind==="para") return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.from)}</div><div class="k en">→ ${esc(d.to)}</div><div class="v">${esc(d.ja)}</div>${noteBtn(n)}</div>`;
+    return `<div class="note"><span class="tag">${label}</span><div class="v en">${esc(d.before)}</div><div class="k en">→ ${esc(d.after)}</div><div class="v">${esc(d.why_ja)}</div>${noteBtn(n)}</div>`;
   }).join("") : `<p class="muted">該当するものはありません。</p>`;
 }
 $("#n-q").addEventListener("input", renderNotes);
+document.addEventListener("click", e=>{ const b=e.target.closest("[data-noterm]"); if(!b) return; const k=decodeURIComponent(b.dataset.noterm); removeNotes(n=>n.key===k); });
 $("#n-seg").addEventListener("click", e=>{
   if(e.target.tagName!=="BUTTON") return;
   $("#n-seg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b===e.target?"true":"false"));
@@ -1938,13 +1958,14 @@ function renderSRS(){
   box.innerHTML=`<div class="muted tiny">残り ${SRSQ.q.length} 件</div>
     <div class="flash"><span class="tag">${c.tag}</span><div class="front">${c.front}</div><div class="tiny">${c.ask}</div>
       ${SRSQ.flip?`<div class="back">${c.back}</div>`:""}</div>
-    ${SRSQ.flip?`<div class="row"><button class="primary" data-srs="good">覚えていた</button><button data-srs="hard">あいまい</button><button data-srs="again">忘れていた</button></div>`
+    ${SRSQ.flip?`<div class="row"><button class="primary" data-srs="good">覚えていた</button><button data-srs="hard">あいまい</button><button data-srs="again">忘れていた</button><button class="mini noterm" data-srs="remove">外す（もう復習しない）</button></div>`
       :`<button class="primary" data-srs="show">答えを見る</button>`}`;
 }
 document.addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   if(b.dataset.sayen){ speakSeq([{sp:"F", text:b.dataset.sayen}], .9); return; }
   const a=b.dataset.srs; if(!a) return;
+  if(a==="remove" && SRSQ && SRSQ.q.length){ const k=SRSQ.q.shift(); SRSQ.flip=false; save(); renderSRS(); removeNotes(n=>n.key===k, "ノートから外しました（復習にも出ません）"); return; }
   if(a==="start"){ SRSQ={q:srsDue().slice(0,20).map(n=>n.key), flip:false, done:0, again:new Set()}; }
   else if(a==="close"){ SRSQ=null; }
   else if(a==="show"){ SRSQ.flip=true; }
@@ -3257,11 +3278,11 @@ function guideRender(){
     <p class="tiny">${esc(g.form)}</p>
     <h3>解き方のコツ</h3><ol class="gtips">${g.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
     <h3>よくある落とし穴</h3><ul>${g.traps.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
-    <div class="part-h"><h3>覚えるべき単語・表現（${g.words.length}）</h3><button class="mini" data-guideall="${u}">全部ノートに追加</button></div>
+    <div class="part-h"><h3>覚えるべき単語・表現（${g.words.length}）</h3>${g.words.every(w=>inNotes(w[0]))?`<button class="mini noterm" data-guidermall="${u}">全部ノートから外す</button>`:`<button class="mini" data-guideall="${u}">全部ノートに追加</button>`}</div>
     <p class="tiny">ノートに追加すると、翌日から間隔反復の「今日の復習」に出てきます。▶で発音を聞けます。</p>
     ${g.words.map(([en,ja,ex],i)=>`<div class="gw"><div><strong class="en">${esc(en)}</strong> <button class="mini" data-sayen="${esc(en)}">▶</button>
         <span class="muted">${esc(ja)}</span></div><div class="tiny en">${esc(ex)}</div>
-        <button class="mini" data-guideadd="${u}|${i}" ${inNotes(en)?"disabled":""}>${inNotes(en)?"ノートにあります":"ノートに追加"}</button></div>`).join("")}
+        ${inNotes(en)?`<button class="mini noterm" data-guiderm="${u}|${i}">ノートから外す</button>`:`<button class="mini" data-guideadd="${u}|${i}">ノートに追加</button>`}</div>`).join("")}
     <p class="tiny" style="margin-top:12px">公式の問題数・時間などは細部が異なる場合があります。</p>`;
   $("#guide-title").textContent=`コツと単語：${g.title}`;
 }
@@ -3279,6 +3300,8 @@ document.addEventListener("click", e=>{
   if(d.guide){ guideOpen(d.guide); }
   else if(d.guideclose!=null){ guideClose(); }
   else if(d.guideadd){ const [u,i]=d.guideadd.split("|"); const w=GUIDE[u].words[+i]; addNotes("word",[{en:w[0], ja:`${w[1]}（例：${w[2]}）`}]); guideRender(); }
+  else if(d.guiderm){ const [u,i]=d.guiderm.split("|"), en=GUIDE[u].words[+i][0].toLowerCase(); removeNotes(n=>n.kind==="word" && String(n.data.en).toLowerCase()===en); }
+  else if(d.guidermall){ const set=new Set(GUIDE[d.guidermall].words.map(w=>w[0].toLowerCase())); removeNotes(n=>n.kind==="word" && set.has(String(n.data.en).toLowerCase())); }
   else if(d.guideall){ const g=GUIDE[d.guideall]; addNotes("word", g.words.map(w=>({en:w[0], ja:`${w[1]}（例：${w[2]}）`}))); guideRender(); toast(`${g.words.length}語をノートに追加しました（翌日から復習に出ます）`); }
 });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#guide").hidden) guideClose(); });
