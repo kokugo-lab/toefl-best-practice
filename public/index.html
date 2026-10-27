@@ -117,6 +117,7 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  .card.wu{border-color:var(--accent)}
   .bandpill{display:inline-block; background:var(--accent-soft); color:var(--accent); border-radius:8px; padding:1px 9px; font-weight:700; font-size:.95em}
   .xlat{margin:10px 0; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); font-size:.9rem}
   .xlat .mh{font-weight:650; font-size:.78rem; color:var(--sub); margin-bottom:2px}
@@ -322,10 +323,12 @@
         <button id="r-reset" style="display:none">新しいセットにする</button>
         <button id="c-start">3分ドリル（Complete the Words）</button>
         <button class="guidebtn" data-guide="cw">コツと単語</button>
+        <button class="guidebtn" data-wu="reading">基礎練習</button>
       </div>
       <p class="tiny" style="margin-top:6px">3分ドリルは、Complete the Words の1段落だけを3分で解くすき間時間用の練習です。時間になると自動で答え合わせします。</p>
       <div id="r-msg"></div>
     </div>
+    <div id="wu-reading"></div>
     <div id="c-body"></div>
     <div id="r-body"></div>
   </section>
@@ -339,11 +342,13 @@
         <button class="primary" id="l-start">第1段階を始める</button>
         <button id="l-voice">声のテスト</button>
         <button class="guidebtn" data-guide="response">コツと単語</button>
+        <button class="guidebtn" data-wu="listening">基礎練習</button>
         <button id="l-reset" style="display:none">新しいセットにする</button>
       </div>
       <p class="tiny" id="l-voiceinfo" style="margin-top:8px"></p>
       <div id="l-msg"></div>
     </div>
+    <div id="wu-listening"></div>
     <div id="l-body"></div>
   </section>
 
@@ -356,7 +361,9 @@
         <button data-t="email" aria-pressed="false">Write an Email</button>
         <button data-t="disc" aria-pressed="false">Academic Discussion</button>
       </div>
+      <button class="mini" data-wu="writing">基礎練習（いま開いている課題）</button>
     </div>
+    <div id="wu-writing"></div>
 
     <div class="wpanel" data-t="build">
       <div class="card">
@@ -426,8 +433,10 @@
         <button data-t="repeat" aria-pressed="true">Listen and Repeat</button>
         <button data-t="iv" aria-pressed="false">Take an Interview</button>
       </div>
+      <button class="mini" data-wu="speaking" style="margin-bottom:6px">基礎練習（いま開いている課題）</button>
       <p class="tiny">評価は文字起こしをもとに行うため、発音・抑揚・間は評価していません。</p>
     </div>
+    <div id="wu-speaking"></div>
 
     <div class="spanel" data-t="repeat">
       <div class="card">
@@ -1099,6 +1108,7 @@ stockDef("rl:reading", ()=>genModule("reading","standard"));
 stockDef("rl:listening", ()=>genModule("listening","standard"));
 async function startSet(sec){
   const P=SEC[sec].p, body=$("#"+P+"-body");
+  wuStart(sec);
   busy(body, "第1段階の問題を作っています…（20〜40秒ほどかかります）");
   $("#"+P+"-start").disabled=true;
   try{
@@ -1143,7 +1153,7 @@ function checkStage(sec){
 /* ---------- 課題ごとの目安のバンド ---------- */
 // 正答率と、その課題の難しさ（LV の lo〜hi）から出す。1〜6・0.5刻み。
 const partBand=(acc, level)=>{ const L=LV[level]||LV.standard; return Math.min(6, Math.max(1, Math.round((L.lo+(L.hi-L.lo)*acc)*2)/2)); };
-const bandPill=(name, b)=>`<span class="bandpill">${esc(name)} ${(+b).toFixed(1)}</span><span class="tiny muted">（目安）</span>`;
+const bandPill=(name, b)=>`<span class="bandpill">${esc(name)} ${(+b).toFixed(1)}</span>`;
 function levelOf(sec){ const st=DB.cur[sec]; if(!st) return "standard"; return sec==="cwd" ? st.s1.level : (curMod(st).level||"standard"); }
 
 /* ---------- 1問あたりの時間 ---------- */
@@ -1320,6 +1330,7 @@ function setupWriter(o){
     tick(); timer=setInterval(tick,1000);
   };
   el("gen").onclick = async ()=>{
+    if(GUIDE[o.key]) wuStart("writing");   // TOEFL の Email・Discussion
     const box=el("task"); box.style.display="block"; busy(box,"課題を作っています…");
     try{
       task = await stockGet("w:"+o.key);
@@ -1457,6 +1468,7 @@ stockDef("build", async ()=>{
   return items;
 });
 async function bStart(){
+  wuStart("writing");
   const body=$("#b-body"); busy(body,"問題を作っています…（10〜30秒ほどかかります）");
   $("#b-start").disabled=true;
   try{
@@ -1608,6 +1620,7 @@ stockDef("repeat", async ()=>{
   return d;
 });
 async function pStart(){
+  wuStart("speaking");
   const body=$("#p-body"); busy(body,"文を作っています…");
   $("#p-start").disabled=true;
   try{
@@ -2236,7 +2249,7 @@ stockDef("iv:one", async ()=>{
   return {qs:[{en:r.question_en, ja:r.question_ja, hint:r.hint_ja, prep:+r.prep_sec||15, speak:+r.speak_sec||60}], meta:{exam:"toefl", title:"Take an Interview（1問）", phrases:r.useful_phrases}};
 });
 async function ivStart(mode){
-  IVMODE=mode; SPKNEW.iv=()=>ivStart(IVMODE);
+  IVMODE=mode; SPKNEW.iv=()=>ivStart(IVMODE); wuStart("speaking");
   const box=$("#iv-body"); busy(box,"質問を作っています…");
   try{
     const x=await stockGet("iv:"+mode);
@@ -3324,6 +3337,75 @@ document.addEventListener("click", e=>{
   else if(d.guideall){ const g=GUIDE[d.guideall]; addNotes("word", g.words.map(w=>({en:w[0], ja:`${w[1]}（例：${w[2]}）`}))); guideRender(); toast(`${g.words.length}語をノートに追加しました（翌日から復習に出ます）`); }
 });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !$("#guide").hidden) guideClose(); });
+
+/* ================= 基礎練習（ウォームアップ） ================= */
+// 3分ドリルよりやさしい、その単元で覚えるべき語句の確認5問＋今日のポイント。
+// 中身は GUIDE から作る（生成しないのですぐ出て、無料枠も使わない）。問題の生成を待つ間に出す。状態は保存しない。
+const WU={};
+const WU_TABUNIT={build:"build", email:"email", disc:"disc", repeat:"repeat", iv:"interview"};
+function wuUnits(view){
+  if(view==="reading"||view==="listening") return GUIDE_SEC[view].units;
+  if(view==="writing") return [WU_TABUNIT[(DB.ui&&DB.ui.w)||"build"]];
+  return [WU_TABUNIT[(DB.ui&&DB.ui.s)||"repeat"]];
+}
+function wuMake(units){
+  const pool=shuffle(units.flatMap(u=>GUIDE[u].words.map(w=>({u, w}))));
+  const picks=pool.slice(0,5);
+  const qs=picks.map(({u,w},k)=>{
+    const [en,ja,ex]=w, others=shuffle(GUIDE[u].words.filter(x=>x[0]!==en)).slice(0,3);
+    const at=ex.toLowerCase().indexOf(en.toLowerCase());
+    if(k<3 && at>=0 && !/[…]/.test(en)){   // 例文の穴埋め（英語を選ぶ）
+      return {u, w, kind:"fill", prompt:ex.slice(0,at)+"＿＿＿＿"+ex.slice(at+en.length), opts:shuffle([en, ...others.map(x=>x[0])]), ans:en};
+    }
+    return {u, w, kind:"mean", prompt:en, opts:shuffle([ja, ...others.map(x=>x[1])]), ans:ja};   // 意味を選ぶ
+  });
+  const tu=units[Math.floor(Math.random()*units.length)];
+  return {units, qs, chosen:{}, tip:{u:tu, t:pick(GUIDE[tu].tips)}};
+}
+function wuStart(view, force){
+  if(MODE()!=="toefl") return;
+  if(!force && DB.ui.wuOff) return;
+  WU[view]=wuMake(wuUnits(view)); wuRender(view);
+}
+function wuHTML(view){
+  const st=WU[view]; if(!st) return "";
+  const n=st.qs.length, done=Object.keys(st.chosen).length, ok=st.qs.filter((q,i)=>st.chosen[i]===q.ans).length;
+  const qh=st.qs.map((q,i)=>{
+    const c=st.chosen[i], answered=c!=null, [en,ja,ex]=q.w;
+    const head = q.kind==="fill"
+      ? `<div class="qt">${i+1}. 空欄に入る語句は？</div><div class="en">${esc(q.prompt)}</div>`
+      : `<div class="qt">${i+1}. <span class="en">${esc(q.prompt)}</span> の意味は？</div>`;
+    const btns=q.opts.map(o=>{ let cls="choice"+(q.kind==="fill"?" en":""); if(answered){ if(o===q.ans) cls+=" ok"; else if(o===c) cls+=" ng"; }
+      return `<button class="${cls}" ${answered?"disabled":""} data-wua="${view}|${i}|${encodeURIComponent(o)}">${esc(o)}</button>`; }).join("");
+    const fb = answered ? `<div class="fb"><div class="h ${c===q.ans?"ok":"ng"}">${c===q.ans?"正解":"不正解"}</div>
+        <div><strong class="en">${esc(en)}</strong> <button class="mini" data-sayen="${esc(en)}">▶</button>　${esc(ja)}</div>
+        <div class="tiny en">${esc(ex)}</div>${c!==q.ans?`<div class="tiny">ノートに追加しました（翌日から復習に出ます）</div>`:""}</div>` : "";
+    return `<div class="q">${head}${btns}${fb}</div>`;
+  }).join("");
+  return `<div class="card wu">
+    <div class="part-h"><h2>基礎練習：${st.units.length>1?`${GUIDE_SEC[view].name}（${st.units.length}課題）`:esc(GUIDE[st.units[0]].title)}</h2><button class="mini" data-wuclose="${view}">閉じる</button></div>
+    <p class="tiny">問題の準備を待つ間や、解く前のウォームアップに。3分ドリルよりやさしい、覚えるべき語句の確認です（${n}問）。</p>
+    <div class="xlat"><div class="mh">今日のポイント（${esc(GUIDE[st.tip.u].title)}）</div><div>${esc(st.tip.t)}</div></div>
+    ${qh}
+    ${done===n?`<div class="fb"><div class="h ${ok===n?"ok":"ng"}">${n}問中 ${ok}問正解</div></div>
+      <div class="row" style="margin-top:8px"><button data-wu="${view}">別の${n}問</button><button data-wuclose="${view}">閉じる</button></div>`:""}
+    <label class="tiny" style="display:block;margin-top:10px"><input type="checkbox" data-wuoff="1" ${DB.ui.wuOff?"checked":""}> 問題を始めたときに自動で出さない</label>
+  </div>`;
+}
+function wuRender(view){ const el=$(`#wu-${view}`); if(el) el.innerHTML=wuHTML(view); }
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const d=b.dataset;
+  if(d.wu){ wuStart(d.wu, true); const el=$(`#wu-${d.wu}`); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }
+  else if(d.wuclose){ WU[d.wuclose]=null; wuRender(d.wuclose); }
+  else if(d.wua){
+    const [view,i,o]=d.wua.split("|"), st=WU[view]; if(!st || st.chosen[i]!=null) return;
+    const q=st.qs[+i], v=decodeURIComponent(o); st.chosen[i]=v;
+    if(v!==q.ans) addNotes("word",[{en:q.w[0], ja:`${q.w[1]}（例：${q.w[2]}）`}]);
+    act(1); wuRender(view);
+  }
+});
+document.addEventListener("change", e=>{ const t=e.target; if(t.dataset && t.dataset.wuoff){ DB.ui.wuOff=t.checked; save(); } });
 
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
