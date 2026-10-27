@@ -20,7 +20,8 @@
 - [x] 1. 共通部分（ホーム・記録/ノート・関数）、Speaking: Take an Interview、Writing: Write an Email
 - [x] 2. Reading（Complete the Words／Read in Daily Life／Read an Academic Passage）、
         Listening（Choose a Response／Conversation／Announcement／Academic Talk）。どちらも2段階アダプティブ
-- [ ] 3. Listen and Repeat（Speaking）、Build a Sentence、Write for an Academic Discussion（Writing）
+- [x] 3. Listen and Repeat（Speaking・7文、端末側で語の再現率を採点）、Build a Sentence（10問、端末側で採点）、
+        Write for an Academic Discussion（Writing・`eval_discussion` で添削）
 - [ ] 4. 模試モード（全セクション一括生成→localStorage保存、本番順・制限時間・戻れない、成績画面、過去結果のグラフ）
 
 ## 実装上の約束
@@ -28,6 +29,9 @@
   選択肢は端末側でシャッフル（`normQ`）。誤答理由 `why_wrong_ja`・誤答タイプ `trap` は選択肢と同じ並び。
 - 第1段階の正答率 ≥70% → 難しめ、<40% → やさしめ。バンドは正答率と第2段階の難易度から算出（目安）。
 - 間違い・言い換え・未知語は `addNotes()` でノートに自動保存。
+- Writing・Speaking は画面上部のタブで課題を切り替え（`segSwitch`）。Email と Academic Discussion は `setupWriter()` を共用し、
+  下書きは `DB.draft.email` / `DB.draft.disc`。Build・Repeat の進行状態は `DB.cur.build` / `DB.cur.repeat`。
+- 記録 `DB.records` には `task`（build / email / disc / repeat / interview）を付ける。古い記録は `taskOf()` で補う。
 - 音声は SpeechSynthesis（男女2声、同じ声しかなければ pitch で区別）、文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。

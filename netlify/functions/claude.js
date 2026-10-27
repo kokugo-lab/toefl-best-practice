@@ -280,6 +280,116 @@ JSON shape:
  "key_words": [{"en": "word or phrase", "ja": "意味"}, ...5 items]}`,
   },
 
+  // ---- Speaking: Listen and Repeat --------------------------------
+  gen_repeat: {
+    max_tokens: 1400,
+    prompt: (i) => `${COMMON}
+
+Create one "Listen and Repeat" set for Speaking practice.
+Setting: ${i.topic || "a guide giving new students a campus tour"}.
+Write 7 sentences that this one speaker would naturally say, in order, as if guiding the listeners.
+The sentences get longer: about 5-7, 7-9, 9-11, 11-13, 13-15, 15-17 and 17-20 words.
+Natural spoken English at CEFR B2. Do NOT use numerals, dates, times, proper names or abbreviations
+(they are hard to repeat and to transcribe). Each sentence must be complete and make sense on its own.
+
+JSON shape:
+{"setting_en": "short English description of the scene", "setting_ja": "場面の説明（日本語1文）",
+ "speaker": "F or M",
+ "sentences": [{"en": "sentence", "ja": "日本語訳"}, ...7 items],
+ "key_words": [{"en": "word or phrase", "ja": "意味"}, ...3 items]}`,
+  },
+
+  // ---- Writing: Build a Sentence ----------------------------------
+  gen_build: {
+    max_tokens: 1800,
+    prompt: (i) => `${COMMON}
+
+Create ${i.count || 5} "Build a Sentence" items for Writing practice. Difficulty: ${lv(i)}
+Situations: ${i.topic || "campus life and classes"}.
+Each item is a short exchange. Speaker A says one line (the context). Speaker B's reply (7-13 words) must be
+assembled by the learner from word chunks.
+- "prefix": 0-2 words fixed at the start of B's reply (may be an empty string).
+- "chunks": the REST of B's reply, split into 5-7 chunks of 1-3 words each, listed in the CORRECT order,
+  without the final punctuation mark.
+- Exactly ONE order of the chunks may be grammatical and natural: never create chunks that could be swapped
+  (two adverbs, two adjectives, two prepositional phrases), and never repeat the same chunk.
+- "distractor": one extra chunk that looks tempting but makes the sentence ungrammatical if used
+  (e.g. "does" inside an embedded question, a wrong preposition, a wrong verb form), or "" for none.
+Target grammar a B2 learner must control: embedded questions, relative clauses, passive voice, perfect tenses,
+conditionals, comparatives, infinitives and gerunds, phrasal verbs. Use a different grammar point per item.
+
+JSON shape:
+{"items": [{
+  "context": "what speaker A says",
+  "prefix": "",
+  "chunks": ["chunk", "chunk", "chunk", "chunk", "chunk"],
+  "end": "? or .",
+  "distractor": "",
+  "tag": "exactly one of: 間接疑問 / 関係詞 / 受動態 / 時制 / 仮定法 / 比較 / 不定詞・動名詞 / 句動詞 / 語順その他",
+  "ja": "Bの文の日本語訳",
+  "grammar_ja": "語順のポイントを日本語1-2文で（なぜこの順番になるか。ダミーの語があればなぜ使えないか）"
+}, ...]}`,
+  },
+
+  // ---- Writing: Academic Discussion -------------------------------
+  gen_discussion: {
+    max_tokens: 1600,
+    prompt: (i) => `${COMMON}
+
+Create one "Write for an Academic Discussion" task.
+Course: ${i.topic || "sociology"}.
+The professor posts on an online class discussion board (60-90 words): brief background, then one clear
+question that invites an opinion and has at least two defensible sides. Two students have already replied
+(40-60 words each) with DIFFERENT positions, each with one reason or example. The learner will write a reply
+of at least 100 words. Vocabulary at CEFR B2.
+
+JSON shape:
+{"course": "course name in English",
+ "professor": "e.g. Dr. Lee",
+ "professor_post": "the professor's post",
+ "question_ja": "教授の問いの要点（日本語1-2文）",
+ "students": [{"name": "first name", "post": "reply"}, {"name": "first name", "post": "reply"}],
+ "time_limit_sec": 600,
+ "min_words": 100,
+ "useful_phrases": [{"en":"phrase","ja":"日本語の意味"}, ...4 items]}`,
+  },
+
+  eval_discussion: {
+    max_tokens: 2000,
+    prompt: (i) => `${COMMON}
+
+Evaluate this "Write for an Academic Discussion" response.
+
+PROFESSOR'S POST: ${i.professor || ""}
+CLASSMATES' POSTS:
+${(i.students || []).map((s) => `- ${s.name}: ${s.post}`).join("\n")}
+LEARNER'S POST:
+"""
+${i.answer || ""}
+"""
+Word count: ${i.words || 0}. Time used: ${i.seconds || 0} seconds.
+Judge especially: a clear position that answers the professor's question; a reason supported by a specific
+example or explanation; whether it engages with the classmates' ideas AND adds a new point instead of
+repeating them; coherence; grammar; range and precision of vocabulary; length (about 100 words or more).
+
+JSON shape (all Japanese fields in natural Japanese):
+{
+ "band": 4.0,
+ "band_note_ja": "このバンドは公式採点ではない概算である旨を一文で",
+ "scores": {"task_response": 4, "organization": 4, "grammar": 3, "vocabulary": 4},
+ "task_response_ja": "問いへの答え・新しい視点の有無・クラスメートへの言及の講評（2-3文）",
+ "organization_ja": "構成の講評（2-3文）",
+ "grammar_ja": "文法の講評（2-3文）",
+ "vocabulary_ja": "語彙の講評（2-3文）",
+ "good_points_ja": ["良かった点1", "良かった点2"],
+ "improvements_ja": ["改善点1", "改善点2"],
+ "corrections": [{"before":"原文の該当箇所","after":"直した形","why_ja":"直した理由"}, ...up to 6],
+ "revised_en": "添削後の全文（英語）",
+ "paraphrases": [{"from":"学習者の表現","to":"B2らしい言い換え","ja":"ニュアンスの違い"}, ...3],
+ "unknown_words": [{"en":"覚えたい語句","ja":"意味"}, ...up to 5]
+}`,
+  },
+
   // ---- review quiz ------------------------------------------------
   gen_review: {
     max_tokens: 1200,

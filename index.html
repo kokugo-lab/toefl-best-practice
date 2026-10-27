@@ -113,6 +113,19 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  .seg button{line-height:1.35}
+  .post{border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin:10px 0; background:var(--bg)}
+  .post .who{font-weight:700; font-size:.82rem; color:var(--accent); margin-bottom:2px}
+  .post.stu{margin-left:14px} .post.stu .who{color:var(--warn)}
+  .ex{margin:4px 0} .ex .sp{display:inline-block; min-width:1.8em; font-weight:700; color:var(--accent)} .ex .sp.M{color:var(--warn)}
+  .bs-ans{display:flex; flex-wrap:wrap; align-items:center; gap:6px; min-height:2.6em; padding:6px 0}
+  .bs-pool{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; padding:8px; border:1px dashed var(--line); border-radius:10px; min-height:2.8em}
+  .tile{padding:6px 11px; border-radius:8px; line-height:1.3}
+  .tile.on{background:var(--accent-soft); border-color:var(--accent)}
+  .slot{display:inline-block; width:3.2em; height:1.9em; border-bottom:2px solid var(--line)}
+  .fixw{font-weight:600}
+  .rp-tok .missw{background:var(--warn-soft); color:var(--warn); border-radius:4px; padding:0 3px; font-weight:650}
+  .rp-tok .hitw{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -179,32 +192,99 @@
   <!-- ============ Writing ============ -->
   <section id="v-writing" class="view">
     <div class="card">
-      <h2>Writing — Write an Email</h2>
-      <p class="tiny">大学の事務室や教授あてのメールを書く課題です。制限時間は10分、90語以上が目安。</p>
-      <div id="w-start" class="row">
-        <button class="primary" id="w-gen">課題を出す</button>
+      <h2>Writing</h2>
+      <div class="seg" id="w-seg">
+        <button data-t="build" aria-pressed="true">Build a Sentence</button>
+        <button data-t="email" aria-pressed="false">Write an Email</button>
+        <button data-t="disc" aria-pressed="false">Academic Discussion</button>
       </div>
-      <div id="w-task" style="display:none"></div>
     </div>
-    <div class="card" id="w-editor" style="display:none">
-      <div class="row" style="justify-content:space-between">
-        <div class="timer" id="w-timer">10:00</div>
-        <div class="muted" id="w-count">0 語</div>
+
+    <div class="wpanel" data-t="build">
+      <div class="card">
+        <h2>Build a Sentence</h2>
+        <p class="tiny">会話の流れに合うように、語のかたまりを正しい順番に並べて文を完成させます（10問・目安6分）。かたまりを押すと解答欄に入り、解答欄のかたまりを押すと戻ります。使わないダミーが1つ混ざっている問題もあります。</p>
+        <div class="row">
+          <button class="primary" id="b-start">10問を始める</button>
+          <button id="b-reset" style="display:none">新しいセットにする</button>
+        </div>
       </div>
-      <textarea id="w-text" placeholder="Write your email here..." spellcheck="true"></textarea>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="w-submit">提出して添削を受ける</button>
-        <button id="w-save">下書きを保存</button>
-      </div>
-      <p class="tiny" style="margin-top:8px">入力内容は自動で保存されます。通信に失敗しても文章は消えません。</p>
+      <div id="b-body"></div>
     </div>
-    <div id="w-result"></div>
+
+    <div class="wpanel" data-t="email" style="display:none">
+      <div class="card">
+        <h2>Write an Email</h2>
+        <p class="tiny">大学の事務室や教授あてのメールを書く課題です。制限時間は10分、90語以上が目安。</p>
+        <div class="row"><button class="primary" id="w-gen">課題を出す</button></div>
+        <div id="w-task" style="display:none"></div>
+      </div>
+      <div class="card" id="w-editor" style="display:none">
+        <div class="row" style="justify-content:space-between">
+          <div class="timer" id="w-timer">10:00</div>
+          <div class="muted" id="w-count">0 語</div>
+        </div>
+        <textarea id="w-text" placeholder="Write your email here..." spellcheck="true"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="w-submit">提出して添削を受ける</button>
+          <button id="w-save">下書きを保存</button>
+        </div>
+        <div id="w-msg"></div>
+        <p class="tiny" style="margin-top:8px">入力内容は自動で保存されます。通信に失敗しても文章は消えません。</p>
+      </div>
+      <div id="w-result"></div>
+    </div>
+
+    <div class="wpanel" data-t="disc" style="display:none">
+      <div class="card">
+        <h2>Write for an Academic Discussion</h2>
+        <p class="tiny">授業のオンライン掲示板で、教授の問いとクラスメート2人の投稿を読み、自分の意見を投稿します。制限時間は10分、100語以上が目安。クラスメートの意見に触れつつ、新しい視点を足すのがコツです。</p>
+        <div class="row"><button class="primary" id="d-gen">課題を出す</button></div>
+        <div id="d-task" style="display:none"></div>
+      </div>
+      <div class="card" id="d-editor" style="display:none">
+        <div class="row" style="justify-content:space-between">
+          <div class="timer" id="d-timer">10:00</div>
+          <div class="muted" id="d-count">0 語</div>
+        </div>
+        <textarea id="d-text" placeholder="Write your post here..." spellcheck="true"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="d-submit">提出して添削を受ける</button>
+          <button id="d-save">下書きを保存</button>
+        </div>
+        <div id="d-msg"></div>
+        <p class="tiny" style="margin-top:8px">入力内容は自動で保存されます。通信に失敗しても文章は消えません。</p>
+      </div>
+      <div id="d-result"></div>
+    </div>
   </section>
 
   <!-- ============ Speaking ============ -->
   <section id="v-speaking" class="view">
     <div class="card">
-      <h2>Speaking — Take an Interview</h2>
+      <h2>Speaking</h2>
+      <div class="seg" id="s-seg">
+        <button data-t="repeat" aria-pressed="true">Listen and Repeat</button>
+        <button data-t="iv" aria-pressed="false">Take an Interview</button>
+      </div>
+      <p class="tiny">評価は文字起こしをもとに行うため、発音・抑揚・間は評価していません。</p>
+    </div>
+
+    <div class="spanel" data-t="repeat">
+      <div class="card">
+        <h2>Listen and Repeat</h2>
+        <p class="tiny">案内役の話す文を1回だけ聞き、聞こえたとおりにくり返します（7文・だんだん長くなります）。再生が終わると自動で録音が始まります。文字起こしと元の文を比べて、再現できた語の割合を出します。</p>
+        <div class="row">
+          <button class="primary" id="p-start">7文を始める</button>
+          <button id="p-reset" style="display:none">新しいセットにする</button>
+        </div>
+      </div>
+      <div id="p-body"></div>
+    </div>
+
+    <div class="spanel" data-t="iv" style="display:none">
+    <div class="card">
+      <h2>Take an Interview</h2>
       <p class="tiny">質問を聞いて、準備15秒・解答60秒で話します。録音と文字起こしを行い、文字起こしは自分で直してから評価に出せます。</p>
       <div class="row"><button class="primary" id="s-gen">質問を出す</button></div>
       <div id="s-task" style="display:none"></div>
@@ -231,6 +311,7 @@
       </div>
     </div>
     <div id="s-result"></div>
+    </div>
   </section>
 
   <!-- ============ ノート ============ -->
@@ -281,6 +362,8 @@ let DB = { records: [], notes: [], draft: {} };
 function load(){ try{ const r = localStorage.getItem(K); if(r) DB = Object.assign(DB, JSON.parse(r)); }catch(e){ console.warn("読み込み失敗", e); } }
 function save(){ try{ localStorage.setItem(K, JSON.stringify(DB)); }catch(e){ console.warn("保存失敗", e); } }
 load();
+// 旧形式の下書き（Email）を引き継ぐ
+try{ if(DB.draft && DB.draft.writing && !DB.draft.email){ DB.draft.email=DB.draft.writing; DB.draft.writing=null; } }catch(e){}
 
 /* ================= helpers ================= */
 const $ = (s)=>document.querySelector(s);
@@ -351,10 +434,13 @@ $("#n-seg").addEventListener("click", e=>{
   renderNotes();
 });
 
+const TASKNAME={build:"Build a Sentence", email:"Email", disc:"Academic Discussion", repeat:"Listen and Repeat", interview:"Interview"};
+// 第3段階より前の記録には task がないので、Writing は Email、Speaking は Interview とみなす
+const taskOf=(r)=>r.task || (r.kind==="Writing" ? "email" : r.kind==="Speaking" ? "interview" : "");
 function renderHist(){
   const r = DB.records.slice().reverse();
   $("#n-hist").innerHTML = r.length ? r.map(x=>
-    `<div class="kv"><span>${new Date(x.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}　${esc(x.kind)}</span><strong>${x.band?.toFixed ? x.band.toFixed(1) : x.band}</strong></div>`
+    `<div class="kv"><span>${new Date(x.at).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}　${esc(x.kind)}${TASKNAME[taskOf(x)]?`（${TASKNAME[taskOf(x)]}）`:""}</span><strong>${x.band?.toFixed ? x.band.toFixed(1) : x.band}</strong></div>`
   ).join("") : `<p class="muted">まだありません。</p>`;
 }
 
@@ -365,15 +451,16 @@ function renderHome(){
   $("#days").textContent = d>0 ? d : 0;
   $("#daysSub").innerHTML = `日<br><span class="tiny">2026年11月29日が本番</span>`;
 
-  const w = DB.records.filter(r=>r.kind==="Writing");
-  const s = DB.records.filter(r=>r.kind==="Speaking");
-  const cnt=(k)=>DB.records.filter(r=>r.kind===k).length;
-  const st=(k,u)=>cnt(k)?`累計 ${cnt(k)}${u}`:"未着手";
+  const cnt=(k,t)=>DB.records.filter(r=>r.kind===k && (!t || taskOf(r)===t)).length;
+  const st=(k,u,t)=>cnt(k,t)?`累計 ${cnt(k,t)}${u}`:"未着手";
   $("#menu").innerHTML = `
     <div class="kv"><span>Reading 1セット（2段階・約20分）</span><span class="muted">${st("Reading","セット")}</span></div>
     <div class="kv"><span>Listening 1セット（2段階・約15分）</span><span class="muted">${st("Listening","セット")}</span></div>
-    <div class="kv"><span>Writing（Write an Email）10分 × 1本</span><span class="muted">${st("Writing","本")}</span></div>
-    <div class="kv"><span>Speaking（Take an Interview）60秒 × 2本</span><span class="muted">${st("Speaking","本")}</span></div>
+    <div class="kv"><span>Writing（Build a Sentence）10問</span><span class="muted">${st("Writing","セット","build")}</span></div>
+    <div class="kv"><span>Writing（Write an Email）10分 × 1本</span><span class="muted">${st("Writing","本","email")}</span></div>
+    <div class="kv"><span>Writing（Academic Discussion）10分 × 1本</span><span class="muted">${st("Writing","本","disc")}</span></div>
+    <div class="kv"><span>Speaking（Listen and Repeat）7文</span><span class="muted">${st("Speaking","セット","repeat")}</span></div>
+    <div class="kv"><span>Speaking（Take an Interview）60秒 × 2本</span><span class="muted">${st("Speaking","本","interview")}</span></div>
     <div class="kv"><span>ノートの復習クイズ 5問</span><span class="muted">${DB.notes.length} 件たまっています</span></div>`;
 
   if(!DB.records.length){ return; }
@@ -390,57 +477,8 @@ function renderHome(){
       const a=avg(v);
       return `<div class="bar"><span>${labels[k]||k}</span><span class="track"><span class="fill" style="width:${(a/6*100).toFixed(0)}%"></span></span><span>${a.toFixed(1)}</span></div>`;
     }).join("")}</div>
-    <p class="tiny">数値の低い順に6項目を表示しています（Reading・Listeningは正答率を6段階に換算）。上にあるものほど伸ばしどころです。</p>`;
+    <p class="tiny">数値の低い順に6項目を表示しています（Reading・Listening・Build a Sentence・Listen and Repeat は正答率を6段階に換算）。上にあるものほど伸ばしどころです。</p>`;
 }
-
-/* ================= Writing ================= */
-let wTask=null, wTimer=null, wLeft=600, wStarted=0;
-$("#w-gen").onclick = async ()=>{
-  const box = $("#w-task"); box.style.display="block"; busy(box,"課題を作っています…");
-  try{
-    wTask = await api("gen_email", {});
-    box.innerHTML = `
-      <hr>
-      <p class="en">${esc(wTask.situation_en)}</p>
-      <p class="muted">${esc(wTask.situation_ja)}</p>
-      <p class="en"><strong>${esc(wTask.instruction_en)}</strong></p>
-      <h3>必ず入れる内容</h3>
-      <ul class="en">${(wTask.points||[]).map(p=>`<li>${esc(p)}</li>`).join("")}</ul>
-      <h3>使える表現</h3>
-      <ul>${(wTask.useful_phrases||[]).map(p=>`<li><span class="en">${esc(p.en)}</span> <span class="muted">${esc(p.ja)}</span></li>`).join("")}</ul>`;
-    $("#w-editor").style.display="block";
-    $("#w-text").value = "";
-    startW(wTask.time_limit_sec||600);
-  }catch(e){ fail(box, e, ()=>$("#w-gen").click()); }
-};
-function startW(sec){
-  clearInterval(wTimer); wLeft=sec; wStarted=Date.now();
-  const t=$("#w-timer");
-  const tick=()=>{ t.textContent=mmss(wLeft); t.classList.toggle("low", wLeft<=60);
-    if(wLeft<=0){ clearInterval(wTimer); $("#w-submit").click(); } wLeft--; };
-  tick(); wTimer=setInterval(tick,1000);
-}
-$("#w-text").addEventListener("input", ()=>{
-  $("#w-count").textContent = words($("#w-text").value)+" 語";
-  DB.draft.writing = {text:$("#w-text").value, task:wTask}; save();
-});
-$("#w-save").onclick=()=>{ DB.draft.writing={text:$("#w-text").value, task:wTask}; save(); $("#w-save").textContent="保存しました"; setTimeout(()=>$("#w-save").textContent="下書きを保存",1500); };
-
-$("#w-submit").onclick = async ()=>{
-  const text=$("#w-text").value.trim();
-  if(!text){ alert("まだ何も書かれていません。"); return; }
-  clearInterval(wTimer);
-  const box=$("#w-result"); busy(box,"添削しています…");
-  const input={ task:(wTask&&wTask.instruction_en)||"", points:(wTask&&wTask.points)||[],
-                answer:text, words:words(text), seconds:Math.round((Date.now()-wStarted)/1000) };
-  try{
-    const r = await api("eval_writing", input);
-    box.innerHTML = renderEval(r, "Writing");
-    DB.records.push({at:Date.now(), kind:"Writing", band:+r.band||0, scores:r.scores||{}});
-    addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); addNotes("fix", r.corrections);
-    DB.draft.writing=null; save();
-  }catch(e){ fail(box, e, ()=>$("#w-submit").click()); }
-};
 
 /* ================= Speaking ================= */
 let sTask=null, sTimer=null, rec=null, chunks=[], sRecog=null, sTrans="", sSec=0;
@@ -526,7 +564,7 @@ $("#s-submit").onclick = async ()=>{
   try{
     const r = await api("eval_speaking", {question:(sTask&&sTask.question_en)||"", transcript:tr, seconds:sSec, words:words(tr)});
     box.innerHTML = renderEval(r, "Speaking");
-    DB.records.push({at:Date.now(), kind:"Speaking", band:+r.band||0, scores:r.scores||{}});
+    DB.records.push({at:Date.now(), kind:"Speaking", task:"interview", band:+r.band||0, scores:r.scores||{}});
     addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); save();
   }catch(e){ fail(box, e, ()=>$("#s-submit").click()); }
 };
@@ -998,6 +1036,431 @@ function confirmReset(){ // ダイアログを出さずに二度押しで確定
 }
 $("#l-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is the woman's voice."},{sp:"M",text:"And this is the man's voice."}], .94); };
 
+/* ================= Writing（Email／Academic Discussion 共通） ================= */
+const phrasesHTML=(a)=>(a&&a.length)?`<h3>使える表現</h3><ul>${a.map(p=>`<li><span class="en">${esc(p.en)}</span> <span class="muted">${esc(p.ja)}</span></li>`).join("")}</ul>`:"";
+const TOPICS_DISC = ["sociology","education","urban planning","environmental policy","business management","public health","media studies","psychology","economics","political science","technology and society","anthropology"];
+function setupWriter(o){
+  const P=o.p, el=(x)=>$(`#${P}-${x}`);
+  let task=null, timer=null, left=0, started=0;
+  const draft=()=>{ DB.draft[o.key]={text:el("text").value, task, left}; save(); };
+  const showTask=()=>{ el("task").style.display="block"; el("task").innerHTML=o.taskHTML(task); el("editor").style.display="block"; };
+  const run=()=>{
+    clearInterval(timer); started=Date.now()-((task&&task.time_limit_sec||600)-left)*1000;
+    const t=el("timer");
+    const tick=()=>{ t.textContent=mmss(left); t.classList.toggle("low", left<=60);
+      if(left<=0){ clearInterval(timer); timer=null; el("submit").click(); return; } left--; if(left%10===0) draft(); };
+    tick(); timer=setInterval(tick,1000);
+  };
+  el("gen").onclick = async ()=>{
+    const box=el("task"); box.style.display="block"; busy(box,"課題を作っています…");
+    try{
+      task = await api(o.gen, o.genInput());
+      showTask(); el("text").value=""; el("count").textContent="0 語"; el("result").innerHTML=""; el("msg").innerHTML="";
+      left=task.time_limit_sec||600; draft(); run();
+    }catch(e){ fail(box, e, ()=>el("gen").click()); }
+  };
+  el("text").addEventListener("input", ()=>{
+    el("count").textContent = words(el("text").value)+" 語";
+    if(!timer && task && left>0) run();   // 保存した下書きを開いたときは、書き始めた時点で時計を再開
+    draft();
+  });
+  el("save").onclick=()=>{ draft(); el("save").textContent="保存しました"; setTimeout(()=>el("save").textContent="下書きを保存",1500); };
+  el("submit").onclick = async ()=>{
+    const text=el("text").value.trim();
+    if(!text){ el("msg").innerHTML=`<div class="err">まだ何も書かれていません。</div>`; return; }
+    el("msg").innerHTML="";
+    clearInterval(timer); timer=null;
+    const box=el("result"); busy(box,"添削しています…");
+    const input=Object.assign(o.evalInput(task||{}), {answer:text, words:words(text), seconds:Math.round((Date.now()-started)/1000)});
+    try{
+      const r = await api(o.ev, input);
+      box.innerHTML = renderEval(r, `Writing（${o.name}）`);
+      DB.records.push({at:Date.now(), kind:"Writing", task:o.key, band:+r.band||0, scores:r.scores||{}});
+      addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); addNotes("fix", r.corrections);
+      DB.draft[o.key]=null; save();
+    }catch(e){ fail(box, e, ()=>el("submit").click()); }
+  };
+  // 下書きの復元
+  try{
+    const d=DB.draft[o.key];
+    if(d && d.text && d.task){
+      task=d.task; left=d.left>0?d.left:(task.time_limit_sec||600);
+      showTask(); el("text").value=d.text; el("count").textContent=words(d.text)+" 語";
+      el("timer").textContent=mmss(left);
+      el("msg").innerHTML=`<p class="tiny">保存していた下書きを開きました。書き始めると残り時間の計測を再開します。</p>`;
+    }
+  }catch(e){}
+}
+setupWriter({
+  p:"w", key:"email", name:"Email", gen:"gen_email", ev:"eval_writing",
+  genInput:()=>({}),
+  evalInput:(t)=>({task:t.instruction_en||"", points:t.points||[]}),
+  taskHTML:(t)=>`
+      <hr>
+      <p class="en">${esc(t.situation_en)}</p>
+      <p class="muted">${esc(t.situation_ja)}</p>
+      <p class="en"><strong>${esc(t.instruction_en)}</strong></p>
+      <h3>必ず入れる内容</h3>
+      <ul class="en">${(t.points||[]).map(p=>`<li>${esc(p)}</li>`).join("")}</ul>
+      ${phrasesHTML(t.useful_phrases)}`,
+});
+setupWriter({
+  p:"d", key:"disc", name:"Academic Discussion", gen:"gen_discussion", ev:"eval_discussion",
+  genInput:()=>({topic:pick(TOPICS_DISC)}),
+  evalInput:(t)=>({professor:t.professor_post||"", students:t.students||[]}),
+  taskHTML:(t)=>`
+      <hr>
+      <p class="tiny">${esc(t.course||"")}</p>
+      <div class="post"><div class="who">${esc(t.professor||"Professor")}</div><div class="en">${esc(t.professor_post)}</div></div>
+      <p class="muted">${esc(t.question_ja||"")}</p>
+      ${(t.students||[]).map(s=>`<div class="post stu"><div class="who">${esc(s.name)}</div><div class="en">${esc(s.post)}</div></div>`).join("")}
+      ${phrasesHTML(t.useful_phrases)}`,
+});
+
+/* ================= タブ切り替え（Writing／Speaking） ================= */
+function segSwitch(segSel, panelSel, key){
+  const seg=$(segSel);
+  const show=(t)=>{
+    seg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.t===t?"true":"false"));
+    document.querySelectorAll(panelSel).forEach(p=>p.style.display = p.dataset.t===t ? "" : "none");
+    DB.ui=DB.ui||{}; DB.ui[key]=t; save();
+  };
+  seg.addEventListener("click", e=>{ const b=e.target.closest("button"); if(b && b.dataset.t) show(b.dataset.t); });
+  const saved=DB.ui && DB.ui[key];
+  if(saved && seg.querySelector(`[data-t="${saved}"]`)) show(saved);
+}
+segSwitch("#w-seg", ".wpanel", "w");
+segSwitch("#s-seg", ".spanel", "s");
+
+const normS=(t)=>String(t||"").toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z0-9' ]+/g," ").replace(/\s+/g," ").trim();
+const capFirst=(t)=>t ? t[0].toUpperCase()+t.slice(1) : t;
+const shuffle=(a)=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const bandOf=(acc)=>Math.min(6, Math.max(1, Math.round((1+5*acc)*2)/2));
+
+/* ================= Writing: Build a Sentence ================= */
+const TOPICS_BUILD = ["talking with classmates about assignments and exams","office hours with professors and teaching assistants","dormitory life and campus services","the library, labs and study groups","club activities, part-time jobs and campus events","registering for courses and talking with an academic advisor"];
+const B_GUIDE = 6*60;
+
+function normBuild(it){
+  if(!it) return null;
+  const chunks=(it.chunks||[]).map(c=>String(c).replace(/[.?!]+$/,"").trim()).filter(Boolean);
+  if(chunks.length<3) return null;
+  const prefix=String(it.prefix||"").trim();
+  // 文頭の大文字で答えがわからないように、先頭のかたまりは小文字にする（I は除く）
+  if(!prefix && !/^I(\s|'|’|$)/.test(chunks[0])) chunks[0]=chunks[0][0].toLowerCase()+chunks[0].slice(1);
+  const tiles=chunks.map(t=>({t, x:false}));
+  const dis=String(it.distractor||"").trim();
+  if(dis && !chunks.some(c=>normS(c)===normS(dis))) tiles.push({t:dis, x:true});
+  let sh=shuffle(tiles), g=0;
+  while(g++<5 && sh.filter(x=>!x.x).every((x,k)=>x.t===chunks[k])) sh=shuffle(tiles);
+  return {context:String(it.context||""), prefix, chunks, end:it.end==="?"?"?":".", tiles:sh,
+    distractor: tiles.some(x=>x.x) ? dis : "", tag:it.tag||"語順その他", ja:it.ja||"", grammar_ja:it.grammar_ja||""};
+}
+const bSentence=(it, list)=>capFirst([it.prefix].concat(list).filter(Boolean).join(" "))+it.end;
+
+async function bStart(){
+  const body=$("#b-body"); busy(body,"問題を作っています…（10〜30秒ほどかかります）");
+  $("#b-start").disabled=true;
+  try{
+    const [t1,t2]=pick2(TOPICS_BUILD);
+    const rs=await Promise.all([api("gen_build",{count:5, topic:t1}), api("gen_build",{count:5, topic:t2})]);
+    const items=rs.flatMap(r=>(r.items||[]).map(normBuild).filter(Boolean)).slice(0,10);
+    if(items.length<5) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
+    DB.cur.build={items, placed:{}, checked:{}, ok:{}, started:Date.now(), phase:"run"};
+    save(); bRender(); window.scrollTo(0, body.offsetTop-10);
+  }catch(e){ fail(body, e, bStart); }
+  finally{ $("#b-start").disabled=false; }
+}
+
+function bItemHTML(st, i){
+  const it=st.items[i], pl=st.placed[i]||[], ch=!!st.checked[i];
+  const placed=pl.map((id,pos)=>`<button class="tile on en" ${ch?"disabled":""} data-bun="${i}|${pos}">${esc(it.tiles[id].t)}</button>`).join("");
+  const empty=Array(Math.max(0,it.chunks.length-pl.length)).fill(`<span class="slot"></span>`).join("");
+  const pool=it.tiles.map((x,id)=>pl.includes(id)?"":`<button class="tile en" ${ch?"disabled":""} data-bpick="${i}|${id}">${esc(x.t)}</button>`).join("");
+  let fb="";
+  if(ch){
+    const ok=st.ok[i];
+    fb=`<div class="fb"><div class="h ${ok?"ok":"ng"}">${ok?"正解":"不正解"}　<span class="tag">${esc(it.tag)}</span></div>
+      <div class="en"><strong>${esc(bSentence(it, it.chunks))}</strong></div>
+      <div class="muted">${esc(it.ja)}</div>
+      ${!ok?`<div class="corr"><strong>あなたの答え</strong><br><span class="en">${esc(bSentence(it, pl.map(id=>it.tiles[id].t)))}</span></div>`:""}
+      <div style="margin-top:6px">${esc(it.grammar_ja)}</div>
+      ${it.distractor?`<div class="tiny" style="margin-top:4px">使わない語：<span class="en">${esc(it.distractor)}</span></div>`:""}
+    </div>`;
+  }
+  return `<div class="q" id="b-it-${i}">
+    <div class="qt">${i+1}.</div>
+    <div class="ex en"><span class="sp">A</span>${esc(it.context)}</div>
+    <div class="ex en bs-ans"><span class="sp M">B</span>${it.prefix?`<span class="fixw">${esc(it.prefix)}</span>`:""}${placed}${empty}<span class="fixw">${it.end}</span></div>
+    ${ch?"":`<div class="bs-pool">${pool}</div>
+    <div class="row" style="margin-top:8px"><button class="primary" data-bcheck="${i}" ${pl.length===it.chunks.length?"":"disabled"}>答え合わせ</button>${pl.length?`<button data-bclear="${i}">やり直す</button>`:""}</div>`}
+    ${fb}
+  </div>`;
+}
+function bBarHTML(st){
+  const n=st.items.length, d=Object.keys(st.checked).length;
+  return `<div class="stagebar"><div><strong>Build a Sentence</strong> <span class="muted">解答 ${d} / ${n}</span>
+      <div class="progress" style="width:min(240px,50vw)"><i style="width:${d/n*100}%"></i></div></div>
+    <div class="timer" data-start="${st.started}" data-limit="${B_GUIDE}" title="目安時間">–</div></div>`;
+}
+function bSummaryHTML(st){
+  const n=st.items.length, c=Object.values(st.ok).filter(Boolean).length;
+  const tags={}; st.items.forEach((it,i)=>{ (tags[it.tag]=tags[it.tag]||[0,0]); tags[it.tag][1]++; if(st.ok[i]) tags[it.tag][0]++; });
+  return `<div class="card"><h2>Build a Sentence の結果</h2>
+    <div class="band">${st.band.toFixed(1)}<span>推定バンド</span></div>
+    <p class="tiny" style="margin-top:8px">正答率から出した目安で、公式採点とは一致しません。</p>
+    <div class="kv"><span>正解</span><strong>${c} / ${n}</strong></div>
+    <h3>文法項目別</h3>
+    <div class="bars">${Object.entries(tags).sort((a,b)=>a[1][0]/a[1][1]-b[1][0]/b[1][1]).map(([t,[k,m]])=>
+      `<div class="bar"><span>${esc(t)}</span><span class="track"><span class="fill" style="width:${(k/m*100).toFixed(0)}%"></span></span><span>${k}/${m}</span></div>`).join("")}</div>
+    <p class="tiny">間違えた問題はノートに保存しました。</p>
+    <button class="primary" data-bnew="1">新しいセットで練習する</button>
+  </div>`;
+}
+function bRender(){
+  const st=DB.cur.build, body=$("#b-body");
+  $("#b-reset").style.display = st ? "" : "none";
+  $("#b-start").style.display = (st && st.phase!=="done") ? "none" : "";
+  if(!st){ body.innerHTML=""; return; }
+  body.innerHTML = (st.phase==="done" ? bSummaryHTML(st) : bBarHTML(st)) +
+    `<div class="card">${st.items.map((_,i)=>bItemHTML(st,i)).join("")}</div>`;
+  tickTimers();
+}
+function bRerender(i){
+  const st=DB.cur.build, el=$(`#b-it-${i}`);
+  if(el) el.outerHTML=bItemHTML(st,i);
+  const bar=$("#b-body .stagebar"); if(bar) bar.outerHTML=bBarHTML(st);
+  tickTimers();
+}
+function bFinish(){
+  const st=DB.cur.build, n=st.items.length;
+  if(Object.keys(st.checked).length<n) return;
+  const acc=Object.values(st.ok).filter(Boolean).length/n;
+  st.band=bandOf(acc); st.phase="done";
+  const tags={}; st.items.forEach((it,i)=>{ (tags[it.tag]=tags[it.tag]||[0,0]); tags[it.tag][1]++; if(st.ok[i]) tags[it.tag][0]++; });
+  const scores={}; Object.entries(tags).forEach(([t,[k,m]])=>scores[`W・${t}`]=+(k/m*6).toFixed(1));
+  DB.records.push({at:Date.now(), kind:"Writing", task:"build", band:st.band, scores});
+  save(); bRender(); window.scrollTo(0, $("#b-body").offsetTop-10);
+}
+$("#b-start").onclick=bStart;
+$("#b-reset").onclick=()=>{
+  if(DB.cur.build && DB.cur.build.phase!=="done" && !armTwice("#b-reset")) return;
+  DB.cur.build=null; save(); bRender(); bStart();
+};
+
+/* ================= Speaking: Listen and Repeat ================= */
+const TOPICS_REP = ["a guide giving new students a campus tour","a librarian showing new students around the library","a lab assistant explaining the rules on the first day in a science lab","a resident assistant welcoming students to a dormitory","a museum guide talking to an art history class","a staff member introducing the university career center","a coach showing students around the university sports center"];
+const PR={i:-1, phase:"ready", R:null, timer:null, left:0, url:null, note:""};  // 録音まわりの一時状態（保存しない）
+const CONTR={"it's":"it is","that's":"that is","there's":"there is","here's":"here is","what's":"what is","you're":"you are","we're":"we are","they're":"they are","i'm":"i am","don't":"do not","doesn't":"does not","didn't":"did not","can't":"can not","cannot":"can not","won't":"will not","isn't":"is not","aren't":"are not","wasn't":"was not","weren't":"were not","haven't":"have not","hasn't":"has not","shouldn't":"should not","couldn't":"could not","wouldn't":"would not","you'll":"you will","we'll":"we will","i'll":"i will","it'll":"it will","they'll":"they will","you've":"you have","we've":"we have","i've":"i have","they've":"they have","let's":"let us","you'd":"you would","we'd":"we would","i'd":"i would"};
+const rTok=(t)=>normS(t).split(" ").filter(Boolean).flatMap(w=>(CONTR[w]||w).split(" "));
+function lcsHit(a,b){
+  const n=a.length, m=b.length, L=Array.from({length:n+1},()=>new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--) for(let j=m-1;j>=0;j--) L[i][j] = a[i]===b[j] ? L[i+1][j+1]+1 : Math.max(L[i+1][j], L[i][j+1]);
+  const hit=new Array(n).fill(false); let i=0, j=0;
+  while(i<n && j<m){ if(a[i]===b[j]){ hit[i]=true; i++; j++; } else if(L[i+1][j]>=L[i][j+1]) i++; else j++; }
+  return hit;
+}
+function rScore(target, said){
+  const a=rTok(target), b=rTok(said), hit=lcsHit(a,b), h=hit.filter(Boolean).length;
+  return {said, toks:a, hit, h, n:a.length, extra:b.length-h, acc: a.length ? h/Math.max(a.length, b.length) : 0};
+}
+const rLimit=(t)=>Math.min(16, Math.max(8, Math.round(6 + rTok(t).length*0.45)));
+
+/* 録音＋文字起こし（MediaRecorder と Web Speech API） */
+async function recStart(){
+  const R={chunks:[], fin:"", interim:"", st:Date.now(), rec:null, stream:null, recog:null, recogEnd:null, micErr:""};
+  try{
+    R.stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    R.rec=new MediaRecorder(R.stream);
+    R.rec.ondataavailable=e=>{ if(e.data && e.data.size) R.chunks.push(e.data); };
+    R.rec.start();
+  }catch(e){ R.micErr=e.message||String(e); }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR && !R.micErr){
+    try{
+      const g=new SR(); g.lang="en-US"; g.continuous=true; g.interimResults=true;
+      g.onresult=e=>{ let im=""; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) R.fin+=r[0].transcript+" "; else im+=r[0].transcript+" "; } R.interim=im; };
+      R.recogEnd=new Promise(res=>{ g.onend=res; });
+      g.onerror=()=>{};
+      g.start(); R.recog=g;
+    }catch(e){ R.recog=null; }
+  }
+  R.st=Date.now();
+  return R;
+}
+async function recStop(R){
+  const sec=Math.round((Date.now()-R.st)/1000);
+  const blobP=new Promise(res=>{
+    if(!R.rec || R.rec.state==="inactive") return res(null);
+    R.rec.onstop=()=>res(new Blob(R.chunks,{type:R.rec.mimeType||"audio/webm"}));
+    R.rec.stop();
+  });
+  if(R.recog){ try{ R.recog.stop(); }catch(e){} await Promise.race([R.recogEnd, new Promise(r=>setTimeout(r,1500))]); }
+  const blob=await blobP;
+  if(R.stream) R.stream.getTracks().forEach(t=>t.stop());
+  return {sec, text:(R.fin+" "+R.interim).replace(/\s+/g," ").trim(), url:blob?URL.createObjectURL(blob):null, micErr:R.micErr, noRecog:!R.recog};
+}
+
+async function pStart(){
+  const body=$("#p-body"); busy(body,"文を作っています…");
+  $("#p-start").disabled=true;
+  try{
+    const d=await api("gen_repeat",{topic:pick(TOPICS_REP)});
+    const sents=(d.sentences||[]).map(s=>({en:String(s.en||s||"").trim(), ja:s.ja||""})).filter(s=>s.en);
+    if(sents.length<5) throw new Error("文がうまく作れませんでした。もう一度お試しください。");
+    d.sentences=sents.slice(0,7);
+    DB.cur.repeat={data:d, i:0, res:[], phase:"run"};
+    PR.i=-1; save(); pRender(); window.scrollTo(0, body.offsetTop-10);
+  }catch(e){ fail(body, e, pStart); }
+  finally{ $("#p-start").disabled=false; }
+}
+function pTokHTML(r){
+  return r.toks.map((w,k)=>`<span class="${r.hit[k]?"hitw":"missw"}">${esc(w)}</span>`).join(" ");
+}
+function pCurHTML(st){
+  const s=st.data.sentences[st.i], n=st.data.sentences.length, r=st.res[st.i];
+  let h=`<div class="card" id="p-cur"><div class="part-h"><h2>${st.i+1} / ${n}</h2><span class="tag">${rTok(s.en).length}語</span></div>`;
+  if(PR.phase==="ready") h+=`<p class="tiny">音声は1回だけ再生されます。再生が終わると録音が始まるので、聞こえたとおりにくり返してください。</p>
+    <button class="playbtn primary" data-pplay="1"><span class="dot" style="background:#fff"></span>音声を再生（1回のみ）</button>`;
+  else if(PR.phase==="playing") h+=`<span class="playbtn playing muted"><span class="dot"></span>再生中…　終わると録音が始まります</span>`;
+  else if(PR.phase==="rec") h+=`<div class="row" style="justify-content:space-between"><div class="timer ${PR.left<=3?"low":""}" id="p-timer">${mmss(PR.left)}</div><div class="muted">録音中 — くり返してください</div></div>
+    <div class="row" style="margin-top:10px"><button class="primary" data-pstop="1">言い終わった</button></div>`;
+  else {
+    h+=`${PR.url?`<audio controls src="${PR.url}"></audio>`:""}
+      ${PR.note?`<div class="err">${esc(PR.note)}</div>`:""}
+      <h3>文字起こし（認識ミスだけを直してください）</h3>
+      <textarea id="p-tr" style="min-height:70px">${esc(r?r.said:"")}</textarea>
+      <div class="row" style="margin-top:8px"><button data-pscore="1">${r?"直した文字起こしで採点し直す":"採点する"}</button></div>`;
+    if(r) h+=`<div class="fb"><div class="h ${r.acc>=0.9?"ok":"ng"}">再現率 ${Math.round(r.acc*100)}%　<span class="muted">${r.h} / ${r.n} 語${r.extra>0?`・余分な語 ${r.extra}`:""}</span></div>
+        <div class="en"><strong>${esc(s.en)}</strong></div><div class="muted">${esc(s.ja)}</div>
+        <div class="en rp-tok" style="margin-top:6px">${pTokHTML(r)}</div>
+        <p class="tiny">色のついた語が、文字起こしに出てこなかった語です。</p></div>
+      <div class="row" style="margin-top:10px"><button data-preplay="1">元の文を聞き直す</button>
+        <button class="primary" data-pnext="1">${st.i+1<n?"次の文へ":"結果を見る"}</button></div>`;
+  }
+  return h+`</div>`;
+}
+function pSummaryHTML(st){
+  const rows=st.data.sentences.map((s,i)=>{ const r=st.res[i]||{acc:0,toks:[],hit:[]};
+    return `<div class="q"><div class="row" style="justify-content:space-between"><strong>${i+1}.</strong><span class="tag">${Math.round(r.acc*100)}%</span></div>
+      <div class="en">${esc(s.en)}</div><div class="muted">${esc(s.ja)}</div>
+      ${r.said?`<div class="tiny en">あなた：${esc(r.said)}</div>`:""}</div>`; }).join("");
+  return `<div class="card"><h2>Listen and Repeat の結果</h2>
+    <div class="band">${st.band.toFixed(1)}<span>推定バンド</span></div>
+    <p class="tiny" style="margin-top:8px">文字起こしと元の文の一致率から出した目安で、公式採点とは一致しません。発音・抑揚・間は評価していません。音声認識の誤りで低く出ることもあります。</p>
+    <div class="kv"><span>全体の再現率</span><strong>${Math.round(st.acc*100)}%</strong></div>
+    ${rows}
+    ${kwHTML(st.data.key_words)}
+    <p class="tiny">再現率が85%未満だった文はノートの「間違い」に保存しました。</p>
+    <button class="primary" data-pnew="1">新しいセットで練習する</button>
+  </div>`;
+}
+function pRender(){
+  const st=DB.cur.repeat, body=$("#p-body");
+  $("#p-reset").style.display = st ? "" : "none";
+  $("#p-start").style.display = (st && st.phase!=="done") ? "none" : "";
+  if(!st){ body.innerHTML=""; return; }
+  if(st.phase==="done"){ body.innerHTML=pSummaryHTML(st); return; }
+  if(PR.i!==st.i){ Object.assign(PR,{i:st.i, phase:st.res[st.i]?"review":"ready", url:null, note:""}); }
+  body.innerHTML = `<div class="card"><p class="tiny">${esc(st.data.setting_ja||"")}</p>
+      <div class="progress"><i style="width:${st.i/st.data.sentences.length*100}%"></i></div></div>` + pCurHTML(st);
+}
+const pVoice=()=>[{sp:DB.cur.repeat.data.speaker==="M"?"M":"F", text:DB.cur.repeat.data.sentences[DB.cur.repeat.i].en}];
+function pPlay(){
+  if(PR.phase!=="ready") return;
+  PR.phase="playing"; pRender();
+  speakSeq(pVoice(), .94, ()=>{ if(PR.phase==="playing") pRec(); });
+}
+async function pRec(){
+  const st=DB.cur.repeat;
+  PR.phase="rec"; PR.left=rLimit(st.data.sentences[st.i].en); pRender();
+  PR.R=await recStart();
+  if(PR.R.micErr){ return pStop(); }
+  clearInterval(PR.timer);
+  PR.timer=setInterval(()=>{ PR.left--; const t=$("#p-timer"); if(t){ t.textContent=mmss(PR.left); t.classList.toggle("low",PR.left<=3); } if(PR.left<=0) pStop(); },1000);
+}
+async function pStop(){
+  if(PR.phase!=="rec" || !PR.R) return;   // マイクの準備が終わるまでは止めない
+  clearInterval(PR.timer); PR.phase="stopping";
+  const out=await recStop(PR.R); PR.R=null;
+  PR.url=out.url;
+  PR.note = out.micErr ? `マイクを使えませんでした（${out.micErr}）。言った内容を下に入力して採点してください。`
+    : out.noRecog ? "この端末では自動の文字起こしが使えません。録音を聞いて、言った内容を下に入力して採点してください。"
+    : !out.text ? "文字起こしが空でした。録音を聞いて、言った内容を入力して採点してください。" : "";
+  PR.phase="review";
+  if(out.text) pScore(out.text); else pRender();
+}
+function pScore(said){
+  const st=DB.cur.repeat;
+  st.res[st.i]=rScore(st.data.sentences[st.i].en, said);
+  save(); pRender();
+}
+function pFinish(){
+  const st=DB.cur.repeat, sents=st.data.sentences;
+  let h=0, n=0;
+  sents.forEach((s,i)=>{ const r=st.res[i]; const a=rTok(s.en).length; if(r){ h+=r.h; n+=Math.max(r.n, r.h+r.extra); } else n+=a; });
+  st.acc = n ? h/n : 0; st.band=bandOf(st.acc); st.phase="done";
+  addNotes("miss", sents.map((s,i)=>({s, r:st.res[i]})).filter(x=>!x.r || x.r.acc<0.85).map(x=>({
+    section:"Speaking", q:`（Listen and Repeat）${x.s.en}`, chosen:(x.r&&x.r.said)||"（未解答）", correct:x.s.en,
+    trap:"聞き取り・再現", why: x.r ? `抜けた語：${x.r.toks.filter((w,k)=>!x.r.hit[k]).join(", ")||"なし"}` : "" })));
+  addNotes("word", st.data.key_words);
+  DB.records.push({at:Date.now(), kind:"Speaking", task:"repeat", band:st.band, scores:{"再現（Repeat）":+(st.acc*6).toFixed(1)}});
+  save(); pRender(); window.scrollTo(0, $("#p-body").offsetTop-10);
+}
+$("#p-start").onclick=pStart;
+$("#p-reset").onclick=()=>{
+  if(DB.cur.repeat && DB.cur.repeat.phase!=="done" && !armTwice("#p-reset")) return;
+  if(PR.phase==="rec"||PR.phase==="playing"){ try{ speechSynthesis.cancel(); }catch(e){} clearInterval(PR.timer); if(PR.R) recStop(PR.R); PR.phase="ready"; }
+  DB.cur.repeat=null; PR.i=-1; save(); pRender(); pStart();
+};
+
+/* 二度押しで確定（ダイアログを出さない） */
+const ARM={};
+function armTwice(sel){
+  if(Date.now()-(ARM[sel]||0)<4000) return true;
+  ARM[sel]=Date.now();
+  const b=$(sel), t=b.textContent; b.textContent="もう一度押すと破棄します"; setTimeout(()=>b.textContent=t,4000);
+  return false;
+}
+
+/* ---------- イベント（Build／Repeat） ---------- */
+document.addEventListener("click", (e)=>{
+  const t=e.target.closest("button"); if(!t) return;
+  const d=t.dataset, b=DB.cur.build, r=DB.cur.repeat;
+  if(d.bpick && b){
+    const [i,id]=d.bpick.split("|").map(Number), pl=(b.placed[i]=b.placed[i]||[]);
+    if(b.checked[i] || pl.includes(id) || pl.length>=b.items[i].chunks.length) return;
+    pl.push(id); save(); bRerender(i);
+  }
+  else if(d.bun && b){
+    const [i,pos]=d.bun.split("|").map(Number);
+    if(b.checked[i]) return;
+    (b.placed[i]||[]).splice(pos,1); save(); bRerender(i);
+  }
+  else if(d.bclear && b){ const i=+d.bclear; if(b.checked[i]) return; b.placed[i]=[]; save(); bRerender(i); }
+  else if(d.bcheck && b){
+    const i=+d.bcheck, it=b.items[i], pl=b.placed[i]||[];
+    if(b.checked[i] || pl.length!==it.chunks.length) return;
+    const mine=pl.map(id=>it.tiles[id].t);
+    b.ok[i] = normS(mine.join(" "))===normS(it.chunks.join(" "));
+    b.checked[i]=true;
+    if(!b.ok[i]) addNotes("miss",[{section:"Writing", q:`（Build a Sentence）${it.context}`, chosen:bSentence(it,mine), correct:bSentence(it,it.chunks), why:it.grammar_ja, trap:it.tag}]);
+    save(); bRerender(i); bFinish();
+  }
+  else if(d.bnew){ DB.cur.build=null; save(); bStart(); }
+  else if(d.pplay && r) pPlay();
+  else if(d.pstop && r) pStop();
+  else if(d.pscore && r){ const v=($("#p-tr").value||"").trim(); if(!v){ PR.note="言った内容を入力してから採点してください。"; pRender(); return; } PR.note=""; pScore(v); }
+  else if(d.preplay && r) speakSeq(pVoice(), .94);
+  else if(d.pnext && r){
+    if(!r.res[r.i]) return;
+    if(r.i+1>=r.data.sentences.length) return pFinish();
+    r.i++; save(); pRender(); window.scrollTo(0, $("#p-body").offsetTop-10);
+  }
+  else if(d.pnew){ DB.cur.repeat=null; PR.i=-1; save(); pStart(); }
+});
+bRender(); pRender();
+
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
   const box=$("#n-quizbox");
@@ -1024,12 +1487,6 @@ function ans(btn, ok){
 }
 
 /* ================= 起動 ================= */
-try{
-  if(DB.draft && DB.draft.writing && DB.draft.writing.text){
-    wTask=DB.draft.writing.task; $("#w-text").value=DB.draft.writing.text;
-    $("#w-count").textContent=words(DB.draft.writing.text)+" 語";
-  }
-}catch(e){}
 renderHome();
 </script>
 </body>
