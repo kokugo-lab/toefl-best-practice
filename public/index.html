@@ -775,15 +775,11 @@ function addNotes(kind, items){
   });
   save();
 }
-// ノートから外す。外したものは「元に戻す」で同じ位置に戻せる。
-function removeNotes(pred, label){
-  const removed=[]; DB.notes=DB.notes.filter((n,i)=>{ if(pred(n)){ removed.push([i,n]); return false; } return true; });
-  if(!removed.length) return;
-  save(); noteViewsRefresh();
-  toast(label || (removed.length>1?`${removed.length}件をノートから外しました`:"ノートから外しました"), null, ()=>{
-    removed.forEach(([i,n])=>{ if(!DB.notes.some(x=>x.key===n.key)) DB.notes.splice(Math.min(i,DB.notes.length),0,n); });
-    save(); noteViewsRefresh();
-  });
+// ノートから外す（お知らせは出さない）
+function removeNotes(pred){
+  const before=DB.notes.length;
+  DB.notes=DB.notes.filter(n=>!pred(n));
+  if(DB.notes.length!==before){ save(); noteViewsRefresh(); }
 }
 function noteViewsRefresh(){
   if($("#v-notes").classList.contains("on")){ renderNotes(); if(!SRSQ) renderSRS(); }
@@ -1965,7 +1961,7 @@ document.addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   if(b.dataset.sayen){ speakSeq([{sp:"F", text:b.dataset.sayen}], .9); return; }
   const a=b.dataset.srs; if(!a) return;
-  if(a==="remove" && SRSQ && SRSQ.q.length){ const k=SRSQ.q.shift(); SRSQ.flip=false; save(); renderSRS(); removeNotes(n=>n.key===k, "ノートから外しました（復習にも出ません）"); return; }
+  if(a==="remove" && SRSQ && SRSQ.q.length){ const k=SRSQ.q.shift(); SRSQ.flip=false; save(); renderSRS(); removeNotes(n=>n.key===k); return; }
   if(a==="start"){ SRSQ={q:srsDue().slice(0,20).map(n=>n.key), flip:false, done:0, again:new Set()}; }
   else if(a==="close"){ SRSQ=null; }
   else if(a==="show"){ SRSQ.flip=true; }
