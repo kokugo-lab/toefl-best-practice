@@ -60,7 +60,7 @@
   .bars{display:grid; gap:8px; margin:12px 0}
   .bar{display:grid; grid-template-columns:7.5em 1fr 2em; align-items:center; gap:8px; font-size:.82rem}
   .bar .track{height:7px; background:var(--line); border-radius:4px; overflow:hidden}
-  .bar .fill{height:100%; background:var(--accent); border-radius:4px}
+  .bar .fill{display:block; height:100%; background:var(--accent); border-radius:4px}
   ul{padding-left:1.2em; margin:6px 0}
   li{margin:4px 0}
   .corr{border-left:3px solid var(--warn); background:var(--warn-soft); padding:8px 12px; border-radius:0 8px 8px 0; margin:8px 0; font-size:.88rem}
@@ -214,6 +214,7 @@
       <h2>どちらの試験を練習しますか</h2>
       <button class="pickbtn" data-exam="toefl"><strong>TOEFL iBT（新形式）</strong><span>2026年1月からの形式。Reading／Listening／Writing／Speaking、各セクション1〜6のバンド。</span></button>
       <button class="pickbtn" data-exam="ielts"><strong>IELTS Academic</strong><span>Listening／Reading／Writing／Speaking、各セクション0〜9のバンド（0.5刻み）。</span></button>
+      <button class="pickbtn" onclick="go('fit')"><strong>迷ったら：診断テスト（約8〜10分）</strong><span>短い問題とアンケートで、どちらの試験が向いているかの目安を出します。</span></button>
       <p class="tiny">あとから画面右上の「試験」ボタンでいつでも切り替えられます。練習の記録は試験ごとに分けて残り、ノート（語句・言い換え・間違い）と復習は共通です。</p>
     </div>
     <div class="card">
@@ -226,6 +227,17 @@
     </div>
   </section>
 
+  <!-- ============ 適性診断 ============ -->
+  <section id="v-fit" class="view">
+    <div class="card">
+      <h2>どっちが向いている？ 診断テスト（約8〜10分）</h2>
+      <p class="tiny">TOEFL（新形式）と IELTS Academic で、求められる力の違いが大きいところだけを短く試します。長文読解（TRUE/FALSE/NOT GIVEN）、Complete the Words、Build a Sentence、メモ完成（聞き取り・つづり）、応答の選択（聞き取り）、最後に4問のアンケートです。音声が出るので、静かな場所で受けてください。</p>
+      <div class="row"><button class="primary" id="fit-start" data-fit="start">診断テストを始める</button><button onclick="go(DB.settings.exam?'home':'pick')">戻る</button></div>
+      <p class="tiny" id="fit-last" style="margin-top:6px"></p>
+    </div>
+    <div id="fit-body"></div>
+  </section>
+
   <!-- ============ ホーム ============ -->
   <section id="v-home" class="view on">
     <div class="card">
@@ -236,6 +248,7 @@
 
     <div class="card">
       <h2>今日のおすすめ</h2>
+      <button class="reco" onclick="go('fit')" id="fit-reco"><strong>TOEFL と IELTS、どっちが向いている？ 診断テスト（約8〜10分） →</strong><span>短い問題とアンケートで、向いている試験の目安を出します。</span></button>
       <div id="reco"></div>
     </div>
 
@@ -585,7 +598,7 @@ const mmss = (s)=>`${Math.floor(Math.max(0,s)/60)}:${String(Math.max(0,s)%60).pa
 
 const IVIEW={reading:"ireading", listening:"ilistening", writing:"iwriting", speaking:"ispeaking"};
 function go(v){
-  if(!DB.settings.exam) v="pick";          // 最初に試験を選ぶ
+  if(!DB.settings.exam && v!=="fit") v="pick";   // 最初に試験を選ぶ（診断テストは選ぶ前でも受けられる）
   const id = MODE()==="ielts" && IVIEW[v] ? IVIEW[v] : v;
   document.querySelectorAll(".view").forEach(e=>e.classList.remove("on"));
   $("#v-"+id).classList.add("on");
@@ -594,6 +607,7 @@ function go(v){
   if(v==="notes") renderNotes(), renderHist(), renderSRS();
   if(v==="home") renderHome();
   if(v==="pick") renderPick();
+  if(v==="fit") fitRender();
   if(id==="reading"||id==="listening") renderRL(id);
   if(id==="reading") cwdRender();
   if(id==="ireading"||id==="ilistening") iRender(id);
@@ -1583,10 +1597,10 @@ function applyMode(){
   $("#quick").innerHTML = order.map((v,i)=>`<button ${i?"":'class="primary"'} onclick="go('${v}')">${v[0].toUpperCase()+v.slice(1)}</button>`).join("");
 }
 function renderPick(){
-  document.querySelectorAll(".pickbtn").forEach(b=>b.setAttribute("aria-pressed", DB.settings.exam===b.dataset.exam?"true":"false"));
+  document.querySelectorAll(".pickbtn[data-exam]").forEach(b=>b.setAttribute("aria-pressed", DB.settings.exam===b.dataset.exam?"true":"false"));
   ["toefl","ielts"].forEach(m=>{ $(`#set-date-${m}`).value=DB.settings.date[m]||""; $(`#set-tgt-${m}`).value=DB.settings.target[m]||""; });
 }
-document.querySelectorAll(".pickbtn").forEach(b=>b.addEventListener("click", ()=>{
+document.querySelectorAll(".pickbtn[data-exam]").forEach(b=>b.addEventListener("click", ()=>{
   DB.settings.exam=b.dataset.exam; save(); applyMode(); go("home");
 }));
 ["toefl","ielts"].forEach(m=>{
@@ -2496,6 +2510,176 @@ document.addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   if(b.dataset.cwdnew) cwdStart();
   else if(b.dataset.cwdclose){ DB.cur.cwd=null; save(); cwdRender(); }
+});
+
+/* ================= 適性診断（TOEFL と IELTS のどちらが向いているか） ================= */
+const FIT_STEPS=["長文読解","Complete the Words","Build a Sentence","メモ完成（聞き取り）","応答の選択（聞き取り）","アンケート"];
+const FIT_PREFS=[
+  {k:"school", q:"出願先が受け付けている試験は？", o:[["both","両方"],["toefl","TOEFLだけ"],["ielts","IELTSだけ"],["unknown","まだ確認していない"]]},
+  {k:"speak", q:"Speaking はどちらが話しやすい？", o:[["face","試験官と対面で話す（IELTS）"],["screen","画面に向かって録音する（TOEFL）"],["either","どちらでもよい"]]},
+  {k:"write", q:"Writing はどちらが得意そう？", o:[["long","250語のエッセイを40分でじっくり（IELTS）"],["short","短めの課題をいくつも（TOEFL）"],["either","どちらでもよい"]]},
+  {k:"focus", q:"集中しやすいのは？", o:[["long","1つの長い文章・音声にじっくり取り組む"],["short","短い問題がテンポよく切り替わる"],["either","どちらでもよい"]]},
+];
+async function fitStart(){
+  const box=$("#fit-body"); busy(box,"診断テストを作っています…（20〜40秒ほど）");
+  try{
+    const [a,b]=await Promise.all([api("gen_fit_a",{topic:pick(TOPICS_IR)}), api("gen_fit_b",{})]);
+    const tf=(a.tfng||[]).map(q=>iNormQ(Object.assign({type:"tfng"},q))).filter(Boolean);
+    const ct=buildCTest(a.ctest||"");
+    const build=(b.build||[]).map(normBuild).filter(Boolean).slice(0,2);
+    const resp=(b.responses||[]).map(normQ).filter(Boolean).slice(0,3);
+    const gaps=(b.gaps||[]).map(g=>iNormQ(Object.assign({type:"gap"},g))).filter(Boolean).slice(0,3);
+    if(!a.passage || tf.length<3 || ct.n<4 || !build.length || resp.length<2 || gaps.length<2 || !b.mono) throw new Error("テストがうまく作れませんでした。もう一度お試しください。");
+    DB.cur.fit={a:{title:a.title||"", passage:a.passage}, tf, ct, build, resp, gaps, mono:{sp:b.mono_speaker==="M"?"M":"F", text:b.mono},
+      step:0, started:Date.now(), readStart:0, readSec:0, ans:{tf:{}, cw:{}, placed:{}, gap:{}, resp:{}, pref:{}}, play:{mono:0, resp:{}}};
+    save(); fitRender(); window.scrollTo(0, box.offsetTop-10);
+  }catch(e){ fail(box, e, fitStart); }
+}
+const fitWords=(t)=>words(t);
+function fitStepHTML(st){
+  const A=st.ans, s=st.step;
+  const head=`<div class="stagebar"><div><strong>${s+1} / ${FIT_STEPS.length}　${FIT_STEPS[s]}</strong>
+    <div class="progress" style="width:min(240px,50vw)"><i style="width:${s/FIT_STEPS.length*100}%"></i></div></div>
+    <div class="timer" data-start="${st.started}" data-limit="600" title="目安10分">–</div></div>`;
+  let h="";
+  if(s===0){
+    if(!st.readStart) h=`<p class="tiny">約${fitWords(st.a.passage)}語の文章です。「読み始める」を押すと時間を計ります。読み終わったら「読み終わった」を押し、そのあと4問に答えます（文章は見返せます）。</p>
+      <button class="primary" data-fit="read">読み始める</button>`;
+    else {
+      h=`<div class="passage long en"><strong>${esc(st.a.title)}</strong>\n\n${esc(st.a.passage)}</div>`;
+      if(!st.readSec) h+=`<button class="primary" data-fit="readdone">読み終わった</button>`;
+      else h+=`<p class="tiny">読むのにかかった時間：${mmss(st.readSec)}</p><div class="ig-h en">Do the following statements agree with the information given in the passage? Choose TRUE, FALSE or NOT GIVEN.</div>`+
+        st.tf.map((q,qi)=>`<div class="q"><div class="qt en">${qi+1}. ${esc(q.q)}</div>${q.choices.map((c,i)=>`<button class="choice en ${A.tf[qi]===i?"sel":""}" data-fitch="tf|${qi}|${i}">${esc(c)}</button>`).join("")}</div>`).join("");
+    }
+  }
+  else if(s===1){
+    let bi=0;
+    const body=st.ct.parts.map(x=>{ if(x.t!=null) return esc(x.t); const i=bi++;
+      return `<span class="w">${esc(x.pre+x.keep)}<input data-fitcw="${i}" maxlength="${x.miss.length}" style="width:${x.miss.length*1.4}ch" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(A.cw[i]||"")}">${esc(x.post)}</span>`; }).join("");
+    h=`<p class="tiny">2文目から1語おきに語の後半が消えています。下線1本が1文字です（${st.ct.n}語）。</p><div class="passage cw en">${esc(st.ct.first)}${body}</div>`;
+  }
+  else if(s===2){
+    h=`<p class="tiny">語のかたまりを押して正しい順に並べます。解答欄のかたまりを押すと戻ります。使わないダミーが混ざることがあります。</p>`+st.build.map((it,i)=>{
+      const pl=A.placed[i]||[];
+      return `<div class="q"><div class="ex en"><span class="sp">A</span>${esc(it.context)}</div>
+        <div class="ex en bs-ans"><span class="sp M">B</span>${it.prefix?`<span class="fixw">${esc(it.prefix)}</span>`:""}${pl.map((id,pos)=>`<button class="tile on en" data-fitun="${i}|${pos}">${esc(it.tiles[id].t)}</button>`).join("")}${Array(Math.max(0,it.chunks.length-pl.length)).fill(`<span class="slot"></span>`).join("")}<span class="fixw">${it.end}</span></div>
+        <div class="bs-pool">${it.tiles.map((x,id)=>pl.includes(id)?"":`<button class="tile en" data-fitpick="${i}|${id}">${esc(x.t)}</button>`).join("")}</div></div>`; }).join("");
+  }
+  else if(s===3){
+    const played=st.play.mono;
+    h=`<p class="tiny">先に下のメモに目を通してから再生してください。音声は1回だけです。聞きながら、聞こえた語を正しいつづりで書きます（ONE WORD AND/OR A NUMBER）。</p>
+      ${played===0?`<button class="playbtn primary" data-fit="mono"><span class="dot" style="background:#fff"></span>音声を再生（1回のみ）</button>`:played===1?`<span class="playbtn playing muted"><span class="dot"></span>再生中…</span>`:`<span class="muted tiny">再生済み</span>`}`+
+      st.gaps.map((q,qi)=>{ const pr=q.q.split(/_{2,}/); return `<div class="q en"><strong>${qi+1}.</strong> ${esc(pr[0])}<input type="text" class="gapin" data-fitgap="${qi}" value="${esc(A.gap[qi]||"")}" autocapitalize="off" autocorrect="off" spellcheck="false">${esc(pr.slice(1).join(" "))}</div>`; }).join("");
+  }
+  else if(s===4){
+    h=`<p class="tiny">短い発話を1回だけ聞き、最も自然な応答を選びます。発話の文字は表示されません。</p>`+st.resp.map((q,qi)=>{
+      const p=st.play.resp[qi];
+      return `<div class="q"><div class="row" style="justify-content:space-between"><strong>${qi+1}.</strong>${!p?`<button class="playbtn" data-fitplay="${qi}"><span class="dot"></span>音声を再生（1回のみ）</button>`:p===1?`<span class="playbtn playing muted"><span class="dot"></span>再生中…</span>`:`<span class="muted tiny">再生済み</span>`}</div>
+        ${p===2?q.choices.map((c,i)=>`<button class="choice en ${A.resp[qi]===i?"sel":""}" data-fitch="resp|${qi}|${i}">${String.fromCharCode(65+i)}. ${esc(c)}</button>`).join(""):""}</div>`; }).join("");
+  }
+  else if(s===5){
+    h=FIT_PREFS.map(p=>`<div class="q"><div class="qt">${esc(p.q)}</div>${p.o.map(([v,l])=>`<button class="choice ${A.pref[p.k]===v?"sel":""}" data-fitpref="${p.k}|${v}">${esc(l)}</button>`).join("")}</div>`).join("");
+  }
+  const ready = fitReady(st);
+  const nextBtn = (s===0 && !st.readSec) ? "" : `<div class="row" style="margin-top:12px"><button class="primary" data-fit="next" ${ready?"":"disabled"}>${s===FIT_STEPS.length-1?"結果を見る":"次へ"}</button>${ready?"":`<span class="tiny muted">${s===3||s===4?"音声を聞いてから進めます":s===5?"すべて選んでください":""}</span>`}</div>`;
+  return head+`<div class="card">${h}${nextBtn}</div>`;
+}
+function fitReady(st){
+  const s=st.step, A=st.ans;
+  if(s===0) return !!st.readSec;
+  if(s===3) return st.play.mono===2;
+  if(s===4) return st.resp.every((_,qi)=>st.play.resp[qi]===2);
+  if(s===5) return FIT_PREFS.every(p=>A.pref[p.k]);
+  return true;
+}
+function fitScore(st){
+  const A=st.ans, acc=(arr)=>arr.length?arr.filter(Boolean).length/arr.length:0;
+  const tf=acc(st.tf.map((q,qi)=>A.tf[qi]===q.answer));
+  const blanks=st.ct.parts.filter(x=>x.t==null);
+  const cw=acc(blanks.map((x,i)=>(A.cw[i]||"").trim().toLowerCase()===x.miss.toLowerCase()));
+  const bs=acc(st.build.map((it,i)=>{ const pl=A.placed[i]||[]; return pl.length===it.chunks.length && normS(pl.map(id=>it.tiles[id].t).join(" "))===normS(it.chunks.join(" ")); }));
+  const gap=acc(st.gaps.map((q,qi)=>gapOK(A.gap[qi]||"", q.answer)));
+  const resp=acc(st.resp.map((q,qi)=>A.resp[qi]===q.answer));
+  const wpm=st.readSec ? Math.round(fitWords(st.a.passage)/st.readSec*60) : 0;
+  const speed=Math.max(0, Math.min(1, (wpm-90)/110));   // 90語/分で0、200語/分で1（IELTS Reading は約2,700語を60分で読み、設問も解く）
+  const toefl=(cw+bs+resp)/3, ielts=(tf+gap+speed)/3;
+  const P=A.pref; let pt=0, pi=0;
+  if(P.speak==="screen") pt+=0.06; if(P.speak==="face") pi+=0.06;
+  if(P.write==="short") pt+=0.04; if(P.write==="long") pi+=0.04;
+  if(P.focus==="short") pt+=0.04; if(P.focus==="long") pi+=0.04;
+  return {tf, cw, bs, gap, resp, wpm, speed, toefl, ielts, ft:toefl+pt, fi:ielts+pi, school:P.school};
+}
+function fitResultHTML(st){
+  const r=st.result, pc=(x)=>Math.round(x*100);
+  const diff=r.ft-r.fi;
+  let verdict, why;
+  if(r.school==="toefl"||r.school==="ielts"){
+    verdict = r.school==="toefl" ? "TOEFL" : "IELTS";
+    why = `出願先が ${verdict} だけを受け付けているので、${verdict} を選ぶことになります。下の結果は、どこを重点的に練習するかの目安にしてください。`;
+  } else if(Math.abs(diff)<0.07){
+    verdict = "どちらでも大差なし";
+    why = "2つの試験で求められる力が、どちらも同じくらいの水準でした。準備をすでに始めている方、または試験日の都合がよい方を選んでかまいません。";
+  } else {
+    verdict = diff>0 ? "TOEFL（新形式）" : "IELTS Academic";
+    why = diff>0
+      ? "短い課題を正確に解く力（語彙・文法の穴埋め、語順、短い応答）が、長文・長い音声を正確に処理する力より強く出ました。新形式TOEFLは短い課題の組み合わせなので、この強みが点になりやすい試験です。"
+      : "長い文章を読む速さと正確さ、聞いた語を正しく書き取る力が、短い課題を解く力より強く出ました。IELTSは長いパッセージと長い音声が中心なので、この強みが点になりやすい試験です。";
+  }
+  const goExam = r.school==="toefl"||r.school==="ielts" ? r.school : diff>0 ? "toefl" : "ielts";
+  const bar=(l,v,tag)=>`<div class="bar"><span>${l}</span><span class="track"><span class="fill" style="width:${pc(v)}%"></span></span><span>${pc(v)}</span></div><div class="tiny" style="margin:-6px 0 6px">${tag}</div>`;
+  const prefTxt=FIT_PREFS.map(p=>{ const o=p.o.find(([v])=>v===st.ans.pref[p.k]); return `<div class="kv"><span>${esc(p.q)}</span><span>${esc(o?o[1]:"")}</span></div>`; }).join("");
+  return `<div class="card"><h2>診断の結果</h2>
+    <div class="band" style="font-size:1.25rem">${esc(verdict)}<span>向いている試験</span></div>
+    <p style="margin-top:10px">${esc(why)}</p>
+    <h3>TOEFL 向きの力（短い課題の正確さ）　${pc(r.toefl)}</h3>
+    <div class="bars">${bar("Complete the Words", r.cw, "語彙と文法で単語を補う")}${bar("Build a Sentence", r.bs, "語順を組み立てる")}${bar("応答の選択", r.resp, "短い発話にすばやく反応する")}</div>
+    <h3>IELTS 向きの力（長文・長い音声の正確さ）　${pc(r.ielts)}</h3>
+    <div class="bars">${bar("TRUE/FALSE/NOT GIVEN", r.tf, "書いてある／違う／書いていないを見分ける")}${bar("メモ完成", r.gap, "聞いた語を正しいつづりで書く")}${bar("読む速さ", r.speed, `${r.wpm}語/分（200語/分で満点。IELTS Reading は約2,700語を60分で読む）`)}</div>
+    <h3>アンケート</h3>${prefTxt}
+    <p class="tiny" style="margin-top:10px">アンケートの答えは、結果に少しだけ（各4〜6点）加えています。問題数が少ないため、1問の差で結果が変わることがあります。目安として使い、迷うときは何度か受けたり、両方の練習モードを試したりしてください。公式の診断ではありません。</p>
+    <div class="row" style="margin-top:8px">
+      <button class="primary" data-fit="use|${goExam}">${EXAMNAME[goExam]} で練習を始める</button>
+      <button data-fit="again">もう一度受ける</button></div>
+  </div>`;
+}
+function fitRender(){
+  const st=DB.cur.fit, box=$("#fit-body");
+  const last=(DB.fitLog||[]).slice(-1)[0];
+  $("#fit-last").innerHTML = last ? `前回の結果（${new Date(last.at).toLocaleDateString("ja-JP",{month:"numeric",day:"numeric"})}）：TOEFL向き ${Math.round(last.toefl*100)}／IELTS向き ${Math.round(last.ielts*100)}` : "";
+  if(!st){ box.innerHTML=""; $("#fit-start").style.display=""; return; }
+  $("#fit-start").style.display = "none";
+  box.innerHTML = st.result ? fitResultHTML(st) : fitStepHTML(st);
+  tickTimers();
+}
+document.addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const d=b.dataset, st=DB.cur.fit;
+  if(d.fit==="start"){ fitStart(); return; }
+  if(!st) return;
+  const A=st.ans;
+  if(d.fit==="read"){ st.readStart=Date.now(); }
+  else if(d.fit==="readdone"){ st.readSec=Math.max(1,Math.round((Date.now()-st.readStart)/1000)); }
+  else if(d.fit==="next"){ if(!fitReady(st)) return;
+    if(st.step<FIT_STEPS.length-1){ st.step++; window.scrollTo(0, $("#fit-body").offsetTop-10); }
+    else { st.result=fitScore(st); DB.fitLog=(DB.fitLog||[]).concat([{at:Date.now(), toefl:st.result.toefl, ielts:st.result.ielts}]); act(2); window.scrollTo(0, $("#fit-body").offsetTop-10); } }
+  else if(d.fit==="mono"){ if(st.play.mono) return; st.play.mono=1; save(); fitRender();
+    speakSeq([st.mono], .94, ()=>{ st.play.mono=2; save(); if(st.step===3) fitRender(); }); return; }
+  else if(d.fitplay!=null){ const qi=+d.fitplay; if(st.play.resp[qi]) return; st.play.resp[qi]=1; save(); fitRender();
+    speakSeq([{sp:qi%2?"M":"F", text:st.resp[qi].prompt||st.resp[qi].q}], .94, ()=>{ st.play.resp[qi]=2; save(); if(st.step===4) fitRender(); }); return; }
+  else if(d.fitch){ const [k,qi,i]=d.fitch.split("|"); A[k][qi]=+i; }
+  else if(d.fitpref){ const [k,v]=d.fitpref.split("|"); A.pref[k]=v; }
+  else if(d.fitpick){ const [i,id]=d.fitpick.split("|").map(Number), pl=(A.placed[i]=A.placed[i]||[]); if(pl.length<st.build[i].chunks.length && !pl.includes(id)) pl.push(id); }
+  else if(d.fitun){ const [i,pos]=d.fitun.split("|").map(Number); (A.placed[i]||[]).splice(pos,1); }
+  else if(d.fit && d.fit.startsWith("use|")){ DB.settings.exam=d.fit.split("|")[1]; DB.cur.fit=null; save(); applyMode(); go("home"); return; }
+  else if(d.fit==="again"){ DB.cur.fit=null; save(); fitStart(); return; }
+  else return;
+  save(); fitRender();
+});
+document.addEventListener("input", e=>{
+  const t=e.target, st=DB.cur.fit; if(!st || !t.dataset) return;
+  if(t.dataset.fitcw!=null){ t.value=t.value.replace(/[^A-Za-z]/g,""); st.ans.cw[t.dataset.fitcw]=t.value; save();
+    if(t.value.length>=t.maxLength){ const all=[...document.querySelectorAll("input[data-fitcw]")]; const nx=all[all.indexOf(t)+1]; if(nx) nx.focus(); } }
+  else if(t.dataset.fitgap!=null){ st.ans.gap[t.dataset.fitgap]=t.value; save(); }
 });
 
 /* ================= 復習クイズ ================= */

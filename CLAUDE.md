@@ -31,6 +31,8 @@
         Complete the Words 3分ドリル、学習カレンダー、バックアップ（JSON書き出し・読み込み）
 - [x] IELTS Academic モード（初回に TOEFL／IELTS を選ぶ。右上の「試験」で切替）：Listening 4パート、Reading 3パッセージ、
         Writing Task 1（図表をSVGで描画）・Task 2、Speaking Part 1〜3。バンドは0〜9
+- [x] 適性診断（約8〜10分、`v-fit`、`fitStart`/`fitRender`/`fitScore`、生成は `gen_fit_a`・`gen_fit_b`）：長文TFNG・読む速さ・
+        メモ完成（IELTS向き）と Complete the Words・Build a Sentence・応答選択（TOEFL向き）＋アンケートで向いている試験の目安を出す
 - [ ] 4. 模試モード（全セクション一括生成→localStorage保存、本番順・制限時間・戻れない、成績画面、過去結果のグラフ）
 
 ## 実装上の約束
