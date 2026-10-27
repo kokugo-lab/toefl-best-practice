@@ -117,6 +117,11 @@
   .script .sp{display:inline-block; min-width:2.2em; font-weight:700; color:var(--accent)}
   .script .sp.M{color:var(--warn)}
   .sum-big{font-size:2rem; font-weight:700; color:var(--accent)}
+  button.ready::after{content:"・準備済み"; font-weight:500; font-size:.74em; opacity:.85}
+  .toast{position:fixed; left:12px; right:12px; bottom:calc(72px + env(safe-area-inset-bottom)); z-index:60; max-width:736px; margin:0 auto;
+    background:var(--ink); color:var(--bg); padding:10px 14px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; gap:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.25); font-size:.88rem}
+  .toast button{background:var(--accent); color:#fff; border:0; padding:6px 14px; font-weight:600}
   .seg button{line-height:1.35}
   .post{border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin:10px 0; background:var(--bg)}
   .post .who{font-weight:700; font-size:.82rem; color:var(--accent); margin-bottom:2px}
@@ -578,6 +583,7 @@ function save(){ try{ localStorage.setItem(K, JSON.stringify(DB)); }catch(e){ co
 // 足りない項目を補う（古いデータ・バックアップの読み込みにも使う）
 function initDB(){
   DB.draft=DB.draft||{}; DB.cur=DB.cur||{}; DB.stats=DB.stats||{}; DB.log=DB.log||{}; DB.ui=DB.ui||{};
+  DB.stock=DB.stock||{}; DB.stockUse=DB.stockUse||{};
   DB.settings=Object.assign({exam:null}, DB.settings||{});
   DB.settings.date=Object.assign({toefl:"2026-11-29", ielts:""}, DB.settings.date||{});
   DB.settings.target=Object.assign({toefl:4.5, ielts:6.5}, DB.settings.target||{});
@@ -614,6 +620,7 @@ function go(v){
 }
 
 async function api(action, input, tries){
+  if(tries==null && !STOCKING){ API_ACTIVE++; try{ return await api(action, input, 1); } finally{ API_ACTIVE--; } }
   tries = tries==null ? 1 : tries;   // 時間切れ・混雑時は自動で1回だけやり直す
   let res, j=null;
   try{
@@ -629,11 +636,84 @@ async function api(action, input, tries){
   if(!res.ok || !j.ok) throw new Error(j.error || "通信に失敗しました。");
   return j.data;
 }
-const busy = (el, msg)=>{ el.innerHTML = `<div class="card"><span class="spin"></span>${esc(msg)}</div>`; };
+const busy = (el, msg)=>{ el.innerHTML = `<div class="card"><span class="spin"></span>${esc(msg)}<div class="tiny" style="margin-top:6px">待っている間も、ほかの画面に移って大丈夫です。できたら画面の下でお知らせします。</div></div>`; };
 const fail = (el, e, retry)=>{
   el.innerHTML = `<div class="err">${esc(e.message||String(e))}<br><span class="tiny">入力した内容はそのまま残っています。</span></div>`;
   if(retry){ const b=document.createElement("button"); b.textContent="もう一度試す"; b.className="primary"; b.onclick=retry; el.appendChild(b); }
+  // 別の画面にいるときは、うまくいかなかったことも下でお知らせする
+  const v=el.closest(".view");
+  if(v && !(v.classList.contains("on") && el.offsetParent!==null)){
+    const id=v.id.replace(/^v-/,""), logical={ireading:"reading", ilistening:"listening", iwriting:"writing", ispeaking:"speaking"}[id]||id;
+    toast("うまく作れませんでした。開いてもう一度お試しください", logical);
+  }
 };
+
+
+/* ================= 先回りの生成（ストック）と完了のお知らせ ================= */
+// 一度使った課題は、次の1セットを裏で作っておき、次回はすぐ始められるようにする。
+// 生成はユーザーの操作中の通信が終わるのを待ってから、1つずつ行う（無料枠の混雑を避ける）。
+const STOCK_GEN={}, STOCK_MAXAGE=14*86400000;
+let API_ACTIVE=0, STOCKING=0;
+const stockDef=(key, fn)=>{ STOCK_GEN[key]=fn; };
+async function stockGet(key){
+  const s=DB.stock && DB.stock[key];
+  if(s){ delete DB.stock[key]; save(); stockRefill(key); stockBadges(); return s.data; }
+  const d=await STOCK_GEN[key]();
+  stockRefill(key);
+  return d;
+}
+const SQ=[];
+function stockRefill(key){
+  DB.stockUse[key]=Date.now(); save();
+  if(!SQ.includes(key)) SQ.push(key);
+  setTimeout(stockRun, 15000);   // いま始めた課題の生成・2段階目の先読みと重ならないよう少し待つ
+}
+let SQRUN=false;
+async function stockRun(){
+  if(SQRUN) return; SQRUN=true;
+  try{
+    while(SQ.length){
+      while(API_ACTIVE>0) await new Promise(r=>setTimeout(r,2000));
+      const k=SQ.shift();
+      if(!STOCK_GEN[k] || (DB.stock[k] && Date.now()-DB.stock[k].at<STOCK_MAXAGE)) continue;
+      STOCKING++;
+      try{ const d=await STOCK_GEN[k](); DB.stock[k]={at:Date.now(), data:d}; save(); stockBadges(); }
+      catch(e){ console.warn("先回りの生成に失敗", k, e.message); }
+      finally{ STOCKING--; }
+      await new Promise(r=>setTimeout(r,3000));
+    }
+  } finally { SQRUN=false; }
+}
+// 最近使った課題のうち、今の試験のものだけ補充しておく
+const IELTS_KEYS=/^(ir:|il:|w:it|isp)/;
+function stockWarm(){
+  const now=Date.now();
+  Object.entries(DB.stockUse).forEach(([k,t])=>{
+    if(now-t>STOCK_MAXAGE || !STOCK_GEN[k]) return;
+    if(IELTS_KEYS.test(k) !== (MODE()==="ielts")) return;
+    if(!(DB.stock[k] && now-DB.stock[k].at<STOCK_MAXAGE) && !SQ.includes(k)) SQ.push(k);
+  });
+  if(SQ.length) setTimeout(stockRun, 8000);
+}
+const STOCKBTN={"#r-start":"rl:reading", "#l-start":"rl:listening", "#c-start":"cwd", "#b-start":"build", "#p-start":"repeat",
+  "#w-gen":"w:email", "#d-gen":"w:disc", "#ia-gen":"w:it1", "#ib-gen":"w:it2", '[data-ivstart="set"]':"iv:set", '[data-ivstart="one"]':"iv:one",
+  '[data-isp="all"]':"isp", '[data-isp="1"]':"isp", '[data-isp="2"]':"isp", '[data-isp="3"]':"isp", '[data-istart="ireading|1"]':"ir:p",
+  '[data-istart="ilistening|1"]':"il:1", '[data-istart="ilistening|2"]':"il:2", '[data-istart="ilistening|3"]':"il:3", '[data-istart="ilistening|4"]':"il:4"};
+function stockBadges(){
+  Object.entries(STOCKBTN).forEach(([sel,k])=>{ const b=$(sel); if(b){ const ok=!!(DB.stock[k] && Date.now()-DB.stock[k].at<STOCK_MAXAGE); b.classList.toggle("ready", ok); b.title=ok?"次の問題は準備済みです（すぐ始められます）":""; } });
+}
+// 生成・評価が終わったとき：その画面を見ていればそこへスクロール、別の画面にいれば下にお知らせを出す
+function arrived(el, label, goto){
+  const v=el && el.closest(".view");
+  if(v && v.classList.contains("on") && el.offsetParent!==null) window.scrollTo(0, el.offsetTop-10);   // 同じ画面でも別のタブを開いていればお知らせ
+  else toast(`${label}ができました`, goto);
+}
+function toast(msg, goto){
+  const t=document.createElement("div"); t.className="toast";
+  t.innerHTML=`<span>${esc(msg)}</span>${goto?`<button data-goto="${goto}">開く</button>`:""}`;
+  t.addEventListener("click", ()=>t.remove());
+  document.body.appendChild(t); setTimeout(()=>t.remove(), 10000);
+}
 
 /* ================= notes ================= */
 function addNotes(kind, items){
@@ -939,21 +1019,24 @@ function tickTimers(){
 setInterval(tickTimers, 1000);
 
 /* ---------- 進行 ---------- */
+stockDef("rl:reading", ()=>genModule("reading","standard"));
+stockDef("rl:listening", ()=>genModule("listening","standard"));
 async function startSet(sec){
   const P=SEC[sec].p, body=$("#"+P+"-body");
   busy(body, "第1段階の問題を作っています…（20〜40秒ほどかかります）");
   $("#"+P+"-start").disabled=true;
   try{
-    const mod = await genModule(sec, "standard");
+    const mod = await stockGet("rl:"+sec);
+    mod.started=Date.now();
     DB.cur[sec] = {phase:"s1", s1:mod, s2:null, s2pre:null, level2:null};
-    save(); renderRL(sec); window.scrollTo(0, $("#"+P+"-body").offsetTop-10);
+    save(); renderRL(sec); arrived($("#"+P+"-body"), `${SEC[sec].name}の問題`, sec);
   }catch(e){ fail(body, e, ()=>startSet(sec)); }
   finally{ $("#"+P+"-start").disabled=false; }
 }
 function prefetchS2(sec){
   const st=DB.cur[sec]; if(!st || st.s2pre || GEN[sec]) return;
   st.s2err=null;
-  GEN[sec] = genModule(sec, st.level2).then(m=>{ st.s2pre=m; save(); }).catch(e=>{ st.s2err=e.message||String(e); })
+  GEN[sec] = genModule(sec, st.level2).then(m=>{ st.s2pre=m; save(); if(!$("#v-"+sec).classList.contains("on")) toast(`${SEC[sec].name}の第2段階の問題`+"ができました", sec); }).catch(e=>{ st.s2err=e.message||String(e); })
     .finally(()=>{ GEN[sec]=null; const s=$(`#${SEC[sec].p}-summary`); if(s) s.outerHTML=summaryHTML(sec,DB.cur[sec]); });
 }
 function checkStage(sec){
@@ -1140,6 +1223,8 @@ const WRITERS={};
 function setupWriter(o){
   const P=o.p, el=(x)=>$(`#${P}-${x}`), max=o.max||6, label=`${o.label||"Writing"}（${o.name}）`;
   let task=null, timer=null, left=0, started=0, last=null, rewriting=false;
+  const tab={email:"email", disc:"disc", it1:"t1", it2:"t2"}[o.key]||"";
+  stockDef("w:"+o.key, ()=>api(o.gen, o.genInput()));
   const limit=()=>(task&&task.time_limit_sec)||o.limit||600;
   const draft=()=>{ DB.draft[o.key]={text:el("text").value, task, left}; save(); };
   const showTask=()=>{ el("task").style.display="block"; el("task").innerHTML=o.taskHTML(task); el("editor").style.display="block"; };
@@ -1154,10 +1239,11 @@ function setupWriter(o){
   el("gen").onclick = async ()=>{
     const box=el("task"); box.style.display="block"; busy(box,"課題を作っています…");
     try{
-      task = await api(o.gen, o.genInput());
+      task = await stockGet("w:"+o.key);
       rewriting=false; last=null;
       showTask(); el("text").value=""; el("count").textContent="0 語"; el("result").innerHTML=""; el("msg").innerHTML="";
       left=limit(); draft(); run();
+      arrived(el("task"), `${label}の課題`, `writing|${tab}`);
     }catch(e){ fail(box, e, ()=>el("gen").click()); }
   };
   el("text").addEventListener("input", ()=>{
@@ -1183,6 +1269,7 @@ function setupWriter(o){
       addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); addNotes("fix", r.corrections);
       last={band:+r.band||0, scores:r.scores||{}, improvements:r.improvements_ja||[], text};
       DB.draft[o.key]=null; save();
+      arrived(box, `${label}の添削`, `writing|${tab}`);
     }catch(e){ fail(box, e, ()=>el("submit").click()); }
   };
   WRITERS[P]={ rewrite(){
@@ -1273,17 +1360,20 @@ function normBuild(it){
 }
 const bSentence=(it, list)=>capFirst([it.prefix].concat(list).filter(Boolean).join(" "))+it.end;
 
+stockDef("build", async ()=>{
+  const [t1,t2]=pick2(TOPICS_BUILD), focus=weakTags("B");
+  const rs=await Promise.all([api("gen_build",{count:5, topic:t1, focus}), api("gen_build",{count:5, topic:t2, focus})]);
+  const items=rs.flatMap(r=>(r.items||[]).map(normBuild).filter(Boolean)).slice(0,10);
+  if(items.length<5) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
+  return items;
+});
 async function bStart(){
   const body=$("#b-body"); busy(body,"問題を作っています…（10〜30秒ほどかかります）");
   $("#b-start").disabled=true;
   try{
-    const [t1,t2]=pick2(TOPICS_BUILD);
-    const focus=weakTags("B");
-    const rs=await Promise.all([api("gen_build",{count:5, topic:t1, focus}), api("gen_build",{count:5, topic:t2, focus})]);
-    const items=rs.flatMap(r=>(r.items||[]).map(normBuild).filter(Boolean)).slice(0,10);
-    if(items.length<5) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
+    const items=await stockGet("build");
     DB.cur.build={items, placed:{}, checked:{}, ok:{}, started:Date.now(), phase:"run"};
-    save(); bRender(); window.scrollTo(0, body.offsetTop-10);
+    save(); bRender(); arrived(body, "Build a Sentence の問題", "writing|build");
   }catch(e){ fail(body, e, bStart); }
   finally{ $("#b-start").disabled=false; }
 }
@@ -1417,16 +1507,20 @@ async function recStop(R){
   return {sec, text:(R.fin+" "+R.interim).replace(/\s+/g," ").trim(), url:blob?URL.createObjectURL(blob):null, micErr:R.micErr, noRecog:!R.recog};
 }
 
+stockDef("repeat", async ()=>{
+  const d=await api("gen_repeat",{topic:pick(TOPICS_REP)});
+  const sents=(d.sentences||[]).map(s=>({en:String(s.en||s||"").trim(), ja:s.ja||""})).filter(s=>s.en);
+  if(sents.length<5) throw new Error("文がうまく作れませんでした。もう一度お試しください。");
+  d.sentences=sents.slice(0,7);
+  return d;
+});
 async function pStart(){
   const body=$("#p-body"); busy(body,"文を作っています…");
   $("#p-start").disabled=true;
   try{
-    const d=await api("gen_repeat",{topic:pick(TOPICS_REP)});
-    const sents=(d.sentences||[]).map(s=>({en:String(s.en||s||"").trim(), ja:s.ja||""})).filter(s=>s.en);
-    if(sents.length<5) throw new Error("文がうまく作れませんでした。もう一度お試しください。");
-    d.sentences=sents.slice(0,7);
+    const d=await stockGet("repeat");
     DB.cur.repeat={data:d, i:0, res:[], phase:"run"};
-    PR.i=-1; save(); pRender(); window.scrollTo(0, body.offsetTop-10);
+    PR.i=-1; save(); pRender(); arrived(body, "Listen and Repeat の文", "speaking|repeat");
   }catch(e){ fail(body, e, pStart); }
   finally{ $("#p-start").disabled=false; }
 }
@@ -1601,7 +1695,7 @@ function renderPick(){
   ["toefl","ielts"].forEach(m=>{ $(`#set-date-${m}`).value=DB.settings.date[m]||""; $(`#set-tgt-${m}`).value=DB.settings.target[m]||""; });
 }
 document.querySelectorAll(".pickbtn[data-exam]").forEach(b=>b.addEventListener("click", ()=>{
-  DB.settings.exam=b.dataset.exam; save(); applyMode(); go("home");
+  DB.settings.exam=b.dataset.exam; save(); applyMode(); go("home"); stockWarm();
 }));
 ["toefl","ielts"].forEach(m=>{
   $(`#set-date-${m}`).addEventListener("change", e=>{ DB.settings.date[m]=e.target.value; save(); });
@@ -1884,7 +1978,7 @@ const SPKNEW={};
 function spkInit(key, qs, meta){
   DB.cur[key]={qs, meta, i:0, ans:[], phase:"run", evals:null, prev:null};
   SPK[key]={phase:"ready", urls:[], note:""};
-  save(); spkRender(key); window.scrollTo(0, $(SPKBOX[key]).offsetTop-10);
+  save(); spkRender(key);
 }
 const spkT=(key)=>(SPK[key]=SPK[key]||{phase:"ready", urls:[], note:""});
 function spkRender(key){
@@ -2006,7 +2100,7 @@ async function spkEval(key){
     st.evals={agg, each}; st.prevShown=st.prev; st.phase="done";
     if(!st.prev) addRecord({kind:"Speaking", task: key==="iv"?"interview":"ispeak", band:+agg.band||0, scores:agg.scores||{}});
     (each||[agg]).forEach(r=>{ addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); });
-    save(); spkRender(key); window.scrollTo(0, $(SPKBOX[key]).offsetTop-10);
+    save(); spkRender(key); arrived($(SPKBOX[key]), "Speaking の評価", key==="iv"?"speaking|iv":"speaking");
   }catch(e){ fail(box, e, ()=>spkEval(key)); }
 }
 document.addEventListener("click", e=>{
@@ -2036,21 +2130,24 @@ document.addEventListener("input", e=>{
 /* ---------- TOEFL: Take an Interview ---------- */
 const TOPICS_IV=["a university research study on student life","a study about how students use technology","a survey about campus facilities","a study on study habits and learning","a project about cities and transportation","a study about part-time jobs and careers","a survey on health and free time"];
 let IVMODE="set";
+stockDef("iv:set", async ()=>{
+  const r=await api("gen_interview_set",{topic:pick(TOPICS_IV)});
+  const qs=(r.questions||[]).filter(q=>q&&q.question_en).slice(0,4).map((q,k)=>({en:q.question_en, ja:q.question_ja, prep:0, speak:45,
+    say: k===0 && r.theme_en ? `${r.theme_en} ${q.question_en}` : q.question_en}));
+  if(qs.length<2) throw new Error("質問がうまく作れませんでした。もう一度お試しください。");
+  return {qs, meta:{exam:"toefl", title:"Take an Interview", theme_en:r.theme_en, theme_ja:r.theme_ja, phrases:r.useful_phrases}};
+});
+stockDef("iv:one", async ()=>{
+  const r=await api("gen_interview",{});
+  if(!r.question_en) throw new Error("質問がうまく作れませんでした。もう一度お試しください。");
+  return {qs:[{en:r.question_en, ja:r.question_ja, hint:r.hint_ja, prep:+r.prep_sec||15, speak:+r.speak_sec||60}], meta:{exam:"toefl", title:"Take an Interview（1問）", phrases:r.useful_phrases}};
+});
 async function ivStart(mode){
   IVMODE=mode; SPKNEW.iv=()=>ivStart(IVMODE);
   const box=$("#iv-body"); busy(box,"質問を作っています…");
   try{
-    if(mode==="set"){
-      const r=await api("gen_interview_set",{topic:pick(TOPICS_IV)});
-      const qs=(r.questions||[]).filter(q=>q&&q.question_en).slice(0,4).map((q,k)=>({en:q.question_en, ja:q.question_ja, prep:0, speak:45,
-        say: k===0 && r.theme_en ? `${r.theme_en} ${q.question_en}` : q.question_en}));
-      if(qs.length<2) throw new Error("質問がうまく作れませんでした。もう一度お試しください。");
-      spkInit("iv", qs, {exam:"toefl", title:"Take an Interview", theme_en:r.theme_en, theme_ja:r.theme_ja, phrases:r.useful_phrases});
-    } else {
-      const r=await api("gen_interview",{});
-      if(!r.question_en) throw new Error("質問がうまく作れませんでした。もう一度お試しください。");
-      spkInit("iv", [{en:r.question_en, ja:r.question_ja, hint:r.hint_ja, prep:+r.prep_sec||15, speak:+r.speak_sec||60}], {exam:"toefl", title:"Take an Interview（1問）", phrases:r.useful_phrases});
-    }
+    const x=await stockGet("iv:"+mode);
+    spkInit("iv", x.qs, x.meta); arrived(box, "Take an Interview の質問", "speaking|iv");
   }catch(e){ fail(box, e, ()=>ivStart(mode)); }
 }
 document.querySelectorAll("[data-ivstart]").forEach(b=>b.addEventListener("click", ()=>ivStart(b.dataset.ivstart)));
@@ -2059,11 +2156,12 @@ document.querySelectorAll("[data-ivstart]").forEach(b=>b.addEventListener("click
 const TOPICS_P1=["your home town","your studies or work","reading","the weather","music","food and cooking","public transport","friends","shopping","weekends"];
 const TOPICS_P2=["a person who taught you something important","a place you would like to visit","a useful object you own","an occasion when you helped someone","a book or film that made you think","a skill you learned recently","a time you changed your mind"];
 let ISPWHICH="all";
+stockDef("isp", ()=>api("gen_i_speaking",{topic1:pick(TOPICS_P1), topic2:pick(TOPICS_P2)}));
 async function ispStart(which){
   ISPWHICH=which; SPKNEW.is=()=>ispStart(ISPWHICH);
   const box=$("#is-body"); busy(box,"質問を作っています…");
   try{
-    const r=await api("gen_i_speaking",{topic1:pick(TOPICS_P1), topic2:pick(TOPICS_P2)});
+    const r=await stockGet("isp");
     const qs=[], p1=r.part1||{}, p2=r.part2||{}, p3=r.part3||{};
     if(which==="all"||which==="1") (p1.questions||[]).slice(0,4).forEach((q,k)=>qs.push({part:1, en:q.en, ja:q.ja, prep:0, speak:30,
       say: k===0 ? `Let's talk about ${p1.topic||"you"}. ${q.en}` : q.en}));
@@ -2074,6 +2172,7 @@ async function ispStart(which){
       say: k===0 && which==="all" ? `We've been talking about ${p2.cue_en ? p2.cue_en.replace(/^Describe\s+/i,"") : "this topic"}. Now I'd like to ask you some more general questions. ${q.en}` : q.en}));
     if(!qs.length) throw new Error("質問がうまく作れませんでした。もう一度お試しください。");
     spkInit("is", qs, {exam:"ielts", title: which==="all"?"IELTS Speaking":`IELTS Speaking Part ${which}`, phrases:r.useful_phrases});
+    arrived(box, "IELTS Speaking の質問", "speaking");
   }catch(e){ fail(box, e, ()=>ispStart(which)); }
 }
 document.querySelectorAll("[data-isp]").forEach(b=>b.addEventListener("click", ()=>ispStart(b.dataset.isp)));
@@ -2181,6 +2280,21 @@ const gapNorm=(t)=>String(t||"").toLowerCase().replace(/[’']/g,"'").replace(/[
 const gapOK=(v,ans)=>ans.some(a=>gapNorm(a)===gapNorm(v));
 
 const IGEN={};
+async function genIPassage(topic, focus){
+  const p=await api("gen_i_read_passage",{topic});
+  const q=await api("gen_i_read_qs",{passage:p.passage, focus});
+  const qs=iQs(q.questions, true);
+  if(!p.passage || qs.length<6) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
+  return {title:p.title||"", passage:p.passage, summary_ja:p.summary_ja||"", qs, key_words:q.key_words||[], ans:{}, checked:false};
+}
+async function genIListen(k, focus){
+  const d=await api("gen_i_listen",{part:k, topic:pick(TOPICS_IL[k]), focus});
+  const qs=iQs(d.questions), lines=(d.lines||[]).filter(l=>l&&l.text).map(l=>({sp:l.sp==="M"?"M":"F", text:String(l.text)}));
+  if(!lines.length || qs.length<5) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
+  return {num:k, title:`Part ${k}`, context_ja:d.context_ja||"", limit:d.limit||"", lines, qs, key_words:d.key_words||[], ans:{}, checked:false, play:{n:0, done:false}};
+}
+stockDef("ir:p", ()=>genIPassage(pick(TOPICS_IR), weakTags("iR")));
+[1,2,3,4].forEach(k=>stockDef("il:"+k, ()=>genIListen(k, weakTags("iL"))));
 async function iStart(sec, which){
   if(IGEN[sec]) return;
   const P=ISEC[sec].p, body=$(`#${P}-body`);
@@ -2193,23 +2307,12 @@ async function iStart(sec, which){
     let out;
     if(sec==="ireading"){
       const topics=shuffle(TOPICS_IR).slice(0,n);
-      out=await Promise.all(topics.map(async t=>{
-        const p=await api("gen_i_read_passage",{topic:t});
-        const q=await api("gen_i_read_qs",{passage:p.passage, focus});
-        const qs=iQs(q.questions, true);
-        if(!p.passage || qs.length<6) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
-        return {title:p.title||"", passage:p.passage, summary_ja:p.summary_ja||"", qs, key_words:q.key_words||[], ans:{}, checked:false};
-      }));
+      out=await Promise.all(topics.map((t,k)=> k===0 ? stockGet("ir:p") : genIPassage(t, focus)));
     } else {
-      out=await Promise.all(parts.map(async k=>{
-        const d=await api("gen_i_listen",{part:k, topic:pick(TOPICS_IL[k]), focus});
-        const qs=iQs(d.questions), lines=(d.lines||[]).filter(l=>l&&l.text).map(l=>({sp:l.sp==="M"?"M":"F", text:String(l.text)}));
-        if(!lines.length || qs.length<5) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
-        return {num:k, title:`Part ${k}`, context_ja:d.context_ja||"", limit:d.limit||"", lines, qs, key_words:d.key_words||[], ans:{}, checked:false, play:{n:0, done:false}};
-      }));
+      out=await Promise.all(parts.map(k=>stockGet("il:"+k)));
     }
     DB.cur[sec]={sec, parts:out, started:Date.now(), limit: sec==="ireading" ? out.length*20*60 : 0, phase:"run"};
-    save(); iRender(sec); window.scrollTo(0, body.offsetTop-10);
+    save(); iRender(sec); arrived(body, `IELTS ${ISEC[sec].name}の問題`, sec.slice(1));
   }catch(e){ fail(body, e, ()=>iStart(sec, which)); }
   finally{ IGEN[sec]=false; }
 }
@@ -2468,15 +2571,19 @@ function cwdLevel(){
   if(!a.length) return "standard";
   const m=avgOf(a); return m>=0.8 ? "hard" : m<0.5 ? "easy" : "standard";
 }
+stockDef("cwd", async ()=>{
+  const level=cwdLevel(), w=await api("gen_r_words",{level, topic:pick(TOPICS_AC)});
+  const ct=buildCTest(w.paragraph);
+  if(ct.n<5) throw new Error("段落がうまく作れませんでした。もう一度お試しください。");
+  return {level, w, ct};
+});
 async function cwdStart(){
   const body=$("#c-body"); busy(body,"段落を作っています…");
   $("#c-start").disabled=true;
   try{
-    const level=cwdLevel(), w=await api("gen_r_words",{level, topic:pick(TOPICS_AC)});
-    const ct=buildCTest(w.paragraph);
-    if(ct.n<5) throw new Error("段落がうまく作れませんでした。もう一度お試しください。");
+    const {level, w, ct}=await stockGet("cwd");
     DB.cur.cwd={phase:"s1", s1:{sec:"cwd", level, started:Date.now(), ans:{}, times:{}, parts:[{type:"words", title:"Complete the Words（3分ドリル）", data:w, ct, inputs:{}, checked:false, res:[]}]}};
-    save(); cwdRender(); window.scrollTo(0, body.offsetTop-10);
+    save(); cwdRender(); arrived(body, "3分ドリルの問題", "reading");
   }catch(e){ fail(body, e, cwdStart); }
   finally{ $("#c-start").disabled=false; }
 }
@@ -2532,7 +2639,7 @@ async function fitStart(){
     if(!a.passage || tf.length<3 || ct.n<4 || !build.length || resp.length<2 || gaps.length<2 || !b.mono) throw new Error("テストがうまく作れませんでした。もう一度お試しください。");
     DB.cur.fit={a:{title:a.title||"", passage:a.passage}, tf, ct, build, resp, gaps, mono:{sp:b.mono_speaker==="M"?"M":"F", text:b.mono},
       step:0, started:Date.now(), readStart:0, readSec:0, ans:{tf:{}, cw:{}, placed:{}, gap:{}, resp:{}, pref:{}}, play:{mono:0, resp:{}}};
-    save(); fitRender(); window.scrollTo(0, box.offsetTop-10);
+    save(); fitRender(); arrived(box, "診断テスト", "fit");
   }catch(e){ fail(box, e, fitStart); }
 }
 const fitWords=(t)=>words(t);
@@ -2712,6 +2819,7 @@ applyMode();
 ["iv","is"].forEach(spkRender);
 iRender("ireading"); iRender("ilistening"); cwdRender();
 go(DB.settings.exam ? "home" : "pick");
+stockBadges(); stockWarm();
 </script>
 </body>
 </html>

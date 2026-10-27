@@ -49,6 +49,10 @@
 - Speaking は共通エンジン（`spkInit`/`spkRender`、状態は `DB.cur.iv`／`DB.cur.is`）。録音と文字起こしは `recStart`/`recStop`。
 - IELTS Reading/Listening は `iStart`/`iRender`/`iCheck`（`DB.cur.ireading`／`DB.cur.ilistening`）。正答数を40問換算してバンドの目安を出す。
 - 書き直し・答え直しは記録（バンドの推移）に入れない。`previous` を渡すと関数側の `rw(i)` が `rewrite_ja` を返させる。
+- 生成（`gen_*`）は Gemini の思考レベル "minimal"、採点・添削は "low"（`handle()` 内。拒否されたら一段上げて再試行）。
+- 先回りの生成：課題の開始は必ず `stockGet(key)` を通す（`stockDef(key, fn)` で生成関数を登録）。一度使った課題は次の1セットを
+  裏で作って `DB.stock` に置く（ユーザーの通信中は待つ・1つずつ・14日で期限切れ）。準備済みのボタンには「・準備済み」が付く。
+- 生成・評価の完了は `arrived(el, label, goto)`、失敗は `fail()` で、別の画面にいるときは `toast()` でお知らせする。
 - 音声は SpeechSynthesis（男女2声、同じ声しかなければ pitch で区別）、文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。
