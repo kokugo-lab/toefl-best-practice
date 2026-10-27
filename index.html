@@ -89,9 +89,13 @@
   .passage{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:14px 16px; white-space:pre-wrap; margin:10px 0}
   .cw{white-space:normal; line-height:2.3}
   .cw .w{white-space:nowrap}
-  .cw input{font:inherit; border:0; border-bottom:2px solid var(--accent); background:transparent; color:var(--ink); padding:0 1px; margin:0 1px; outline:none; border-radius:0}
-  .cw input.ok{border-color:var(--accent); color:var(--accent); font-weight:650}
-  .cw input.ng{border-color:var(--warn); color:var(--warn); text-decoration:line-through}
+  /* 消えた文字は1文字につき下線1本。等幅フォントで、1文字＝1ch＋字間.4ch のマスにそろえる */
+  .cw input{font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; letter-spacing:.4ch;
+    border:0; padding:0 0 3px; margin:0 0 0 .1ch; line-height:1.2; height:1.45em; vertical-align:baseline; outline:none; border-radius:0; color:var(--ink); background-color:transparent;
+    background-image:linear-gradient(to right, var(--accent) 0 1ch, transparent 1ch); background-size:1.4ch 2px; background-repeat:repeat-x; background-position:0 100%}
+  .cw input:focus{background-color:var(--accent-soft)}
+  .cw input.ok{color:var(--accent); font-weight:650}
+  .cw input.ng{color:var(--warn); text-decoration:line-through; background-image:linear-gradient(to right, var(--warn) 0 1ch, transparent 1ch)}
   .cw .fix{color:var(--accent); font-size:.8em; font-weight:650; margin-left:2px}
   .fb{font-size:.88rem; margin-top:8px; padding:10px 12px; border-radius:10px; background:var(--bg); border:1px solid var(--line)}
   .fb .h{font-weight:700; margin-bottom:4px}
@@ -733,12 +737,12 @@ function wordsHTML(sec, pi, p){
     if(x.t!=null) return esc(x.t);
     const i=bi++, v=p.inputs[i]||"";
     if(!p.checked)
-      return `<span class="w">${esc(x.pre+x.keep)}<input data-cw="${sec}|${pi}|${i}" maxlength="${x.miss.length}" style="width:${x.miss.length+0.8}ch" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v)}">${esc(x.post)}</span>`;
+      return `<span class="w">${esc(x.pre+x.keep)}<input data-cw="${sec}|${pi}|${i}" maxlength="${x.miss.length}" style="width:${x.miss.length*1.4}ch" aria-label="${x.miss.length}文字" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(v)}">${esc(x.post)}</span>`;
     const ok=p.res[i];
-    return `<span class="w">${esc(x.pre+x.keep)}<input class="${ok?"ok":"ng"}" disabled value="${esc(v||"＿")}" style="width:${Math.max(x.miss.length,v.length||1)+0.8}ch">${ok?"":`<span class="fix">${esc(x.miss)}</span>`}${esc(x.post)}</span>`;
+    return `<span class="w">${esc(x.pre+x.keep)}<input class="${ok?"ok":"ng"}" disabled value="${esc(v)}" style="width:${Math.max(x.miss.length,v.length)*1.4}ch">${ok?"":`<span class="fix">${esc(x.miss)}</span>`}${esc(x.post)}</span>`;
   }).join("");
   const gl=(p.data.glossary||[]);
-  return `<p class="tiny">段落の2文目から、1語おきに語の後半が消えています。消えた文字を入れてください（${ct.n}語）。</p>
+  return `<p class="tiny">段落の2文目から、1語おきに語の後半が消えています。消えた文字を入れてください（${ct.n}語）。下線1本が1文字です。</p>
     <div class="passage cw en">${esc(ct.first)}${body}</div>
     ${!p.checked?`<button class="primary" data-cwcheck="${sec}|${pi}">答え合わせ</button>`:`
       <div class="fb"><div class="h ${p.res.every(Boolean)?"ok":"ng"}">${p.res.filter(Boolean).length} / ${ct.n} 語 正解</div>
