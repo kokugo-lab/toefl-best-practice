@@ -152,6 +152,17 @@
   nav button .ic{font-size:1.3rem}
   @media (prefers-reduced-motion: reduce){ .mascot, .bubble .bird, .spin{animation:none} }
   .card.wu{border-color:var(--accent)}
+  .menusum{display:flex; justify-content:space-between; font-size:.88rem}
+  .menusum strong{color:var(--accent); font-size:1.05rem}
+  .mrow.done span:first-child{color:var(--sub); text-decoration:line-through; text-decoration-color:var(--line)}
+  .mrow small{font-size:.74rem}
+  .predbars .bar{grid-template-columns:8.5em 1fr 2.4em}
+  .predbars .bar.sub{font-size:.78rem; padding-left:1em; color:var(--sub)}
+  .predsec summary{list-style:none; color:var(--ink); font-size:inherit; margin:0}
+  .predsec summary::-webkit-details-marker{display:none}
+  .predsec[open] summary .bar span:first-child::after{content:" ▴"} .predsec:not([open]) summary .bar span:first-child::after{content:" ▾"; color:var(--sub)}
+  .track{position:relative}
+  .track .tgt{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--warn); border-radius:1px}
   .offline{background:var(--warn-soft); color:var(--warn); border:1px solid var(--warn); border-radius:14px; padding:8px 12px; font-size:.82rem; margin:4px 0 8px}
   @media (display-mode: standalone){ header{padding-top:calc(16px + env(safe-area-inset-top))} }
   .partpick{border:1px solid var(--line); border-radius:16px; padding:10px 12px; background:var(--bg)}
@@ -337,6 +348,11 @@
       <h2>🗓️ 本番まで</h2>
       <div class="countdown"><div class="n" id="days">–</div><div class="muted" id="daysSub"></div></div>
       <div id="plan" class="tiny" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <h2>🦉 いまの予想バンド</h2>
+      <div id="pred"></div>
     </div>
 
     <div class="card">
@@ -1241,7 +1257,14 @@ function checkStage(sec){
     const scores={}; Object.entries(tags).forEach(([t,[ok,n]])=>scores[`${SEC[sec].name.slice(0,1)}・${t}`]=+(ok/n*6).toFixed(1));
     st.past=pastTimes(SEC[sec].name);
     st.times=avgTimes(mergeTimes(timesOf(st.s1), timesOf(st.s2)));
-    addRecord({kind:SEC[sec].name, band:st.band, scores, times:st.times});
+    const pb={};   // パートごとのバンド（第1・第2段階の平均）
+    [st.s1, st.s2].forEach(mod=>mod.parts.forEach((p,pi)=>{
+      const n = p.type==="words" ? p.ct.n : (p.qs||[]).length; if(!n) return;
+      const ok = p.type==="words" ? (p.res||[]).filter(Boolean).length : p.qs.filter((q,qi)=>mod.ans[pi+"-"+qi]===q.answer).length;
+      (pb[p.type]=pb[p.type]||[]).push(partBand(ok/n, mod.level));
+    }));
+    const parts=Object.fromEntries(Object.entries(pb).map(([k,v])=>[k, Math.round(avgOf(v)*2)/2]));
+    addRecord({kind:SEC[sec].name, band:st.band, scores, times:st.times, parts});
     save(); renderRL(sec); window.scrollTo(0, $("#"+SEC[sec].p+"-body").offsetTop-10);
   }
 }
@@ -1945,21 +1968,21 @@ function renderHist(){
 /* ================= ホーム ================= */
 const MENU={
   toefl:[
-    {k:"Reading", t:"", label:"🎯 本番：Reading（2段階・約20分）", u:"セット", go:"reading"},
-    {k:"Reading", t:"cwdrill", label:"⏱️ 練習：Complete the Words（3分）", u:"回", go:"reading"},
-    {k:"Listening", t:"", label:"🎯 本番：Listening（2段階・約15分）", u:"セット", go:"listening"},
-    {k:"Writing", t:"build", label:"Writing（Build a Sentence）10問", u:"セット", go:"writing", tab:"build"},
-    {k:"Writing", t:"email", label:"Writing（Write an Email）10分", u:"本", go:"writing", tab:"email"},
-    {k:"Writing", t:"disc", label:"Writing（Academic Discussion）10分", u:"本", go:"writing", tab:"disc"},
-    {k:"Speaking", t:"repeat", label:"Speaking（Listen and Repeat）7文", u:"セット", go:"speaking", tab:"repeat"},
-    {k:"Speaking", t:"interview", label:"Speaking（Take an Interview）4問 × 45秒", u:"回", go:"speaking", tab:"iv"},
+    {k:"Reading", t:"", label:"🎯 本番：Reading（2段階）", u:"セット", go:"reading", min:20},
+    {k:"Reading", t:"cwdrill", label:"⏱️ 練習：Complete the Words", u:"回", go:"reading", min:3},
+    {k:"Listening", t:"", label:"🎯 本番：Listening（2段階）", u:"セット", go:"listening", min:15},
+    {k:"Writing", t:"build", label:"Writing（Build a Sentence）10問", u:"セット", go:"writing", tab:"build", min:6},
+    {k:"Writing", t:"email", label:"Writing（Write an Email）", u:"本", go:"writing", tab:"email", min:10},
+    {k:"Writing", t:"disc", label:"Writing（Academic Discussion）", u:"本", go:"writing", tab:"disc", min:10},
+    {k:"Speaking", t:"repeat", label:"Speaking（Listen and Repeat）7文", u:"セット", go:"speaking", tab:"repeat", min:3},
+    {k:"Speaking", t:"interview", label:"Speaking（Take an Interview）4問", u:"回", go:"speaking", tab:"iv", min:5},
   ],
   ielts:[
-    {k:"Listening", t:"", label:"Listening 1パート〜全4パート", u:"回", go:"listening"},
-    {k:"Reading", t:"", label:"Reading 1パッセージ（20分）〜全3パッセージ", u:"回", go:"reading"},
-    {k:"Writing", t:"it1", label:"Writing Task 1（図表・20分・150語）", u:"本", go:"writing", tab:"t1"},
-    {k:"Writing", t:"it2", label:"Writing Task 2（エッセイ・40分・250語）", u:"本", go:"writing", tab:"t2"},
-    {k:"Speaking", t:"", label:"Speaking Part 1〜3", u:"回", go:"speaking"},
+    {k:"Listening", t:"", label:"Listening 1パート", u:"回", go:"listening", min:8},
+    {k:"Reading", t:"", label:"Reading 1パッセージ", u:"回", go:"reading", min:20},
+    {k:"Writing", t:"it1", label:"Writing Task 1（図表・150語）", u:"本", go:"writing", tab:"t1", min:20},
+    {k:"Writing", t:"it2", label:"Writing Task 2（エッセイ・250語）", u:"本", go:"writing", tab:"t2", min:40},
+    {k:"Speaking", t:"", label:"Speaking Part 1〜3", u:"回", go:"speaking", min:14},
   ],
 };
 const menuCount=(m)=>recs().filter(r=>r.kind===m.k && (m.t ? taskOf(r)===m.t : !r.task || ["iread","ilisten","ispeak"].includes(r.task))).length;
@@ -2023,9 +2046,19 @@ function renderHome(){
       ? `<div class="reco info"><strong>${esc(x.label)}</strong><span>${esc(x.why)}</span></div>`
       : `<button class="reco" data-goto="${x.goto}"><strong>${esc(x.label)} →</strong><span>${esc(x.why)}</span></button>`).join("")
     : `<p class="muted">練習すると、苦手と練習量からおすすめを出します。</p>`;
-  $("#menu").innerHTML = MENU[m].map(i=>{ const c=menuCount(i);
-      return `<button class="mrow" data-goto="${gotoOf(i)}"><span>${esc(i.label)}</span><span class="muted">${c?`累計 ${c}${i.u}`:"未着手"}</span></button>`; }).join("")
-    + `<button class="mrow" data-goto="notes|srs"><span>ノートの復習</span><span class="muted">今日 ${srsDue().length}件 ／ 全${DB.notes.length}件</span></button>`;
+  // メニュー：所要時間・今日やったか（✓）・合計と残り
+  const t0=new Date(); t0.setHours(0,0,0,0);
+  const doneToday=(i)=>recs().some(r=>r.at>=t0.getTime() && r.kind===i.k && (i.t ? taskOf(r)===i.t : !r.task || ["iread","ilisten","ispeak"].includes(r.task)));
+  const dueN=srsDue().length, srsMin=dueN?Math.max(1,Math.round(Math.min(dueN,20)*0.3)):0;
+  const mrows=MENU[m].map(i=>({i, done:doneToday(i), c:menuCount(i)}));
+  const total=mrows.reduce((a,x)=>a+x.i.min,0)+srsMin, left=mrows.filter(x=>!x.done).reduce((a,x)=>a+x.i.min,0)+srsMin;
+  const hm=(n)=>n>=60?`${Math.floor(n/60)}時間${n%60?`${n%60}分`:""}`:`${n}分`;
+  $("#menu").innerHTML = `<div class="menusum"><span>合計 <strong>約${hm(total)}</strong></span><span>今日の残り <strong>約${hm(left)}</strong></span></div>
+    <div class="progress" style="margin:2px 0 8px"><i style="width:${total?(total-left)/total*100:0}%"></i></div>`
+    + mrows.map(({i,done,c})=>`<button class="mrow ${done?"done":""}" data-goto="${gotoOf(i)}"><span>${done?"✓ ":""}${esc(i.label)}<small class="muted">　約${i.min}分</small></span><span class="muted">${c?`累計 ${c}${i.u}`:"未着手"}</span></button>`).join("")
+    + `<button class="mrow" data-goto="notes|srs"><span>ノートの復習<small class="muted">　${srsMin?`約${srsMin}分`:"今日はなし"}</small></span><span class="muted">今日 ${dueN}件 ／ 全${DB.notes.length}件</span></button>
+    <p class="tiny">✓は今日やった課題です。残り時間は、まだやっていない課題と今日の復習の合計です。</p>`;
+  $("#pred").innerHTML = predHTML();
   $("#cal").innerHTML = calHTML();
   $("#birdsay").textContent = birdSay();
 
@@ -2828,7 +2861,7 @@ function cwdDone(){
   if(st.phase==="done") return;
   st.phase="done"; st.sec=Math.round((Date.now()-mod.started)/1000);
   const acc=p.res.filter(Boolean).length/p.ct.n;
-  addRecord({kind:"Reading", task:"cwdrill", band:null, acc, times:{"Complete the Words":Math.round(st.sec/p.ct.n)}});
+  addRecord({kind:"Reading", task:"cwdrill", band:null, partBandV:partBand(acc, mod.level), acc, times:{"Complete the Words":Math.round(st.sec/p.ct.n)}});
   save(); cwdRender();
 }
 setInterval(()=>{   // 3分たったら自動で答え合わせ
@@ -3748,6 +3781,85 @@ document.addEventListener("click", e=>{
   else if(b.dataset.partclose){ DB.cur[b.dataset.partclose]=null; save(); partRender(b.dataset.partclose); }
 });
 document.querySelectorAll("[data-partpick]").forEach(el=>{ el.outerHTML=partPickHTML(el.dataset.partpick); });
+
+/* ================= 予想バンド（全体・セクション・パート）と今必要な技能 ================= */
+// 各パートの最近5回の結果を、新しいものほど重くして平均する。セクションはパートの平均、全体はセクションの平均。
+const PRED_DEF={
+  toefl:{max:6, secs:[
+    ["Reading",[["words","Complete the Words","reading","part:words"],["daily","Daily Life","reading","part:daily"],["academic","Academic Passage","reading","part:academic"]]],
+    ["Listening",[["response","Choose a Response","listening","part:response"],["conversation","Conversation","listening","part:conversation"],["announcement","Announcement","listening","part:announcement"],["talk","Academic Talk","listening","part:talk"]]],
+    ["Writing",[["build","Build a Sentence","writing|build"],["email","Write an Email","writing|email"],["disc","Academic Discussion","writing|disc"]]],
+    ["Speaking",[["repeat","Listen and Repeat","speaking|repeat"],["interview","Take an Interview","speaking|iv"]]],
+  ]},
+  ielts:{max:9, secs:[
+    ["Listening",[["ilisten","Listening","listening"]]],
+    ["Reading",[["iread","Reading","reading"]]],
+    ["Writing",[["it1","Task 1","writing|t1",null,1],["it2","Task 2","writing|t2",null,2]]],
+    ["Speaking",[["ispeak","Speaking","speaking"]]],
+  ]},
+};
+// 記録から「セクション・パート・バンド・日時」の点を取り出す
+function predPoints(){
+  const pts=[], m=MODE();
+  recs().forEach(r=>{
+    const t=taskOf(r), at=r.at, add=(part,b)=>{ if(b!=null && !isNaN(b)) pts.push({sec:r.kind, part, band:+b, at}); };
+    if(m==="toefl"){
+      if(r.parts) Object.entries(r.parts).forEach(([k,b])=>add(k,b));                 // 本番（パートごとのバンドを保存したもの）
+      else if(!t && (r.kind==="Reading"||r.kind==="Listening")) add(null, r.band);    // 古い本番の記録はセクション全体
+      if(t.startsWith("part:")) add(t.slice(5), r.band);
+      if(t==="cwdrill") add("words", r.partBandV!=null ? r.partBandV : partBand(r.acc||0, "standard"));
+      if(["build","email","disc","repeat","interview"].includes(t)) add(t, r.band);
+    } else add(t||null, r.band);
+  });
+  return pts;
+}
+function predOf(list){
+  const l=list.slice().sort((a,b)=>b.at-a.at).slice(0,5); if(!l.length) return null;
+  let w=1, sw=0, s=0; l.forEach(p=>{ s+=p.band*w; sw+=w; w*=0.8; });
+  return {band:Math.round(s/sw*2)/2, n:list.length};
+}
+function predict(){
+  const D=PRED_DEF[MODE()], pts=predPoints(), out={max:D.max, secs:[]};
+  D.secs.forEach(([sec, parts])=>{
+    const ps=parts.map(([k,label,go,startKey,w])=>({k, label, go, startKey, w:w||1, pred:predOf(pts.filter(p=>p.sec===sec && p.part===k))}));
+    const have=ps.filter(p=>p.pred);
+    let band=null;
+    if(have.length){ const sw=have.reduce((a,p)=>a+p.w,0); band=Math.round(have.reduce((a,p)=>a+p.pred.band*p.w,0)/sw*2)/2; }
+    else { const s=predOf(pts.filter(p=>p.sec===sec)); band=s?s.band:null; }
+    out.secs.push({sec, band, parts:ps});
+  });
+  const hs=out.secs.filter(s=>s.band!=null);
+  out.overall = hs.length ? Math.round(hs.reduce((a,s)=>a+s.band,0)/hs.length*2)/2 : null;
+  out.measured=hs.length;
+  return out;
+}
+// いま必要な技能：まだ測っていないパート → 目標との差が大きいパートの順
+function needs(P){
+  const tgt=DB.settings.target[MODE()], all=[];
+  P.secs.forEach(s=>s.parts.forEach(p=>all.push(Object.assign({sec:s.sec}, p))));
+  const unmeasured=all.filter(p=>!p.pred), measured=all.filter(p=>p.pred).sort((a,b)=>a.pred.band-b.pred.band);
+  const out=[];
+  measured.filter(p=>p.pred.band<tgt).slice(0,2).forEach(p=>out.push({p, why:`いま ${p.pred.band.toFixed(1)} → 目標 ${tgt}（あと ${(tgt-p.pred.band).toFixed(1)}）`}));
+  if(out.length<2 && unmeasured.length) out.push({p:unmeasured[0], why:"まだ測っていません。まず1回で今の位置がわかります"});
+  if(!out.length && measured.length) out.push({p:measured[0], why:`目標 ${tgt} に届いています。いちばん低いここを伸ばすと、さらに安定します`});
+  return out;
+}
+function predHTML(){
+  const P=predict(), tgt=DB.settings.target[MODE()], pct=(b)=>Math.min(100, b/P.max*100).toFixed(0);
+  const bar=(b)=>`<span class="track"><span class="fill" style="width:${b==null?0:pct(b)}%"></span><span class="tgt" style="left:${pct(tgt)}%"></span></span>`;
+  const startAttr=(p)=> p.startKey ? `data-gopart="${p.go}|${p.startKey.slice(5)}"` : `data-goto="${p.go}"`;
+  const nd=needs(P);
+  return `
+    <div class="predtop"><div><div class="tiny muted">総合（${P.measured}/4 セクションの平均）</div>
+      <div class="band" style="font-size:1.9rem">${P.overall!=null?P.overall.toFixed(1):"–"}<span>目標 ${tgt}</span></div></div></div>
+    <div class="bars predbars">${P.secs.map(s=>`
+      <details class="predsec"><summary><div class="bar"><span>${esc(s.sec)}</span>${bar(s.band)}<span>${s.band!=null?s.band.toFixed(1):"–"}</span></div></summary>
+        ${s.parts.length>1||P.max===6?s.parts.map(p=>`<div class="bar sub"><span>${esc(p.label)}</span>${bar(p.pred&&p.pred.band)}<span>${p.pred?p.pred.band.toFixed(1):`<span class="tiny muted">未測定</span>`}</span></div>`).join(""):""}
+      </details>`).join("")}</div>
+    <p class="tiny">セクション名を押すとパートごとに開きます。縦の線が目標です。各パートの最近5回の結果から出した目安です。</p>
+    ${nd.length?`<h3>🎯 いま必要な技能</h3>${nd.map(x=>`<button class="reco" ${startAttr(x.p)}><strong>${esc(x.p.sec)}：${esc(x.p.label)} →</strong><span>${esc(x.why)}</span></button>`).join("")}`:""}`;
+}
+document.addEventListener("click", e=>{ const b=e.target.closest("[data-gopart]"); if(!b) return; const [v,t]=b.dataset.gopart.split("|"); go(v); partStart(v,t); });
 
 /* ================= 復習クイズ ================= */
 $("#n-quiz").onclick = async ()=>{
