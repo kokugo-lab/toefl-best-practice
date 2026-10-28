@@ -4,7 +4,7 @@
 元の仕様書は `docs/spec.md`。画面の説明文は日本語、出題と回答は英語。
 
 ## 構成
-- `public/index.html` … 画面すべて（CSS・JS込みの単一ファイル）。データは localStorage キー `toefl_bp_v1`（必ず try/catch）。
+- `public/index.html` … 画面すべて（CSS・JS込みの単一ファイル）。ほかに `public/sw.js`・`public/manifest.webmanifest`・`public/icons/`。データは localStorage キー `toefl_bp_v1`（必ず try/catch）。
 - `lib/core.mjs` … LLM呼び出しの本体（プロンプト `TASKS`、Gemini/Claude 呼び出し、`handle()`）。`action` で処理を分岐。
   APIキーはサーバー側の環境変数のみ（`env` 引数で受け取る。`process.env` は直接使わない）。
 - `worker/index.mjs`＋`wrangler.jsonc` … Cloudflare Workers の入口（`public/` を配信し `/api/claude` を処理、待ち時間50秒）。
@@ -74,6 +74,10 @@
 - 効果音：`sfx("tap"|"ok"|"ng")`（Web Audio で生成）。ボタンは「ぽん」、採点結果は画面に出た .fb .h を見て鳴らす。録音中（`REC_ACTIVE`）は鳴らさない。設定 `DB.ui.sfxOff`。
 - 名言は「言った人」を太字で表示（`quoteWho()` が出典の文字列を人と出典に分ける。ことわざは「ことわざ（国）」）。
 - 選択肢の日本語訳：生成時に `choices_ja`（選択肢と同じ並び。`normQ` で一緒にシャッフル）。古い問題は `explain_part` の `choices_ja` で補う（`choiceJa()`）。答えたあと英語の下に表示。
+- 🧩 パートだけ：`partStart(view,type)`→`genPart()`（stock は `part:<type>`）。状態は `DB.cur.rpart`／`DB.cur.lpart`（phase は s1 のまま `done` で終わり）。
+  共通エンジンの `partHTML` を使い、`checkStage` から `partDone()`。記録の task は `part:<type>`。
+- アプリ化：`public/manifest.webmanifest`・`public/icons/`・`public/sw.js`（画面は通信優先・4秒でつながらなければ保存した版。`/api/` は保存しない）。
+  オフライン中は上に `#offline` を表示。sw.js の中身を変えたら `CACHE` の名前を上げる。
 - 音声は SpeechSynthesis（男女2声、同じ声しかなければ pitch で区別）、文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。
