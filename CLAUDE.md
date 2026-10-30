@@ -84,7 +84,7 @@
 - ホームの予想バンド：`predict()`（`PRED_DEF` のセクション・パートごとに、`predPoints()` が記録から点を取り出し、最近5回を新しいほど重く平均）。
   本番の記録には `parts`（パートごとのバンド）を保存する。`needs()` が未測定・目標との差が大きいパートを「いま必要な技能」に出す。
 - ホームのメニュー：`MENU` の各項目に `min`（分）。今日やった課題に✓、合計と今日の残りを表示。
-- 音声は SpeechSynthesis（Samantha があればすべて Samantha・高さも変えない〔`VOICE.sam`、話す直前に `loadVoices()` で選び直す〕。なければ男女2声）、文を分けてキューに積む。
+- 音声は SpeechSynthesis。声はアプリ全体で1つ（`VOICE.sam`）：`DB.ui.voice` で選べ、おまかせは `vScore()` で Premium・Enhanced・Natural・Google を優先（ふざけた声 `VNOVELTY` は除く）。選ぶ欄は `#l-voiceinfo`／`#il-voiceinfo` の `.vsel`。文を分けてキューに積む。
 - 「公式問題ではない」「バンドは目安」「公式と細部が異なる場合あり」の表示を消さない。
 - Speaking評価では発音・抑揚・間を評価しないと明記する。
 - ブラウザのダイアログ（alert/confirm）は新たに増やさない。

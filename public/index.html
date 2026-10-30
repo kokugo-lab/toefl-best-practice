@@ -1308,22 +1308,37 @@ function timesHTML(st){
 const VOICE={F:null, M:null, same:true};
 const FEM=/(female|samantha|karen|victoria|moira|tessa|fiona|zira|aria|jenny|susan|allison|ava|serena|kate|emma|libby|sonia|natasha|michelle|google us english)/i;
 const MAL=/(\bmale|alex|daniel|fred|tom\b|aaron|guy|david|mark|arthur|oliver|rishi|ryan|thomas|christopher|eric|george|google uk english male)/i;
+// 声はアプリ全体で1つ。DB.ui.voice（名前）で選べる。おまかせは自然な声（Premium・Enhanced・Natural など）を優先
+const VNOVELTY=/^(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|junior|ralph|kathy|fred|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley)\b/i;
+function vScore(v){
+  let n=0; const nm=v.name;
+  if(/premium|プレミアム/i.test(nm)) n+=6; else if(/enhanced|拡張|高品質/i.test(nm)) n+=4;
+  if(/natural|neural|online/i.test(nm)) n+=5;
+  if(/google/i.test(nm)) n+=3;
+  if(/^(ava|zoe|evan|nathan|joelle|noelle|allison|susan|tom)\b/i.test(nm)) n+=1;
+  if(/en[-_]US/i.test(v.lang)) n+=1;
+  return n;
+}
+function vList(){
+  try{ return speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang) && !VNOVELTY.test(v.name)).sort((a,b)=>vScore(b)-vScore(a)); }catch(e){ return []; }
+}
 function loadVoices(){
   try{
-    const all=speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang)||/samantha/i.test(v.name));
-    const us=all.filter(v=>/en[-_]US/i.test(v.lang)), pool=us.length?us.concat(all.filter(v=>!us.includes(v))):all;
-    const sam = all.find(v=>/samantha/i.test(v.name));   // あれば男女とも Samantha（高さで区別）
-    VOICE.sam=sam||null;
-    if(sam){ VOICE.F=VOICE.M=sam; }
-    else {
-    VOICE.F = pool.find(v=>FEM.test(v.name) && !/male/i.test(v.name.replace(/female/i,""))) || pool[0] || null;
-    VOICE.M = pool.find(v=>MAL.test(v.name) && v!==VOICE.F) || pool.find(v=>v!==VOICE.F) || VOICE.F;
-    }
-    VOICE.same = !VOICE.F || VOICE.F===VOICE.M;
-    const txt = VOICE.F ? (sam ? `声：${sam.name}（すべて同じ声で読み上げます）` : `女性の声：${VOICE.F.name}　男性の声：${VOICE.M?VOICE.M.name:"-"}${VOICE.same?"（同じ声のため高さで区別します）":""}　※Samantha が見つからないため別の声を使っています`) : "この端末では英語の音声が見つかりません。";
-    ["#l-voiceinfo","#il-voiceinfo"].forEach(id=>{ const el=$(id); if(el) el.textContent=txt; });
+    const all=vList(), want=DB.ui && DB.ui.voice;
+    const v=(want && all.find(x=>x.name===want)) || all[0] || null;
+    VOICE.sam=v; VOICE.F=VOICE.M=v; VOICE.same=true;
+    const opts=`<option value="">おまかせ（いちばん自然な声）</option>`+all.map(x=>`<option value="${esc(x.name)}" ${x.name===want?"selected":""}>${esc(x.name)}（${esc(x.lang)}）</option>`).join("");
+    const html = v ? `声：<strong>${esc(v.name)}</strong>（すべてこの声で読み上げます）<br><select class="vsel">${opts}</select>
+      <br>iPhone は「設定 → アクセシビリティ → 読み上げコンテンツ → 声 → 英語」で Ava・Zoe・Evan などの「プレミアム」の声を入れると、ここで選べて自然になります。`
+      : "この端末では英語の音声が見つかりません。";
+    ["#l-voiceinfo","#il-voiceinfo"].forEach(id=>{ const el=$(id); if(el) el.innerHTML=html; });
   }catch(e){}
 }
+document.addEventListener("change", e=>{
+  if(!e.target.classList || !e.target.classList.contains("vsel")) return;
+  DB.ui.voice=e.target.value; save(); loadVoices();
+  speakSeq([{sp:"F", text:"Hi, this is the voice you will hear in the listening section."}], .94);
+});
 try{ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }catch(e){}
 const UTT=[]; // GCで再生が止まるのを防ぐ
 function speakSeq(segs, rate, onend){
@@ -1437,7 +1452,7 @@ function confirmReset(){ // ダイアログを出さずに二度押しで確定
   document.querySelectorAll("#r-reset,#l-reset").forEach(b=>{ b.textContent="もう一度押すと破棄します"; setTimeout(()=>b.textContent="新しいセットにする",4000); });
   return false;
 }
-$("#l-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is the woman's voice."},{sp:"M",text:"And this is the man's voice."}], .94); };
+$("#l-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is the voice you will hear in the listening section."}], .94); };
 
 /* ================= Writing（Email／Academic Discussion 共通） ================= */
 const phrasesHTML=(a)=>(a&&a.length)?`<h3>使える表現</h3><ul>${a.map(p=>`<li><span class="en">${esc(p.en)}</span> <span class="muted">${esc(p.ja)}</span></li>`).join("")}</ul>`:"";
@@ -2765,7 +2780,7 @@ document.addEventListener("input", e=>{
   const [sec,pi,qi]=t.dataset.igap.split("|"), st=DB.cur[sec]; if(!st) return;
   st.parts[+pi].ans[qi]=t.value; save(); iUpdCtl(sec,+pi);
 });
-$("#il-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is the woman's voice."},{sp:"M",text:"And this is the man's voice."}], .94); };
+$("#il-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is the voice you will hear in the listening section."}], .94); };
 
 /* ================= グラフ（IELTS Writing Task 1） ================= */
 function niceStep(max){ const raw=max/4, p=Math.pow(10,Math.floor(Math.log10(raw||1))); return [1,2,2.5,5,10].map(x=>x*p).find(x=>x>=raw)||p*10; }
