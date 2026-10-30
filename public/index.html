@@ -1312,10 +1312,14 @@ function loadVoices(){
   try{
     const all=speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang));
     const us=all.filter(v=>/en[-_]US/i.test(v.lang)), pool=us.length?us.concat(all.filter(v=>!us.includes(v))):all;
+    const sam = all.find(v=>/samantha/i.test(v.name));   // あれば男女とも Samantha（高さで区別）
+    if(sam){ VOICE.F=VOICE.M=sam; }
+    else {
     VOICE.F = pool.find(v=>FEM.test(v.name) && !/male/i.test(v.name.replace(/female/i,""))) || pool[0] || null;
     VOICE.M = pool.find(v=>MAL.test(v.name) && v!==VOICE.F) || pool.find(v=>v!==VOICE.F) || VOICE.F;
+    }
     VOICE.same = !VOICE.F || VOICE.F===VOICE.M;
-    const txt = VOICE.F ? `女性の声：${VOICE.F.name}　男性の声：${VOICE.M?VOICE.M.name:"-"}${VOICE.same?"（同じ声のため高さで区別します）":""}` : "この端末では英語の音声が見つかりません。";
+    const txt = VOICE.F ? (sam ? `声：${sam.name}（男性の役は声を低くして区別します）` : `女性の声：${VOICE.F.name}　男性の声：${VOICE.M?VOICE.M.name:"-"}${VOICE.same?"（同じ声のため高さで区別します）":""}　※Samantha が見つからないため別の声を使っています`) : "この端末では英語の音声が見つかりません。";
     ["#l-voiceinfo","#il-voiceinfo"].forEach(id=>{ const el=$(id); if(el) el.textContent=txt; });
   }catch(e){}
 }
