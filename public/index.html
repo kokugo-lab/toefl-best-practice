@@ -1310,16 +1310,17 @@ const FEM=/(female|samantha|karen|victoria|moira|tessa|fiona|zira|aria|jenny|sus
 const MAL=/(\bmale|alex|daniel|fred|tom\b|aaron|guy|david|mark|arthur|oliver|rishi|ryan|thomas|christopher|eric|george|google uk english male)/i;
 function loadVoices(){
   try{
-    const all=speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang));
+    const all=speechSynthesis.getVoices().filter(v=>/^en([-_]|$)/i.test(v.lang)||/samantha/i.test(v.name));
     const us=all.filter(v=>/en[-_]US/i.test(v.lang)), pool=us.length?us.concat(all.filter(v=>!us.includes(v))):all;
     const sam = all.find(v=>/samantha/i.test(v.name));   // あれば男女とも Samantha（高さで区別）
+    VOICE.sam=sam||null;
     if(sam){ VOICE.F=VOICE.M=sam; }
     else {
     VOICE.F = pool.find(v=>FEM.test(v.name) && !/male/i.test(v.name.replace(/female/i,""))) || pool[0] || null;
     VOICE.M = pool.find(v=>MAL.test(v.name) && v!==VOICE.F) || pool.find(v=>v!==VOICE.F) || VOICE.F;
     }
     VOICE.same = !VOICE.F || VOICE.F===VOICE.M;
-    const txt = VOICE.F ? (sam ? `声：${sam.name}（男性の役は声を低くして区別します）` : `女性の声：${VOICE.F.name}　男性の声：${VOICE.M?VOICE.M.name:"-"}${VOICE.same?"（同じ声のため高さで区別します）":""}　※Samantha が見つからないため別の声を使っています`) : "この端末では英語の音声が見つかりません。";
+    const txt = VOICE.F ? (sam ? `声：${sam.name}（すべて同じ声で読み上げます）` : `女性の声：${VOICE.F.name}　男性の声：${VOICE.M?VOICE.M.name:"-"}${VOICE.same?"（同じ声のため高さで区別します）":""}　※Samantha が見つからないため別の声を使っています`) : "この端末では英語の音声が見つかりません。";
     ["#l-voiceinfo","#il-voiceinfo"].forEach(id=>{ const el=$(id); if(el) el.textContent=txt; });
   }catch(e){}
 }
@@ -1333,12 +1334,13 @@ function speakSeq(segs, rate, onend){
     const list=[];
     segs.forEach(s=>{ (String(s.text||"").match(/[^.!?]+[.!?]+["')]?|[^.!?]+$/g)||[]).forEach(t=>{ t=t.trim(); if(t) list.push({t, sp:s.sp}); }); });
     if(!list.length) return done();
+    if(!VOICE.sam) loadVoices();   // 声の一覧が後から届く端末（iPhone など）では、話す直前に選び直す
     list.forEach((x,i)=>{
       const u=new SpeechSynthesisUtterance(x.t);
       u.lang="en-US"; u.rate=rate||.94;
-      const v = x.sp==="M" ? VOICE.M : VOICE.F;
-      if(v) u.voice=v;
-      if(VOICE.same) u.pitch = x.sp==="M" ? 0.7 : 1.25;
+      const v = VOICE.sam || (x.sp==="M" ? VOICE.M : VOICE.F);
+      if(v){ u.voice=v; u.lang=v.lang||"en-US"; }
+      if(VOICE.same && !VOICE.sam) u.pitch = x.sp==="M" ? 0.7 : 1.25;
       if(i===list.length-1){ u.onend=done; u.onerror=done; }
       UTT.push(u); speechSynthesis.speak(u);
     });
