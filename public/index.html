@@ -203,6 +203,9 @@
   .xs mark, .dl mark{background:none; color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px}
   .xpara{height:10px}
   .qref{display:inline-block; font-size:.66rem; font-weight:700; color:#fff; background:#c62828; border-radius:6px; padding:0 6px; margin-right:5px; vertical-align:2px; font-family:-apple-system,sans-serif}
+  .ctx{margin:6px 0; padding:6px 10px; background:var(--card,#fff); border:1px dashed #d9c9b6; border-radius:8px; font-size:.9rem}
+  .ctx .ja{color:var(--sub); font-size:.85rem}
+  .ctx mark{background:#ffe08a; color:#c62828; font-weight:700; padding:0 2px; border-radius:3px}
   .think{margin-top:8px; padding:8px 12px; border-left:3px solid #c62828; background:var(--bg); border-radius:0 8px 8px 0; font-size:.88rem}
   .think .mh{font-weight:650; font-size:.78rem; color:var(--sub)}
   .cwrow{padding:8px 0; border-bottom:1px dashed var(--line); font-size:.9rem}
@@ -3079,10 +3082,21 @@ function cwRerender(key){
   if(sec==="cwd") return cwdRender();
   if(DB.cur[sec]) rerenderPart(sec,+pi);
 }
+// 空欄ごとに、その語を含む本文の1文（その語を強調）
+function cwSents(p){
+  let txt=p.ct.first||""; const pos=[];
+  p.ct.parts.forEach(x=>{ if(x.t!=null) txt+=x.t; else { txt+=x.pre; pos.push([txt.length, txt.length+x.word.length]); txt+=x.word+x.post; } });
+  const ss=[...txt.matchAll(/[^.!?]+[.!?]+["')]?|[^.!?]+$/g)].map(m=>[m.index, m.index+m[0].length]);
+  return pos.map(([a,b])=>{ const r=ss.find(([s0,s1])=>a>=s0&&a<s1); if(!r) return "";
+    const t=txt.slice(r[0],r[1]), lead=t.length-t.trimStart().length;
+    return (esc(txt.slice(r[0]+lead,a))+`<mark>${esc(txt.slice(a,b))}</mark>`+esc(txt.slice(b,r[1]))).trim(); });
+}
 function cwTableHTML(key, p){
   const blanks=p.ct.parts.filter(x=>x.t==null), E=p.exp||{}, it=(E.items)||[];
+  const sents=cwSents(p);
   const rows=blanks.map((x,i)=>{ const e=it[i]||{}, ok=p.res[i], mine=x.keep+(p.inputs[i]||"");
     return `<div class="cwrow ${ok?"ok":"ng"}"><div><strong class="en">${esc(x.word)}</strong>${e.pos_ja?` <span class="tag">${esc(e.pos_ja)}</span>`:""} <span class="muted">${esc(e.ja||"")}</span></div>
+      ${sents[i]?`<div class="ctx"><div class="en">${sents[i]}</div>${e.sent_ja?`<div class="ja">${esc(e.sent_ja)}</div>`:""}</div>`:""}
       <div class="tiny">${ok?"✓ 正解":`✗ あなたの答え：<span class="en">${esc(mine)}</span>`}</div>
       ${e.why_ja?`<div>${esc(e.why_ja)}</div>`:""}${!ok&&e.user_ja?`<div class="corr">${esc(e.user_ja)}</div>`:""}</div>`; }).join("");
   const tail = CWX[key] ? `<p class="muted"><span class="spin"></span>1語ずつの解説と全文訳を作っています…</p>`
@@ -3274,7 +3288,8 @@ function xpPassageHTML(key, h, title, num, cls){
 // 1問ごとの考え方
 function xpThinkHTML(h, qi, num){
   const q=h && h.xp && h.xp.qs[qi]; if(!q || !q.think) return "";
-  return `<div class="think"><div class="mh">考え方${q.refs.length?`<span class="tiny">（根拠：赤字の Q${num(qi)} の文）</span>`:""}</div>${esc(q.think)}</div>`;
+  const xp=h.xp, src=q.refs.length?`<div class="ctx">${q.refs.map(i=>`<div class="en">${xpMark(xp.segs[i].t,xp,[qi])}</div>${xp.ja[i]?`<div class="ja">${esc(xp.ja[i])}</div>`:""}`).join("")}</div>`:"";
+  return `<div class="think"><div class="mh">考え方${q.refs.length?`<span class="tiny">（根拠：本文の赤字の Q${num(qi)} の文）</span>`:""}</div>${src}${esc(q.think)}</div>`;
 }
 document.addEventListener("click", e=>{ const b=e.target.closest("[data-xp]"); if(b) xpFetch(b.dataset.xp); });
 

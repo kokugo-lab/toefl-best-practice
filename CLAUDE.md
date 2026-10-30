@@ -65,6 +65,7 @@
 - ノートから外す：`removeNotes(pred)`（お知らせは出さない）。ノート一覧・今日の復習・コツと単語から使う。
 - 課題ごとの目安バンド：`partBand(正答率, 難しさ)`＋`bandPill("Reading", b)`（「（目安）」は付けない）。TOEFL の各パート・第1段階・3分ドリル、IELTS の各パート（`rawBand`）に表示。
 - Complete the Words の全文訳は結果（○/10 語 正解）の上に出す（`cwTransHTML`）。
+- 解説の中に本文の該当文を出す（スクロールで戻らなくてよいように）：Complete the Words は `cwSents()` で空欄を含む1文（語を強調）＋`sent_ja`、ほかの設問は `xpThinkHTML` が根拠の文（英文＋訳）を「考え方」に添える。
 - 基礎練習（TOEFL のみ）：`wuStart(view)` が `GUIDE` から5問（例文の穴埋め・意味）＋今日のポイントを作り `#wu-<view>` に出す。
   課題を始めたとき自動で出す（`DB.ui.wuOff` で止められる）。状態は保存しない。間違えた語はノートへ。
 - 画面の呼び名：🎯 本番（セット）／⏱️ 練習（3分の Complete the Words、Interview の1問）／🌱 基礎（`wuStart`）／💡 コツと単語。開始ボタンは `.stack` で縦に並べる。
