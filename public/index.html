@@ -203,6 +203,17 @@
   .xs mark, .dl mark{background:none; color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px}
   .xpara{height:10px}
   .qref{display:inline-block; font-size:.66rem; font-weight:700; color:#fff; background:#c62828; border-radius:6px; padding:0 6px; margin-right:5px; vertical-align:2px; font-family:-apple-system,sans-serif}
+  .gflow{display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:6px 0 10px}
+  .gstep{background:var(--card); border:1.5px solid #e6c9a0; border-radius:999px; padding:4px 10px; font-size:.85rem}
+  .garr{color:#c9a27a; font-weight:700}
+  .gex{background:var(--card); border:1.5px dashed #e6c9a0; border-radius:12px; padding:10px 12px; margin-bottom:8px}
+  .gex mark{background:#ffe08a; border-radius:3px; padding:0 2px}
+  .gans{color:#c62828}
+  .gexs{margin:6px 0 4px; padding-left:20px; font-size:.88rem}
+  .gtips{display:grid; gap:6px; margin:6px 0}
+  .gtip{display:flex; gap:8px; align-items:flex-start; background:var(--card); border-radius:10px; padding:8px 10px; font-size:.9rem; box-shadow:0 1px 0 rgba(0,0,0,.05)}
+  .gtip.trap{background:rgba(230,120,60,.12)}
+  .gico{font-size:1.2rem; line-height:1.3}
   .ctx{margin:6px 0; padding:6px 10px; background:var(--card,#fff); border:1px dashed #d9c9b6; border-radius:8px; font-size:.9rem}
   .ctx .ja{color:var(--sub); font-size:.85rem}
   .ctx mark{background:#ffe08a; color:#c62828; font-weight:700; padding:0 2px; border-radius:3px}
@@ -3454,6 +3465,65 @@ const GUIDE={
     traps:["理由を言わずに答えだけで終わる（短すぎる）。","質問とずれた話を長く続ける。"],
     words:[["In my experience","私の経験では","In my experience, group study works."],["Personally, I think …","個人的には〜と思う","Personally, I think it's useful."],["One reason is that …","理由の1つは〜","One reason is that it's cheaper."],["For instance","たとえば","For instance, last year I joined a club."],["Looking back","振り返ると","Looking back, it was a great choice."],["I'd say …","〜だと思います","I'd say it's about balance."],["On the other hand","一方で","On the other hand, it takes time."],["Nowadays","最近では","Nowadays, most students use laptops."],["That's an interesting question.","いい質問ですね（つなぎ）","That's an interesting question. I think…"],["Overall","全体として","Overall, I prefer studying alone."],["It depends on …","〜による","It depends on the situation."],["In the future","将来は","In the future, I want to study abroad."]]},
 };
+// コツの図と例（[[ ]] は手がかり＝黄色、{{ }} は答え＝赤字）
+const GUIDE_VIS={
+  cw:{flow:["📖 1文目で話題","🔍 前後で品詞","✏️ 形（-s/-ed）","🔢 文字数で確定"],
+    ex:{q:"Most [[plants]] need light. They {{use}} it to make food, and [[the]] {{process}} is called photosynthesis.",
+      steps:["They の後 → 動詞が入る → us__ は use","the の後 → 名詞が入る → proc___ は process"]},
+    icons:["📖","🔍","✏️","🔢","🔗","⏭️"]},
+  daily:{flow:["❓ 先に設問","👀 見出し・日時","🎯 該当箇所を読む","🔁 言い換えを選ぶ"],
+    ex:{q:"Q: What must students do? — Notice: \"[[Please]] {{bring your student ID}} to the front desk.\"",
+      steps:["must を聞かれたら Please / required の近くを探す","正解：Show their identification card（本文の言い換え）"]},
+    icons:["❓","👀","🎯","📌","🔁"]},
+  academic:{flow:["🧭 各段落の1文目","❓ 設問のキーワード","🔍 前後1〜2文","✅ 言い換えを選ぶ"],
+    ex:{q:"Q: Why does the author mention camels? — \"Some animals survive with little water. [[For example]], {{camels can go weeks without drinking}}.\"",
+      steps:["For example の前が「言いたいこと」","答え：少ない水で生きられる動物の例を示すため"]},
+    icons:["🧭","🌐","🔍","🔄","🤔","🎯"]},
+  response:{flow:["👂 最初の疑問詞","🧠 答えの種類","🙅 同じ音の罠","✅ 自然な返事"],
+    ex:{q:"\"[[When]] does the library close?\" → {{At six on weekdays.}}",
+      steps:["When → 時間で答える返事を選ぶ","× In the main building（場所）、× I closed the book（同じ音の罠）"]},
+    icons:["👂","🔄","🪤","🙏","⏰"]},
+  conversation:{flow:["🧩 最初で用件","↪️ But/Actually","📝 W/M でメモ","➡️ 最後に次の行動"],
+    ex:{q:"W: Let's meet Monday. M: [[Actually]], I have a lab then. {{How about Tuesday?}} W: OK.",
+      steps:["Actually の後で話が変わる","最終的に決まったのは Tuesday（Monday は却下）"]},
+    icons:["🧩","↪️","➡️","📝","💭"]},
+  announcement:{flow:["📢 冒頭で目的","🔄 前→これから","🙋 Please の後","🗓️ 日時・場所をメモ"],
+    ex:{q:"\"The lab was in Room 10. [[From now on]], {{it will be in Room 214}}. [[Please]] {{bring goggles}}.\"",
+      steps:["変更後の Room 214 が答え（Room 10 は罠）","Please の後 → 聞き手がすること"]},
+    icons:["📢","🔄","🙋","🗓️"]},
+  talk:{flow:["🎯 今日のテーマ","🪧 道しるべ語","💡 例は何のため？","📝 主張→理由→例"],
+    ex:{q:"\"Today we'll look at [[urban heat]]. Cities are hotter than the countryside. [[For instance]], {{Tokyo is 3°C warmer}}.\"",
+      steps:["主題は urban heat（都市の暑さ）","Tokyo の例は「都市は暑い」を示すため。数字そのものより役割"]},
+    icons:["🎯","🪧","💡","📖","📝"]},
+  build:{flow:["👤 主語＋動詞","❓ 質問の形を見る","🧱 かたまりで並べる","🗑️ ダミーを外す"],
+    ex:{q:"Do you know [[where]] ___? 〔the lab / is / does〕 → where {{the lab is}}",
+      steps:["間接疑問は「疑問詞＋主語＋動詞」","does はダミー（使わない）"]},
+    icons:["👤","❓","🔤","🧱","🗑️"]},
+  email:{flow:["👋 あいさつ","🎯 用件1文","📋 指示を全部","🙏 お礼と結び"],
+    ex:{q:"Dear Professor Lee, [[I am writing to]] {{ask for an extension}}. [[Could you please]] {{let me submit it on Friday}}? Thank you, Mika",
+      steps:["1文目で用件をはっきり","お願いは Could you please … で丁寧に"]},
+    icons:["🧱","📋","🎩","📅","🔎"]},
+  disc:{flow:["🗣️ 1文目で意見","👥 級友に触れる","✨ 新しい理由","🏁 まとめ"],
+    ex:{q:"[[I believe]] {{schools should start later}}. [[I agree with Ana that]] sleep matters, but {{another reason is safety: fewer students bike in the dark}}.",
+      steps:["意見 → 級友に触れる → 2人にない理由","「新しい理由」が高評価の決め手"]},
+    icons:["🗣️","👥","✨","🪜","🏁"]},
+  repeat:{flow:["👂 かたまりで聞く","🔁 頭で一緒に言う","🔎 小さい語も","🏃 最後まで言う"],
+    ex:{q:"[[The library]] / [[is located]] / [[to the left]] / [[of the main entrance]].",
+      steps:["4つのかたまりで覚える","the / of などの小さい語も採点される"]},
+    icons:["🧱","🔁","🔎","🏃","📣"]},
+  interview:{flow:["🎯 答え","💬 理由","📸 具体例","🏁 まとめ"],
+    ex:{q:"[[Yes, I think]] {{online classes are useful}}. [[One reason is that]] I can review videos. [[For instance]], last year I… [[So, overall]], they help me.",
+      steps:["型どおりに話すと45秒がちょうど埋まる","具体例は自分の経験を1つ"]},
+    icons:["🎯","🪜","📸","⏳","🏁"]},
+};
+function gvMark(t){ return esc(t).replace(/\[\[(.+?)\]\]/g,'<mark>$1</mark>').replace(/\{\{(.+?)\}\}/g,'<b class="gans">$1</b>'); }
+function gvHTML(u){
+  const v=GUIDE_VIS[u]; if(!v) return "";
+  return `<h3>流れ（この順で解く）</h3><div class="gflow">${v.flow.map(s=>`<span class="gstep">${esc(s)}</span>`).join('<span class="garr">→</span>')}</div>
+    <h3>例でみる</h3><div class="gex"><div class="en">${gvMark(v.ex.q)}</div>
+    <ol class="gexs">${v.ex.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+    <div class="tiny"><mark>黄色</mark>＝手がかり　<b class="gans">赤字</b>＝答え・中身</div></div>`;
+}
 const PTYPE2GUIDE={words:"cw", daily:"daily", academic:"academic", response:"response", conversation:"conversation", announcement:"announcement", talk:"talk"};
 let GUIDE_CUR=null;
 const guideBtnHTML=(unit, label)=>`<button class="mini guidebtn" data-guide="${unit}">${label||"コツと単語"}</button>`;
@@ -3465,8 +3535,10 @@ function guideRender(){
   $("#guide-body").innerHTML=`
     <div class="seg">${units.map(k=>`<button data-guide="${k}" aria-pressed="${k===u}">${esc(GUIDE[k].title)}</button>`).join("")}</div>
     <p class="tiny">${esc(g.form)}</p>
-    <h3>解き方のコツ</h3><ol class="gtips">${g.tips.map(t=>`<li>${esc(t)}</li>`).join("")}</ol>
-    <h3>よくある落とし穴</h3><ul>${g.traps.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+    ${gvHTML(u)}
+    <h3>解き方のコツ</h3><div class="gtips">${g.tips.map((t,i)=>`<div class="gtip"><span class="gico">${(GUIDE_VIS[u]&&GUIDE_VIS[u].icons[i])||"🐦"}</span><div><b>${i+1}.</b> ${esc(t)}</div></div>`).join("")}</div>
+    <h3>よくある落とし穴</h3><div class="gtips">${g.traps.map(t=>`<div class="gtip trap"><span class="gico">⚠️</span><div>${esc(t)}</div></div>`).join("")}</div>
+    <p class="tiny">🐦 まずは「流れ」の順番だけ覚えればOK！</p>
     <div class="part-h"><h3>覚えるべき単語・表現（${g.words.length}）</h3>${g.words.every(w=>inNotes(w[0]))?`<button class="mini noterm" data-guidermall="${u}">全部ノートから外す</button>`:`<button class="mini" data-guideall="${u}">全部ノートに追加</button>`}</div>
     <p class="tiny">ノートに追加すると、翌日から間隔反復の「今日の復習」に出てきます。▶で発音を聞けます。</p>
     ${g.words.map(([en,ja,ex],i)=>`<div class="gw"><div><strong class="en">${esc(en)}</strong> <button class="mini" data-sayen="${esc(en)}">▶</button>

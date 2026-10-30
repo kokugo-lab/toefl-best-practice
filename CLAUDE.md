@@ -61,7 +61,7 @@
 - 「やめる」：進行中の画面には `quitBtnHTML(key)`（二度押しで確定）。`quitSession(key)` が音声・録音・時計を止めて進行を破棄（記録に入れない）。
   再生完了などの遅れて届く処理は、状態が消えていたら何もしない（`rerenderPart`・`iUpdCtl` などで確認）。
 - コツと単語（TOEFL のみ）：中身は `GUIDE`（単元ごとの形式・コツ・落とし穴・単語[英,意味,例文]）に固定で書く。`data-guide="単元"` の
-  ボタンで下からシートが開く（`guideOpen`）。単語は `addNotes("word")` でノート・SRS に入る。
+  ボタンで下からシートが開く（`guideOpen`）。図と例は `GUIDE_VIS`（流れ4段・例文〔[[手がかり]]・{{答え}}〕・コツごとの絵文字）を `gvHTML()` で描く。単語は `addNotes("word")` でノート・SRS に入る。
 - ノートから外す：`removeNotes(pred)`（お知らせは出さない）。ノート一覧・今日の復習・コツと単語から使う。
 - 課題ごとの目安バンド：`partBand(正答率, 難しさ)`＋`bandPill("Reading", b)`（「（目安）」は付けない）。TOEFL の各パート・第1段階・3分ドリル、IELTS の各パート（`rawBand`）に表示。
 - Complete the Words の全文訳は結果（○/10 語 正解）の上に出す（`cwTransHTML`）。
