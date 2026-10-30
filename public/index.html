@@ -10,26 +10,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Best Practice">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#2f8f6f">
+<meta name="theme-color" content="#fbf6ec">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐦%3C/text%3E%3C/svg%3E">
 <style>
-  :root{
+  :root{ color-scheme:light;
     --bg:#fbf6ec; --card:#fffdf8; --ink:#3a3128; --sub:#7c7063;
     --line:#ece2d2; --accent:#2f8f6f; --accent-soft:#e3f3ea;
     --warn:#cf6b3c; --warn-soft:#fdeee3; --shadow:0 2px 4px rgba(120,90,50,.05),0 10px 26px rgba(120,90,50,.07);
     --r:22px;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#17191a; --card:#1f2223; --ink:#eae6de; --sub:#9d978c;
-      --line:#32373a; --accent:#6fc3a8; --accent-soft:#1d2d29;
-      --warn:#e09a76; --warn-soft:#2d2420; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#17191a; --card:#1f2223; --ink:#eae6de; --sub:#9d978c;
-    --line:#32373a; --accent:#6fc3a8; --accent-soft:#1d2d29;
-    --warn:#e09a76; --warn-soft:#2d2420;
   }
   *{box-sizing:border-box}
   body{
@@ -198,8 +186,6 @@
   .xs{padding:4px 0}
   .xs .ja, .dl .ja, .q .ja{font-size:.82rem; color:var(--sub); line-height:1.6; margin:1px 0 2px; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif}
   .xs.hit .en, .dl.hit{color:#c62828}
-  :root[data-theme="dark"] .xs.hit .en, :root[data-theme="dark"] .dl.hit{color:#ff8a80}
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .xs.hit .en, :root:not([data-theme="light"]) .dl.hit{color:#ff8a80} }
   .xs mark, .dl mark{background:none; color:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px}
   .xpara{height:10px}
   .qref{display:inline-block; font-size:.66rem; font-weight:700; color:#fff; background:#c62828; border-radius:6px; padding:0 6px; margin-right:5px; vertical-align:2px; font-family:-apple-system,sans-serif}
@@ -301,9 +287,7 @@
   input.gapin.ng{border-color:var(--warn); color:var(--warn)}
   .ig-h{font-size:.82rem; color:var(--sub); margin:14px 0 4px; font-weight:650}
   /* ---- グラフ（IELTS Writing Task 1） ---- */
-  :root{--s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948}
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767} }
-  :root[data-theme="dark"]{--s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767}
+  :root{ color-scheme:light;--s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948}
   .chartbox{border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--card); margin:10px 0}
   .chartbox .ch-title{font-weight:650; font-size:.9rem; margin-bottom:6px}
   .chartbox svg{width:100%; height:auto; display:block}
