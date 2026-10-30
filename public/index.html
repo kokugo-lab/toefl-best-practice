@@ -1233,11 +1233,12 @@ stockDef("rl:reading", ()=>genModule("reading","standard"));
 stockDef("rl:listening", ()=>genModule("listening","standard"));
 async function startSet(sec){
   const P=SEC[sec].p, body=$("#"+P+"-body");
-  wuStart(sec);
+  claim(sec); wuStart(sec);
   busy(body, "第1段階の問題を作っています…（20〜40秒ほどかかります）");
   $("#"+P+"-start").disabled=true;
   try{
     const mod = await stockGet("rl:"+sec);
+    if(!owns(sec)){ body.innerHTML=""; return; }
     mod.started=Date.now();
     DB.cur[sec] = {phase:"s1", s1:mod, s2:null, s2pre:null, level2:null};
     save(); renderRL(sec); arrived($("#"+P+"-body"), `${SEC[sec].name}の問題`, sec);
@@ -1463,10 +1464,12 @@ function setupWriter(o){
     tick(); timer=setInterval(tick,1000);
   };
   el("gen").onclick = async ()=>{
-    if(GUIDE[o.key]) wuStart("writing");   // TOEFL の Email・Discussion
+    claim("w:"+P); if(GUIDE[o.key]) wuStart("writing");   // TOEFL の Email・Discussion
     const box=el("task"); box.style.display="block"; busy(box,"課題を作っています…");
     try{
-      task = await stockGet("w:"+o.key);
+      const t = await stockGet("w:"+o.key);
+      if(!owns("w:"+P)){ box.innerHTML=""; box.style.display="none"; return; }
+      task = t;
       rewriting=false; last=null;
       showTask(); el("text").value=""; el("count").textContent="0 語"; el("result").innerHTML=""; el("msg").innerHTML="";
       left=limit(); draft(); run();
@@ -1500,7 +1503,7 @@ function setupWriter(o){
       arrived(box, `${label}の添削`, `writing|${tab}`);
     }catch(e){ fail(box, e, ()=>el("submit").click()); }
   };
-  WRITERS[P]={ quit(){
+  WRITERS[P]={ active(){ return !!task && (!last || rewriting); }, quit(){
     clearInterval(timer); timer=null; task=null; last=null; rewriting=false; left=0;
     el("text").value=""; el("count").textContent="0 語"; el("timer").textContent="–";
     el("task").style.display="none"; el("task").innerHTML=""; el("editor").style.display="none"; el("result").innerHTML=""; el("msg").innerHTML="";
@@ -1601,11 +1604,12 @@ stockDef("build", async ()=>{
   return items;
 });
 async function bStart(){
-  wuStart("writing");
+  claim("build"); wuStart("writing");
   const body=$("#b-body"); busy(body,"問題を作っています…（10〜30秒ほどかかります）");
   $("#b-start").disabled=true;
   try{
     const items=await stockGet("build");
+    if(!owns("build")){ body.innerHTML=""; return; }
     DB.cur.build={items, placed:{}, checked:{}, ok:{}, started:Date.now(), phase:"run"};
     save(); bRender(); arrived(body, "Build a Sentence の問題", "writing|build");
   }catch(e){ fail(body, e, bStart); }
@@ -1756,11 +1760,12 @@ stockDef("repeat", async ()=>{
   return d;
 });
 async function pStart(){
-  wuStart("speaking");
+  claim("repeat"); wuStart("speaking");
   const body=$("#p-body"); busy(body,"文を作っています…");
   $("#p-start").disabled=true;
   try{
     const d=await stockGet("repeat");
+    if(!owns("repeat")){ body.innerHTML=""; return; }
     DB.cur.repeat={data:d, i:0, res:[], phase:"run"};
     PR.i=-1; save(); pRender(); arrived(body, "Listen and Repeat の文", "speaking|repeat");
   }catch(e){ fail(body, e, pStart); }
@@ -2401,10 +2406,11 @@ stockDef("iv:one", async ()=>{
   return {qs:[{en:r.question_en, ja:r.question_ja, hint:r.hint_ja, prep:+r.prep_sec||15, speak:+r.speak_sec||60}], meta:{exam:"toefl", title:"Take an Interview（1問）", phrases:r.useful_phrases}};
 });
 async function ivStart(mode){
-  IVMODE=mode; SPKNEW.iv=()=>ivStart(IVMODE); wuStart("speaking");
+  claim("iv"); IVMODE=mode; SPKNEW.iv=()=>ivStart(IVMODE); wuStart("speaking");
   const box=$("#iv-body"); busy(box,"質問を作っています…");
   try{
     const x=await stockGet("iv:"+mode);
+    if(!owns("iv")){ box.innerHTML=""; return; }
     spkInit("iv", x.qs, x.meta); arrived(box, "Take an Interview の質問", "speaking|iv");
   }catch(e){ fail(box, e, ()=>ivStart(mode)); }
 }
@@ -2416,10 +2422,11 @@ const TOPICS_P2=["a person who taught you something important","a place you woul
 let ISPWHICH="all";
 stockDef("isp", ()=>api("gen_i_speaking",{topic1:pick(TOPICS_P1), topic2:pick(TOPICS_P2)}));
 async function ispStart(which){
-  ISPWHICH=which; SPKNEW.is=()=>ispStart(ISPWHICH);
+  claim("is"); ISPWHICH=which; SPKNEW.is=()=>ispStart(ISPWHICH);
   const box=$("#is-body"); busy(box,"質問を作っています…");
   try{
     const r=await stockGet("isp");
+    if(!owns("is")){ box.innerHTML=""; return; }
     const qs=[], p1=r.part1||{}, p2=r.part2||{}, p3=r.part3||{};
     if(which==="all"||which==="1") (p1.questions||[]).slice(0,4).forEach((q,k)=>qs.push({part:1, en:q.en, ja:q.ja, prep:0, speak:30,
       say: k===0 ? `Let's talk about ${p1.topic||"you"}. ${q.en}` : q.en}));
@@ -2563,7 +2570,7 @@ async function iStart(sec, which){
   const P=ISEC[sec].p, body=$(`#${P}-body`);
   const n = sec==="ireading" ? (+which||1) : 0;
   const parts = sec==="ilistening" ? (which==="all"?[1,2,3,4]:[+which]) : [];
-  busy(body, sec==="ireading" ? `パッセージを作っています…（${n}本・1本につき20〜40秒ほど）` : `音声のスクリプトと設問を作っています…（${parts.length}パート・20〜40秒ほど）`);
+  claim(sec); busy(body, sec==="ireading" ? `パッセージを作っています…（${n}本・1本につき20〜40秒ほど）` : `音声のスクリプトと設問を作っています…（${parts.length}パート・20〜40秒ほど）`);
   try{
     IGEN[sec]=true;
     const focus=weakTags(ISEC[sec].st);
@@ -2574,6 +2581,7 @@ async function iStart(sec, which){
     } else {
       out=await Promise.all(parts.map(k=>stockGet("il:"+k)));
     }
+    if(!owns(sec)){ body.innerHTML=""; return; }
     DB.cur[sec]={sec, parts:out, started:Date.now(), limit: sec==="ireading" ? out.length*20*60 : 0, phase:"run"};
     save(); iRender(sec); arrived(body, `IELTS ${ISEC[sec].name}の問題`, sec.slice(1));
   }catch(e){ fail(body, e, ()=>iStart(sec, which)); }
@@ -2846,10 +2854,11 @@ stockDef("cwd", async ()=>{
   return {level, w, ct};
 });
 async function cwdStart(){
-  const body=$("#c-body"); busy(body,"段落を作っています…");
+  claim("cwd"); const body=$("#c-body"); busy(body,"段落を作っています…");
   $("#c-start").disabled=true;
   try{
     const {level, w, ct}=await stockGet("cwd");
+    if(!owns("cwd")){ body.innerHTML=""; return; }
     DB.cur.cwd={phase:"s1", s1:{sec:"cwd", level, started:Date.now(), ans:{}, times:{}, parts:[{type:"words", title:"⏱️ 練習：Complete the Words（3分）", data:w, ct, inputs:{}, checked:false, res:[]}]}};
     save(); cwdRender(); arrived(body, "練習（3分）の問題", "reading");
   }catch(e){ fail(body, e, cwdStart); }
@@ -2898,7 +2907,7 @@ const FIT_PREFS=[
   {k:"focus", q:"集中しやすいのは？", o:[["long","1つの長い文章・音声にじっくり取り組む"],["short","短い問題がテンポよく切り替わる"],["either","どちらでもよい"]]},
 ];
 async function fitStart(){
-  const box=$("#fit-body"); busy(box,"診断テストを作っています…（20〜40秒ほど）");
+  claim("fit"); const box=$("#fit-body"); busy(box,"診断テストを作っています…（20〜40秒ほど）");
   try{
     const [a,b]=await Promise.all([api("gen_fit_a",{topic:pick(TOPICS_IR)}), api("gen_fit_b",{})]);
     const tf=(a.tfng||[]).map(q=>iNormQ(Object.assign({type:"tfng"},q))).filter(Boolean);
@@ -2906,6 +2915,7 @@ async function fitStart(){
     const build=(b.build||[]).map(normBuild).filter(Boolean).slice(0,2);
     const resp=(b.responses||[]).map(normQ).filter(Boolean).slice(0,3);
     const gaps=(b.gaps||[]).map(g=>iNormQ(Object.assign({type:"gap"},g))).filter(Boolean).slice(0,3);
+    if(!owns("fit")){ box.innerHTML=""; return; }
     if(!a.passage || tf.length<3 || ct.n<4 || !build.length || resp.length<2 || gaps.length<2 || !b.mono) throw new Error("テストがうまく作れませんでした。もう一度お試しください。");
     DB.cur.fit={a:{title:a.title||"", passage:a.passage}, tf, ct, build, resp, gaps, mono:{sp:b.mono_speaker==="M"?"M":"F", text:b.mono},
       step:0, started:Date.now(), readStart:0, readSec:0, ans:{tf:{}, cw:{}, placed:{}, gap:{}, resp:{}, pref:{}}, play:{mono:0, resp:{}}};
@@ -3306,10 +3316,24 @@ document.addEventListener("click", e=>{ const b=e.target.closest("[data-xp]"); i
 
 /* ================= やめる（途中で終える） ================= */
 // 二度押しで確定（ダイアログは出さない）。音声・録音・時計を止め、その回の進行を破棄する（記録には入れない）。
+// 同時に1つだけ：新しく始めると、進行中（生成中を含む）のほかの課題は中断・破棄する
+let OWNER=null;
+const TASK_KEYS=["reading","listening","rpart","lpart","cwd","build","repeat","iv","is","ireading","ilistening","fit"];
+function isActive(k){
+  if(k.startsWith("w:")){ const w=WRITERS[k.slice(2)]; return !!(w && w.active()); }
+  const st=DB.cur[k]; return !!(st && st.phase!=="done" && !st.done && !st.result);
+}
+function claim(key){
+  const others=[...TASK_KEYS, ...Object.keys(WRITERS).map(p=>"w:"+p)].filter(k=>k!==key && (isActive(k) || OWNER===k));
+  others.forEach(k=>quitSession(k));
+  if(others.length) toast("始めていた課題は中断しました");
+  OWNER=key;
+}
+const owns=(key)=>OWNER===key;
 const quitBtnHTML=(key)=>`<button class="mini quit" data-quit="${key}">やめる</button>`;
 function stopAudio(){ try{ speechSynthesis.cancel(); }catch(e){} }
 async function quitSession(key){
-  stopAudio();
+  stopAudio(); if(OWNER===key) OWNER=null;
   if(key==="reading"||key==="listening"){ PLAYING[key]=null; DB.cur[key]=null; save(); renderRL(key); }
   else if(key==="cwd"){ DB.cur.cwd=null; save(); cwdRender(); }
   else if(key==="rpart"||key==="lpart"){ PLAYING[key]=null; DB.cur[key]=null; save(); partRender(key); }
@@ -3815,10 +3839,11 @@ async function partStart(view, type){
   const key=PARTKEY[view], body=$(`#${SEC[key].p}-body`);
   if(DB.cur[key] && !DB.cur[key].done && !armTwice(`[data-part="${view}|${type}"]`)) return;
   stopAudio(); PLAYING[key]=null;
-  wuStart(view);
+  claim(key); wuStart(view);
   busy(body, "パートの問題を作っています…（10〜30秒ほど）");
   try{
     const part=await stockGet("part:"+type);
+    if(!owns(key)){ body.innerHTML=""; return; }
     if(part.type!=="words" && (!part.qs || !part.qs.length)) throw new Error("問題がうまく作れませんでした。もう一度お試しください。");
     DB.cur[key]={phase:"s1", done:false, s1:{sec:key, level:"standard", started:Date.now(), ans:{}, times:{}, parts:[part]}};
     save(); partRender(key); arrived(body, `${SEC[key].name}（${part.title}）の問題`, view);
