@@ -61,15 +61,16 @@
 - 同時に1つだけ：課題の開始は `claim(key)` を呼ぶ（進行中・生成中のほかの課題を `quitSession` で破棄し「始めていた課題は中断しました」）。生成の待ちの後は `owns(key)` を確かめ、奪われていたら何もしない。Writing は `w:<p>`（`WRITERS[p].active()`）。
 - 「やめる」：進行中の画面には `quitBtnHTML(key)`（二度押しで確定）。`quitSession(key)` が音声・録音・時計を止めて進行を破棄（記録に入れない）。
   再生完了などの遅れて届く処理は、状態が消えていたら何もしない（`rerenderPart`・`iUpdCtl` などで確認）。
-- コツと単語（TOEFL のみ）：中身は `GUIDE`（単元ごとの形式・コツ・落とし穴・単語[英,意味,例文]）に固定で書く。`data-guide="単元"` の
+- コツと単語（TOEFL・IELTS）：中身は `GUIDE`（単元ごとの形式・コツ・落とし穴・単語[英,意味,例文]）に固定で書く。`data-guide="単元"` の
   ボタンで下からシートが開く（`guideOpen`）。図と例は `GUIDE_VIS`（流れ4段・例文〔[[手がかり]]・{{答え}}〕・コツごとの絵文字）を `gvHTML()` で描く。単語は `addNotes("word")` でノート・SRS に入る。
+- IELTS の単元：`GUIDE`／`GUIDE_VIS` の il・ir・it1・it2・isp、`GUIDE_SEC` の ilistening・ireading・iwriting・ispeaking（基礎の `#wu-<view>`）。
 - ノートから外す：`removeNotes(pred)`（お知らせは出さない）。ノート一覧・今日の復習・コツと単語から使う。
 - 課題ごとの目安バンド：`partBand(正答率, 難しさ)`＋`bandPill("Reading", b)`（「（目安）」は付けない）。TOEFL の各パート・第1段階・3分ドリル、IELTS の各パート（`rawBand`）に表示。
 - Complete the Words の全文訳は結果（○/10 語 正解）の上に出す（`cwTransHTML`）。
 - 解説の中に本文の該当文を出す（スクロールで戻らなくてよいように）：Complete the Words は `cwSents()` で空欄を含む1文（語を強調）＋`sent_ja`、ほかの設問は `xpThinkHTML` が根拠の文（英文＋訳）を「考え方」に添える。
-- 基礎練習（TOEFL のみ）：`wuStart(view)` が `GUIDE` から5問（例文の穴埋め・意味）＋今日のポイントを作り `#wu-<view>` に出す。
+- 基礎練習（TOEFL・IELTS）：`wuStart(view)` が `GUIDE` から5問（例文の穴埋め・意味）＋今日のポイントを作り `#wu-<view>` に出す。
   課題を始めたとき自動で出す（`DB.ui.wuOff` で止められる）。状態は保存しない。間違えた語はノートへ。
-- 画面の呼び名：🎯 本番（セット）／⏱️ 練習（本番をラフにしたもの：3分の Complete the Words、Interview の1問、Listening 応答選択4問〔`partStart(v,t,lite)`・聞き直し・文字表示〕、Build 5問・時間なし〔`bStart(true)`〕、Repeat 3文・何度でも聞ける〔`pStart(true)`〕、Email・Discussion 時間なし＋型のヒント〔`wHintHTML`・記録に入れない〕。練習の記録の task は `prac:<種類>` で予想バンドに入れない）／🌱 基礎（`wuStart`）／💡 コツと単語。開始ボタンは `.stack` で縦に並べる。
+- 画面の呼び名：🎯 本番（セット）／⏱️ 練習（本番をラフにしたもの：3分の Complete the Words、Interview の1問、Listening 応答選択4問〔`partStart(v,t,lite)`・聞き直し・文字表示〕、Build 5問・時間なし〔`bStart(true)`〕、Repeat 3文・何度でも聞ける〔`pStart(true)`〕、Email・Discussion 時間なし＋型のヒント〔`wHintHTML`・記録に入れない〕。IELTS は Listening Part 1 の聞き直し〔`iStart(sec,w,lite)`・`data-ireplay`〕、Reading 1パッセージ時間なし、Speaking Part 1 を2問・時間2倍〔`ispStart("1|lite")`〕、Writing は共通の練習ボタン。練習の記録の task は `prac:<種類>` で予想バンドに入れない）／🌱 基礎（`wuStart`）／💡 コツと単語。開始ボタンは `.stack` で縦に並べる。
 - 配色はいつも明るいカフェ風（ダークモードの配色は持たない。`color-scheme:light`）。
 - デザイン：やわらかカフェ風＋鳥（見出し・メニュー・ホームの吹き出し `birdSay()`・ぐるぐるは🐦）。正解は「🎉 正解！」、不正解は「💪 おしい！」。
   結果画面には `cheerHTML(正答率, seed)`（鳥のひとこと＋名言 `QUOTES`・約100件）。名言は出典が確かなものだけを入れる（誤って広まった「〜の言葉」は入れない）。

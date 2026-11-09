@@ -546,12 +546,12 @@
     <div class="card">
       <h2>🐦 IELTS Listening</h2>
       <p class="tiny">4つのパート（Part 1 日常会話／Part 2 日常の独話／Part 3 学術的な会話／Part 4 講義）。本番と同じく先に設問を読み、音声は1回だけ再生されます。聞きながら解答し、再生が終わったら答え合わせします。答え合わせのあとは、スクリプトを1文ずつ聞き直し・書き取り・くり返しできます。</p>
-      <div class="row">
-        <button data-istart="ilistening|1">Part 1</button>
-        <button data-istart="ilistening|2">Part 2</button>
-        <button data-istart="ilistening|3">Part 3</button>
-        <button data-istart="ilistening|4">Part 4</button>
-        <button class="primary" data-istart="ilistening|all">全4パート（約30分）</button>
+      <div class="stack">
+        <button class="primary" data-istart="ilistening|all">🎯 本番<small>全4パート・約30分</small></button>
+        <div class="row"><button data-istart="ilistening|1">Part 1</button><button data-istart="ilistening|2">Part 2</button><button data-istart="ilistening|3">Part 3</button><button data-istart="ilistening|4">Part 4</button></div>
+        <button data-istart="ilistening|1|lite">⏱️ 練習<small>Part 1・何度でも聞き直せる</small></button>
+        <button class="guidebtn" data-wu="ilistening">🌱 基礎<small>覚えるべき語句の確認5問</small></button>
+        <button class="guidebtn" data-guide="il">💡 コツと単語</button>
       </div>
       <div class="row" style="margin-top:8px">
         <button id="il-voice">声のテスト</button>
@@ -559,6 +559,7 @@
       </div>
       <p class="tiny" id="il-voiceinfo" style="margin-top:8px"></p>
     </div>
+    <div id="wu-ilistening"></div>
     <div id="il-body"></div>
   </section>
 
@@ -567,12 +568,16 @@
     <div class="card">
       <h2>🦉 IELTS Reading（Academic）</h2>
       <p class="tiny">1パッセージ約700語・13問（TRUE / FALSE / NOT GIVEN、多肢選択、文完成）。目安は1パッセージ20分です。本番と同じく、解き終わってからパッセージごとにまとめて答え合わせします。</p>
-      <div class="row">
-        <button class="primary" data-istart="ireading|1">1パッセージ（20分）</button>
-        <button data-istart="ireading|3">全3パッセージ（60分）</button>
+      <div class="stack">
+        <button class="primary" data-istart="ireading|3">🎯 本番<small>全3パッセージ・60分</small></button>
+        <button data-istart="ireading|1">🧩 1パッセージ<small>20分</small></button>
+        <button data-istart="ireading|1|lite">⏱️ 練習<small>1パッセージ・時間なし</small></button>
         <button id="ir-reset" data-ireset="ireading" style="display:none">新しいセットにする</button>
+        <button class="guidebtn" data-wu="ireading">🌱 基礎<small>覚えるべき語句の確認5問</small></button>
+        <button class="guidebtn" data-guide="ir">💡 コツと単語</button>
       </div>
     </div>
+    <div id="wu-ireading"></div>
     <div id="ir-body"></div>
   </section>
 
@@ -585,11 +590,12 @@
         <button data-t="t2" aria-pressed="false">Task 2（エッセイ）</button>
       </div>
     </div>
+    <div id="wu-iwriting"></div>
     <div class="iwpanel" data-t="t1">
       <div class="card">
         <h2>Task 1 — 図表の説明</h2>
         <p class="tiny">グラフや表の主な特徴をまとめて比べる課題です。制限時間20分、150語以上。自分の意見は書かず、全体の傾向（overview）を必ず入れます。</p>
-        <div class="row"><button class="primary" id="ia-gen">課題を出す</button></div>
+        <div class="stack"><button class="primary" id="ia-gen">🎯 本番<small>課題を出す・20分</small></button><button class="guidebtn" data-wu="iwriting">🌱 基礎<small>覚えるべき表現の確認5問</small></button><button class="guidebtn" data-guide="it1">💡 コツと単語</button></div>
         <div id="ia-task" style="display:none"></div>
       </div>
       <div class="card" id="ia-editor" style="display:none">
@@ -611,7 +617,7 @@
       <div class="card">
         <h2>Task 2 — エッセイ</h2>
         <p class="tiny">社会的なテーマについて自分の立場を論じる課題です。制限時間40分、250語以上。Task 2 は Task 1 の2倍の配点です。</p>
-        <div class="row"><button class="primary" id="ib-gen">課題を出す</button></div>
+        <div class="stack"><button class="primary" id="ib-gen">🎯 本番<small>課題を出す・40分</small></button><button class="guidebtn" data-wu="iwriting">🌱 基礎<small>覚えるべき表現の確認5問</small></button><button class="guidebtn" data-guide="it2">💡 コツと単語</button></div>
         <div id="ib-task" style="display:none"></div>
       </div>
       <div class="card" id="ib-editor" style="display:none">
@@ -636,13 +642,15 @@
     <div class="card">
       <h2>🦜 IELTS Speaking</h2>
       <p class="tiny">Part 1（身近な質問4問・各30秒まで）→ Part 2（カードを見て準備1分・2分スピーチ）→ Part 3（Part 2 のテーマを掘り下げる4問・各60秒まで）。試験官の質問を読み上げ、録音と文字起こしを行います。評価は文字起こしにもとづくため、発音（Pronunciation）は評価していません。</p>
-      <div class="row">
-        <button class="primary" data-isp="all">通し（Part 1〜3・約14分）</button>
-        <button data-isp="1">Part 1</button>
-        <button data-isp="2">Part 2</button>
-        <button data-isp="3">Part 3</button>
+      <div class="stack">
+        <button class="primary" data-isp="all">🎯 本番<small>通し Part 1〜3・約14分</small></button>
+        <div class="row"><button data-isp="1">Part 1</button><button data-isp="2">Part 2</button><button data-isp="3">Part 3</button></div>
+        <button data-isp="1|lite">⏱️ 練習<small>Part 1 を2問・時間に余裕あり</small></button>
+        <button class="guidebtn" data-wu="ispeaking">🌱 基礎<small>答えに使える表現の確認5問</small></button>
+        <button class="guidebtn" data-guide="isp">💡 コツと単語</button>
       </div>
     </div>
+    <div id="wu-ispeaking"></div>
     <div id="is-body"></div>
   </section>
 
@@ -1487,7 +1495,7 @@ function setupWriter(o){
   el("gen").after(pbtn); pbtn.onclick=()=>{ lite=true; gen(); };
   el("gen").onclick=()=>{ lite=false; gen(); };
   const gen = async ()=>{
-    claim("w:"+P); if(GUIDE[o.key]) wuStart("writing");   // TOEFL の Email・Discussion
+    claim("w:"+P); { const gk={it1:"it1",it2:"it2"}[o.key]||o.key; if(GUIDE[gk]) wuStart(gk.startsWith("it")?"iwriting":"writing"); }
     const box=el("task"); box.style.display="block"; busy(box,"課題を作っています…");
     try{
       const t = await stockGet("w:"+o.key);
@@ -2391,7 +2399,7 @@ async function spkEval(key){
         improvements_ja:each.flatMap(r=>r.improvements_ja||[])};
     }
     st.evals={agg, each}; st.prevShown=st.prev; st.phase="done";
-    if(!st.prev) addRecord({kind:"Speaking", task: key==="iv"?"interview":"ispeak", band:+agg.band||0, scores:agg.scores||{}});
+    if(!st.prev) addRecord({kind:"Speaking", task: key==="iv"?"interview":(st.meta&&st.meta.lite?"prac:ispeak":"ispeak"), band:+agg.band||0, scores:agg.scores||{}});
     (each||[agg]).forEach(r=>{ addNotes("word", r.unknown_words); addNotes("para", r.paraphrases); });
     save(); spkRender(key); arrived($(SPKBOX[key]), "Speaking の評価", key==="iv"?"speaking|iv":"speaking");
   }catch(e){ fail(box, e, ()=>spkEval(key)); }
@@ -2451,8 +2459,9 @@ const TOPICS_P1=["your home town","your studies or work","reading","the weather"
 const TOPICS_P2=["a person who taught you something important","a place you would like to visit","a useful object you own","an occasion when you helped someone","a book or film that made you think","a skill you learned recently","a time you changed your mind"];
 let ISPWHICH="all";
 stockDef("isp", ()=>api("gen_i_speaking",{topic1:pick(TOPICS_P1), topic2:pick(TOPICS_P2)}));
-async function ispStart(which){
-  claim("is"); ISPWHICH=which; SPKNEW.is=()=>ispStart(ISPWHICH);
+async function ispStart(which0){
+  const lite=/\|lite$/.test(which0), which=which0.replace("|lite","");
+  claim("is"); ISPWHICH=which0; SPKNEW.is=()=>ispStart(ISPWHICH); wuStart("ispeaking");
   const box=$("#is-body"); busy(box,"質問を作っています…");
   try{
     const r=await stockGet("isp");
@@ -2466,9 +2475,10 @@ async function ispStart(which){
     if(which==="all"||which==="3") (p3.questions||[]).slice(0,4).forEach((q,k)=>qs.push({part:3, en:q.en, ja:q.ja, prep:0, speak:60,
       say: k===0 && which==="all" ? `We've been talking about ${p2.cue_en ? p2.cue_en.replace(/^Describe\s+/i,"") : "this topic"}. Now I'd like to ask you some more general questions. ${q.en}` : q.en}));
     if(!qs.length) throw new Error("質問がうまく作れませんでした。もう一度お試しください。");
-    spkInit("is", qs, {exam:"ielts", title: which==="all"?"IELTS Speaking":`IELTS Speaking Part ${which}`, phrases:r.useful_phrases});
+    if(lite){ qs.splice(2); qs.forEach(q=>{ q.speak*=2; }); }
+    spkInit("is", qs, {exam:"ielts", lite, title: lite?"⏱️ 練習：IELTS Speaking Part 1":which==="all"?"IELTS Speaking":`IELTS Speaking Part ${which}`, phrases:r.useful_phrases});
     arrived(box, "IELTS Speaking の質問", "speaking");
-  }catch(e){ fail(box, e, ()=>ispStart(which)); }
+  }catch(e){ fail(box, e, ()=>ispStart(which0)); }
 }
 document.querySelectorAll("[data-isp]").forEach(b=>b.addEventListener("click", ()=>ispStart(b.dataset.isp)));
 
@@ -2595,12 +2605,12 @@ async function genIListen(k, focus){
 }
 stockDef("ir:p", ()=>genIPassage(pick(TOPICS_IR), weakTags("iR")));
 [1,2,3,4].forEach(k=>stockDef("il:"+k, ()=>genIListen(k, weakTags("iL"))));
-async function iStart(sec, which){
+async function iStart(sec, which, lite){
   if(IGEN[sec]) return;
   const P=ISEC[sec].p, body=$(`#${P}-body`);
   const n = sec==="ireading" ? (+which||1) : 0;
   const parts = sec==="ilistening" ? (which==="all"?[1,2,3,4]:[+which]) : [];
-  claim(sec); busy(body, sec==="ireading" ? `パッセージを作っています…（${n}本・1本につき20〜40秒ほど）` : `音声のスクリプトと設問を作っています…（${parts.length}パート・20〜40秒ほど）`);
+  claim(sec); wuStart(sec); busy(body, sec==="ireading" ? `パッセージを作っています…（${n}本・1本につき20〜40秒ほど）` : `音声のスクリプトと設問を作っています…（${parts.length}パート・20〜40秒ほど）`);
   try{
     IGEN[sec]=true;
     const focus=weakTags(ISEC[sec].st);
@@ -2612,9 +2622,9 @@ async function iStart(sec, which){
       out=await Promise.all(parts.map(k=>stockGet("il:"+k)));
     }
     if(!owns(sec)){ body.innerHTML=""; return; }
-    DB.cur[sec]={sec, parts:out, started:Date.now(), limit: sec==="ireading" ? out.length*20*60 : 0, phase:"run"};
+    DB.cur[sec]={sec, parts:out, lite:!!lite, started:Date.now(), limit: sec==="ireading" && !lite ? out.length*20*60 : 0, phase:"run"};
     save(); iRender(sec); arrived(body, `IELTS ${ISEC[sec].name}の問題`, sec.slice(1));
-  }catch(e){ fail(body, e, ()=>iStart(sec, which)); }
+  }catch(e){ fail(body, e, ()=>iStart(sec, which, lite)); }
   finally{ IGEN[sec]=false; }
 }
 
@@ -2674,7 +2684,8 @@ function iCtlHTML(sec, st, pi){
     if(playing) return `<span class="playbtn playing muted"><span class="dot"></span>再生中…　聞きながら解答してください</span>`;
   }
   const n=Object.keys(p.ans).filter(k=>p.ans[k]!=null && p.ans[k]!=="").length;
-  return `<div class="row"><button class="primary" data-icheck="${sec}|${pi}">${sec==="ireading"?"このパッセージ":"このパート"}の答え合わせ</button><span class="muted tiny">解答 ${n} / ${p.qs.length}</span></div>`;
+  const rep = sec==="ilistening" && st.lite && p.play.done ? `<button data-ireplay="${pi}">🔁 もう一度聞く</button>` : "";
+  return `<div class="row">${rep}<button class="primary" data-icheck="${sec}|${pi}">${sec==="ireading"?"このパッセージ":"このパート"}の答え合わせ</button><span class="muted tiny">解答 ${n} / ${p.qs.length}</span></div>`;
 }
 // 設問の下には答え合わせのボタンだけを出す（Listening は再生が終わってから）
 const iCtl2HTML=(sec, st, pi)=> sec==="ilistening" && !st.parts[pi].play.done ? "" : iCtlHTML(sec,st,pi);
@@ -2750,14 +2761,14 @@ function iCheck(sec, pi){
     const tags={}; st.parts.forEach(x=>x.qs.forEach((q,qi)=>{ (tags[q.tag]=tags[q.tag]||[0,0]); tags[q.tag][1]++; if(x.res[qi]) tags[q.tag][0]++; }));
     const scores={}; Object.entries(tags).forEach(([t,[c,n]])=>scores[`${S.name[0]}・${t}`]=+(c/n*9).toFixed(1));
     const times = sec==="ireading" ? {"Passage":Math.round(st.sec/st.total)} : {};
-    addRecord({kind:S.name, task:S.task, band:st.band, acc:st.raw/st.total, scores, times});
+    addRecord({kind:S.name, task:(st.lite?"prac:":"")+S.task, band:st.band, acc:st.raw/st.total, scores, times});
     save(); iRender(sec); window.scrollTo(0, $(`#${S.p}-body`).offsetTop-10);
   } else { save(); const el=$(`#${S.p}-part-${pi}`); if(el) el.outerHTML=iPartHTML(sec,st,pi); iUpdCtl(sec,pi); }
 }
 document.addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   const d=b.dataset;
-  if(d.istart){ const [sec,w]=d.istart.split("|"); if(DB.cur[sec] && DB.cur[sec].phase!=="done" && !armTwice(`[data-istart="${d.istart}"]`)) return; iStart(sec,w); }
+  if(d.istart){ const [sec,w,l]=d.istart.split("|"); if(DB.cur[sec] && DB.cur[sec].phase!=="done" && !armTwice(`[data-istart="${d.istart}"]`)) return; iStart(sec,w,!!l); }
   else if(d.ireset){ const sec=d.ireset; if(DB.cur[sec] && DB.cur[sec].phase!=="done" && !armTwice(`#${ISEC[sec].p}-reset`)) return;
     try{ speechSynthesis.cancel(); }catch(err){} PLAYING[sec]=null; DB.cur[sec]=null; save(); iRender(sec); }
   else if(d.ich){
@@ -2768,6 +2779,11 @@ document.addEventListener("click", e=>{
     iUpdCtl(sec,+pi);
   }
   else if(d.icheck){ const [sec,pi]=d.icheck.split("|"); iCheck(sec,+pi); }
+  else if(d.ireplay!=null){
+    const st=DB.cur.ilistening, pi=+d.ireplay; if(!st || !st.lite || PLAYING.ilistening!=null) return;
+    PLAYING.ilistening=String(pi); iUpdCtl("ilistening",pi);
+    speakSeq(st.parts[pi].lines, .94, ()=>{ if(DB.cur.ilistening!==st) return; PLAYING.ilistening=null; iUpdCtl("ilistening",pi); });
+  }
   else if(d.iplay){
     const [sec,pi]=d.iplay.split("|"), st=DB.cur[sec], p=st.parts[+pi];
     if(p.play.n) return;
@@ -3578,6 +3594,92 @@ function gvHTML(u){
     <ol class="gexs">${v.ex.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
     <div class="tiny"><mark>黄色</mark>＝手がかり　<b class="gans">赤字</b>＝答え・中身</div></div>`;
 }
+// ---- IELTS の単元（コツと単語・基礎・練習のヒントに使う）
+Object.assign(GUIDE_SEC, {
+  ilistening:{name:"IELTS Listening", units:["il"]},
+  ireading:{name:"IELTS Reading", units:["ir"]},
+  iwriting:{name:"IELTS Writing", units:["it1","it2"]},
+  ispeaking:{name:"IELTS Speaking", units:["isp"]},
+});
+Object.assign(GUIDE, {
+  il:{title:"IELTS Listening", form:"4パート40問。日常会話・日常の独話・学術的な会話・講義。音声は1回だけ。メモ完成・多肢選択などを聞きながら解く。",
+    tips:[
+      "再生前の時間に設問を読み、空欄に入る語の種類（数字・名前・場所・名詞）を予想しておく。",
+      "答えは設問の順番どおりに出てくる。1問聞き逃したら、すぐ次の設問に意識を移す。",
+      "語数制限（ONE WORD AND/OR A NUMBER など）を必ず守る。語数オーバーは不正解。",
+      "つづりを言う場面（名前・住所）は Part 1 の定番。アルファベットの聞き取りを練習しておく。",
+      "「やっぱり〜」と言い直す（Actually, no, it's…）ことが多い。最後に決まった情報を書く。",
+      "設問の語は本文で言い換えられる（cost → price / fee）。同じ語を待たない。",
+    ],
+    traps:["最初に言った数字や日付が、あとで訂正されることがある。","複数形の -s や、単位（km・%）の書き落としで不正解になる。"],
+    words:[["accommodation","宿泊施設","The accommodation is near the station."],["deposit","手付金・保証金","You need to pay a deposit of $50."],["reception","受付","Please ask at reception."],["membership","会員資格","Membership costs £20 a year."],["available","空いている・利用できる","Is the room available on Friday?"],["fortnight","2週間","The course lasts a fortnight."],["postcode","郵便番号","What's your postcode?"],["brochure","パンフレット","I'll send you a brochure."],["questionnaire","アンケート","Please fill in the questionnaire."],["seminar","ゼミ・セミナー","The seminar starts at ten."],["assignment","課題","The assignment is due next week."],["survey","調査","We carried out a survey of students."],["participant","参加者","Each participant got a form."],["significant","かなりの・重要な","There was a significant drop in sales."],["sustainable","持続可能な","They want a sustainable design."],["habitat","生息地","The bird's habitat is shrinking."]]},
+  ir:{title:"IELTS Reading", form:"3パッセージ40問・60分。1パッセージ約700〜900語。TRUE/FALSE/NOT GIVEN・多肢選択・文完成など。",
+    tips:[
+      "最初にタイトルと各段落の1文目だけを読み、どこに何が書いてあるかの地図を作る（スキミング）。",
+      "設問のキーワード（固有名詞・数字・年）で本文を探し、その前後だけを丁寧に読む（スキャニング）。",
+      "TRUE/FALSE/NOT GIVEN：本文と同じ→TRUE、本文と逆→FALSE、本文に書いていない→NOT GIVEN。",
+      "答えはだいたい本文の順番に並ぶ（見出し選択などを除く）。前の問題の答えの近くから探す。",
+      "文完成は語数制限を守り、本文の語をそのまま写す。文法的に入るかも確かめる。",
+      "1パッセージ20分が目安。1問に2分以上かかったら飛ばして最後に戻る。",
+    ],
+    traps:["FALSE と NOT GIVEN の混同。本文が「反対のこと」を言っていれば FALSE、触れていなければ NOT GIVEN。","some / all / always / only などの限定語の違いで答えが変わる。"],
+    words:[["according to","〜によると","According to the study, sleep improves memory."],["contrary to","〜に反して","Contrary to popular belief, bats are not blind."],["moreover","さらに","Moreover, the cost was low."],["nevertheless","それにもかかわらず","Nevertheless, the plan succeeded."],["account for","〜を占める・説明する","Cars account for 30% of emissions."],["attribute A to B","AをBのせいにする","They attributed the decline to pollution."],["decline","減少（する）","Bird numbers declined sharply."],["exceed","超える","Demand exceeded supply."],["approximately","およそ","Approximately 200 people attended."],["predominantly","主に","The area is predominantly rural."],["undermine","弱める","Stress can undermine health."],["emerge","現れる","A new pattern emerged."],["inevitable","避けられない","Change is inevitable."],["consequently","その結果","Consequently, prices rose."],["hypothesis","仮説","The hypothesis was tested."],["controversial","議論を呼ぶ","It is a controversial theory."]]},
+  it1:{title:"Writing Task 1", form:"グラフ・表・図を150語以上で説明する（20分）。意見は書かない。全体の傾向（overview）が必須。",
+    tips:[
+      "1段落目：図が何を示すかを言い換えて書く（shows → illustrates / compares）。",
+      "2段落目：overview。いちばん大きな特徴を2つ（最大・最小、全体の増減）を数字なしで書く。",
+      "3・4段落目：具体的な数字で比べる。似た動きのものをまとめて書く。",
+      "増減の表現を使い分ける：rose sharply / fell slightly / remained stable / peaked at。",
+      "比較の表現：twice as high as / higher than / the highest / compared with。",
+      "最後に、時制（過去の年なら過去形）と数字の書き写しを見直す。",
+    ],
+    traps:["overview を書き忘れると Task Achievement が大きく下がる。","すべての数字を順番に並べるだけになり、比較になっていない。"],
+    words:[["The graph illustrates …","グラフは〜を示している","The graph illustrates changes in energy use."],["Overall, …","全体として","Overall, sales increased over the period."],["rose sharply","急増した","Prices rose sharply in 2010."],["fell slightly","わずかに減った","Visitors fell slightly in May."],["remained stable","横ばいだった","The rate remained stable."],["peaked at","〜で最高に達した","Sales peaked at 500 units."],["fluctuated","上下した","Temperatures fluctuated during the year."],["a quarter of","4分の1","A quarter of people used buses."],["the majority of","大多数の","The majority of students walked."],["compared with","〜と比べて","Compared with 2000, more people cycled."],["whereas","一方","Men preferred sport, whereas women chose music."],["respectively","それぞれ","The figures were 20% and 30% respectively."]]},
+  it2:{title:"Writing Task 2", form:"社会的なテーマについて250語以上のエッセイ（40分）。配点は Task 1 の2倍。",
+    tips:[
+      "最初の2〜3分で、問いの種類（賛否／両論／原因と対策／利点と欠点）を確かめ、立場を決める。",
+      "序論：テーマの言い換え＋自分の立場（This essay will argue that…）。2〜3文で十分。",
+      "本論は2段落。各段落は「主張 → 理由 → 具体例 → まとめ」の順で1つの考えだけを書く。",
+      "両論型の問いは、両方の意見に触れたうえで自分の意見を必ず書く。",
+      "結論：立場をもう一度言い換えて1〜2文。新しい理由は入れない。",
+      "同じ語の繰り返しを避け、言い換え（important → crucial / essential）を使う。",
+    ],
+    traps:["問いの一部にしか答えていない（両方を問われているのに片方だけ）。","具体例がなく一般論だけ。語数不足（250語未満）も減点。"],
+    words:[["It is often argued that …","〜とよく言われる","It is often argued that technology isolates people."],["This essay will argue that …","本稿では〜と論じる","This essay will argue that schools should teach cooking."],["On the one hand, …","一方では","On the one hand, cars are convenient."],["On the other hand, …","他方では","On the other hand, they cause pollution."],["A key reason is that …","大きな理由は〜","A key reason is that it saves money."],["For instance, …","たとえば","For instance, Japan has an ageing society."],["As a result, …","その結果","As a result, crime fell."],["In conclusion, …","結論として","In conclusion, the benefits outweigh the drawbacks."],["outweigh","上回る","The advantages outweigh the disadvantages."],["detrimental","有害な","Too much screen time is detrimental."],["beneficial","有益な","Exercise is beneficial for everyone."],["crucial","非常に重要な","Education is crucial for development."]]},
+  isp:{title:"IELTS Speaking", form:"試験官との面接（11〜14分）。Part 1 身近な質問、Part 2 カードで2分スピーチ（準備1分）、Part 3 社会的な話題の議論。",
+    tips:[
+      "Part 1：Yes/No だけで終わらず、答え＋理由か具体例を1つ足す（2〜3文）。",
+      "Part 2：準備の1分で、カードの4つの点ごとにキーワードを書く。文は書かない。",
+      "Part 2：最後の「explain …」で気持ちや理由を詳しく話すと2分を使い切れる。",
+      "Part 3：意見 → 理由 → 例 → 反対の立場への言及（Some people might say…）で深める。",
+      "考える時間は That's a good question. / Let me think. などでつなぐ。沈黙しない。",
+      "わからない語は別の言い方で説明する（言い換えも評価される）。",
+    ],
+    traps:["丸暗記した答えは試験官に気づかれ、評価が下がる。","Part 2 が1分ほどで終わってしまう（話す内容の準備不足）。"],
+    words:[["To be honest, …","正直に言うと","To be honest, I'm not a morning person."],["I'd say that …","〜だと思う","I'd say that cooking is relaxing."],["It depends on …","〜による","It depends on the weather."],["One thing I remember is …","覚えているのは〜","One thing I remember is the smell of the sea."],["The main reason is that …","主な理由は〜","The main reason is that it's cheap."],["Generally speaking, …","一般的に言えば","Generally speaking, young people prefer online shopping."],["That's a good question.","よい質問ですね（考える時間）","That's a good question. Let me think."],["looking back","振り返ると","Looking back, it changed my life."],["I'm really into …","〜にはまっている","I'm really into photography."],["nowadays","最近は","Nowadays, many people work from home."],["in the long run","長い目で見れば","In the long run, it saves money."],["on the whole","全体として","On the whole, I enjoyed it."]]},
+});
+Object.assign(GUIDE_VIS, {
+  il:{flow:["📄 先に設問","🔮 入る語を予想","👂 順番どおり聞く","✍️ 語数・つづり確認"],
+    ex:{q:"Name: Sarah [[(1)]] ___  — \"It's Sarah {{Whitfield}}. That's W-H-I-T-F-I-E-L-D.\"",
+      steps:["名前の空欄 → つづりを言う場面を待つ","大文字・つづりを1文字ずつ確認して書く"]},
+    icons:["📄","➡️","🔢","🔤","↩️","🔁"]},
+  ir:{flow:["🗺️ 段落の1文目","🔑 キーワード","🔍 前後だけ精読","⚖️ T / F / NG"],
+    ex:{q:"Statement: [[All]] birds migrate. — Passage: \"{{Many species}} of birds migrate in winter.\"",
+      steps:["All と Many は意味が違う → 本文と食い違う","本文が「すべてではない」と示すので FALSE（触れていなければ NOT GIVEN）"]},
+    icons:["🗺️","🔑","⚖️","➡️","✍️","⏱️"]},
+  it1:{flow:["📝 図の言い換え","🔭 overview","🔢 数字で比較","🔎 時制の見直し"],
+    ex:{q:"The chart [[illustrates]] car use in three cities. [[Overall]], {{car use rose in all three, with London the highest}}.",
+      steps:["1文目は shows を illustrates に言い換え","Overall の文は数字なしで最大の特徴を2つ"]},
+    icons:["📝","🔭","🔢","📈","⚖️","🔎"]},
+  it2:{flow:["❓ 問いの種類","🗣️ 立場を決める","🧱 本論2段落","🏁 結論で言い換え"],
+    ex:{q:"[[This essay will argue that]] {{university should be free}}. [[A key reason is that]] {{it gives everyone the same chance}}. [[For instance]], …",
+      steps:["序論で立場をはっきり","本論は 主張 → 理由 → 具体例 の順"]},
+    icons:["❓","📣","🧱","⚖️","🏁","🔁"]},
+  isp:{flow:["💬 答え","➕ 理由・例","🗒️ Part 2 はメモ","🔄 つなぎ言葉"],
+    ex:{q:"Q: Do you like cooking? — [[Yes, I do.]] {{I usually cook on weekends}} [[because]] {{it helps me relax}}.",
+      steps:["Part 1 は 答え＋理由 の2〜3文","Yes, I do. だけで終わらない"]},
+    icons:["💬","🗒️","⏳","🪜","🔄","🔁"]},
+});
 const PTYPE2GUIDE={words:"cw", daily:"daily", academic:"academic", response:"response", conversation:"conversation", announcement:"announcement", talk:"talk"};
 let GUIDE_CUR=null;
 const guideBtnHTML=(unit, label)=>`<button class="mini guidebtn" data-guide="${unit}">${label||"コツと単語"}</button>`;
@@ -3628,6 +3730,8 @@ const WU={};
 const WU_TABUNIT={build:"build", email:"email", disc:"disc", repeat:"repeat", iv:"interview"};
 function wuUnits(view){
   if(view==="reading"||view==="listening") return GUIDE_SEC[view].units;
+  if(view==="iwriting") return [((DB.ui&&DB.ui.iw)||"t1")==="t2"?"it2":"it1"];
+  if(GUIDE_SEC[view]) return GUIDE_SEC[view].units;
   if(view==="writing") return [WU_TABUNIT[(DB.ui&&DB.ui.w)||"build"]];
   return [WU_TABUNIT[(DB.ui&&DB.ui.s)||"repeat"]];
 }
@@ -3648,7 +3752,6 @@ function wuMake(units){
   return {units, qs, chosen:{}, tip:{u:tu, t:pick(GUIDE[tu].tips)}};
 }
 function wuStart(view, force){
-  if(MODE()!=="toefl") return;
   if(!force && DB.ui.wuOff) return;
   WU[view]=wuMake(wuUnits(view)); wuRender(view);
 }
@@ -3953,7 +4056,7 @@ function predPoints(){
       if(t.startsWith("part:")) add(t.slice(5), r.band);
       if(t==="cwdrill") add("words", r.partBandV!=null ? r.partBandV : partBand(r.acc||0, "standard"));
       if(["build","email","disc","repeat","interview"].includes(t)) add(t, r.band);
-    } else add(t||null, r.band);
+    } else if(!t.startsWith("prac:")) add(t||null, r.band);
   });
   return pts;
 }
