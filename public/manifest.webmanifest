@@ -1,7 +1,7 @@
 {
-  "name": "TOEFL Best Practice",
-  "short_name": "Best Practice",
-  "description": "TOEFL・IELTS の4技能練習アプリ",
+  "name": "IELTS Best Practice",
+  "short_name": "IELTS BP",
+  "description": "IELTS・TOEFL の4技能練習アプリ",
   "lang": "ja",
   "start_url": "/",
   "scope": "/",

@@ -1,5 +1,7 @@
 # TOEFL Best Practice — 開発メモ（Claude向け）
 
+アプリ名（画面の見出し・title・manifest）は「IELTS Best Practice」（試験の切替に関係なく固定）。リポジトリ名は toefl-best-practice のまま。
+
 新形式TOEFL（2026年1月〜）の4技能練習＋模試Webアプリ。利用者は本人（日本人学習者、目標CEFR B2／バンド4.0〜4.5、本番 2026-11-29）。
 元の仕様書は `docs/spec.md`。画面の説明文は日本語、出題と回答は英語。
 

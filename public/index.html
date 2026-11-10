@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TOEFL Best Practice</title>
+<title>IELTS Best Practice</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Best Practice">
+<meta name="apple-mobile-web-app-title" content="IELTS Best Practice">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#fbf6ec">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐦%3C/text%3E%3C/svg%3E">
@@ -302,7 +302,7 @@
 <body>
 <div class="wrap">
   <header class="hd">
-    <h1><span class="mascot" aria-hidden="true">🐦</span><span id="hd-title">TOEFL Best Practice</span><small id="hd-sub">新形式（2026年1月〜）練習　Reading / Listening / Writing / Speaking</small></h1>
+    <h1><span class="mascot" aria-hidden="true">🐦</span><span id="hd-title">IELTS Best Practice</span><small id="hd-sub">新形式（2026年1月〜）練習　Reading / Listening / Writing / Speaking</small></h1>
     <button class="modebtn" onclick="go('pick')" title="試験を切り替える">試験：<strong id="mode-name">TOEFL</strong> ▾</button>
   </header>
   <div id="offline" class="offline" hidden>📴 オフラインです。🌱 基礎・💡 コツと単語・今日の復習・ノートは使えます。問題の生成と添削は、電波が戻ってからできます。</div>
@@ -1968,7 +1968,7 @@ const DISC={
 function applyMode(){
   const m=MODE();
   $("#mode-name").textContent=EXAMNAME[m];
-  $("#hd-title").textContent=`${EXAMNAME[m]} Best Practice`;
+  $("#hd-title").textContent="IELTS Best Practice";   // アプリ名は試験に関係なく IELTS Best Practice
   $("#hd-sub").textContent = m==="ielts" ? "IELTS Academic 練習　Listening / Reading / Writing / Speaking" : "新形式（2026年1月〜）練習　Reading / Listening / Writing / Speaking";
   $("#disc").innerHTML=DISC[m];
   document.title=`${EXAMNAME[m]} Best Practice`;
