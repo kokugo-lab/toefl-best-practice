@@ -65,6 +65,7 @@
   再生完了などの遅れて届く処理は、状態が消えていたら何もしない（`rerenderPart`・`iUpdCtl` などで確認）。
 - コツと単語（TOEFL・IELTS）：中身は `GUIDE`（単元ごとの形式・コツ・落とし穴・単語[英,意味,例文]）に固定で書く。`data-guide="単元"` の
   ボタンで下からシートが開く（`guideOpen`）。図と例は `GUIDE_VIS`（流れ4段・例文〔[[手がかり]]・{{答え}}〕・コツごとの絵文字）を `gvHTML()` で描く。単語は `addNotes("word")` でノート・SRS に入る。
+- 仮添削：Writing の全課題に「📝 仮添削」（`setupWriter` 内、`draft_check`・思考 minimal）。途中の文章のバンド目安・改善点・段落ごとの始め方（`openers`）を `kariHTML` で `#<p>-kbox` に出す。記録に入れない・時計は止めない。
 - IELTS Writing Task 1 は図表を入力欄の上に固定表示（`setupWriter` の `peek` → `#ia-peek`・たためる）。
 - IELTS の単元：`GUIDE`／`GUIDE_VIS` の il・ir・it1・it2・isp、`GUIDE_SEC` の ilistening・ireading・iwriting・ispeaking（基礎の `#wu-<view>`）。
 - ノートから外す：`removeNotes(pred)`（お知らせは出さない）。ノート一覧・今日の復習・コツと単語から使う。

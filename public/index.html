@@ -1470,6 +1470,16 @@ $("#l-voice").onclick=()=>{ loadVoices(); speakSeq([{sp:"F",text:"Hi, this is th
 const phrasesHTML=(a)=>(a&&a.length)?`<h3>使える表現</h3><ul>${a.map(p=>`<li><span class="en">${esc(p.en)}</span> <span class="muted">${esc(p.ja)}</span></li>`).join("")}</ul>`:"";
 const TOPICS_DISC = ["sociology","education","urban planning","environmental policy","business management","public health","media studies","psychology","economics","political science","technology and society","anthropology"];
 const WRITERS={};
+function kariHTML(r, name){
+  const op=(r.openers||[]).map(x=>`<div class="ctx"><div><b>第${esc(String(x.para||""))}段落</b> <span class="tag">${esc(x.role_ja||"")}</span>${x.current?` <span class="tiny en">今：${esc(x.current)}…</span>`:` <span class="tiny" style="color:var(--warn)">まだありません</span>`}</div>
+    <div class="tiny">${esc(x.tip_ja||"")}</div>${(x.better||[]).map(b=>`<div class="en">✏️ ${esc(b)}</div>`).join("")}</div>`).join("");
+  return `<div class="fb"><div class="h">📝 仮添削　${bandPill(name, +r.band||0)}</div>
+    <p>${esc(r.summary_ja||"")}</p>
+    ${(r.improve_ja||[]).length?`<h3>改善点</h3><ul>${r.improve_ja.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+    ${op?`<h3>段落のはじめ方</h3>${op}`:""}
+    ${r.next_ja?`<p class="tiny">➡️ ${esc(r.next_ja)}</p>`:""}
+    <p class="tiny">書いている途中の目安です（記録には入れません・時計は止まりません）。バンドは目安で、公式採点とは一致しません。</p></div>`;
+}
 // 練習用の型のヒント（コツの「流れ」と、使える書き出し）
 function wHintHTML(key){
   const v=GUIDE_VIS[key], g=GUIDE[key];
@@ -1522,6 +1532,20 @@ function setupWriter(o){
   });
   el("save").onclick=()=>{ draft(); el("save").textContent="保存しました"; setTimeout(()=>el("save").textContent="下書きを保存",1500); };
   { const q=document.createElement("button"); q.className="quit"; q.dataset.quit="w:"+P; q.textContent="やめる"; el("save").after(q); }
+  // 仮添削：書いている途中のバンドの目安・改善点・段落の始め方（記録に入れない。時計は止めない）
+  { const k=document.createElement("button"); k.textContent="📝 仮添削"; k.id=`${P}-kari`; el("submit").after(k);
+    const box=document.createElement("div"); box.id=`${P}-kbox`; el("msg").after(box);
+    k.onclick=async()=>{
+      const text=el("text").value.trim();
+      if(words(text)<20){ box.innerHTML=`<div class="err">20語以上書いてから使ってください。</div>`; return; }
+      busy(box,"今の文章を仮に見ています…（10〜20秒）"); k.disabled=true;
+      try{
+        const r=await api("draft_check",{exam:o.max===9?"ielts":"toefl", kind:label, task:el("task").innerText, draft:text, words:words(text)});
+        box.innerHTML=kariHTML(r, o.max===9?"IELTS Writing":"Writing");
+      }catch(e){ box.innerHTML=`<div class="err">${esc(e.message)}</div>`; }
+      k.disabled=false;
+    };
+  }
   el("submit").onclick = async ()=>{
     const text=el("text").value.trim();
     if(!text){ el("msg").innerHTML=`<div class="err">まだ何も書かれていません。</div>`; return; }
