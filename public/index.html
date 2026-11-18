@@ -295,6 +295,13 @@
   .chartbox{border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--card); margin:10px 0}
   .chartbox .ch-title{font-weight:650; font-size:.9rem; margin-bottom:6px}
   .chartbox svg{width:100%; height:auto; display:block}
+  .ch-one+.ch-one{margin-top:14px; padding-top:10px; border-top:1px dashed var(--line)}
+  .proc{display:flex; flex-direction:column; align-items:stretch}
+  .pstep{display:flex; gap:10px; align-items:center; background:var(--bg); border:1.5px solid #e6c9a0; border-radius:12px; padding:6px 10px}
+  .pnum{background:var(--accent); color:#fff; border-radius:999px; min-width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-size:.8rem}
+  .parr{text-align:center; color:#c9a27a; font-weight:700; line-height:1.4}
+  .maps{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  @media (max-width:520px){ .maps{grid-template-columns:1fr} }
   .chartbox svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   .legend{display:flex; flex-wrap:wrap; gap:4px 14px; font-size:.78rem; color:var(--ink); margin-top:6px}
   .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
@@ -2887,20 +2894,49 @@ function chartHTML(c){
 }
 
 /* ================= IELTS Writing ================= */
-const TOPICS_T1=["household spending by category in several countries","electricity production by source over time","international student numbers by region","internet use by age group","water use by sector in different countries","tourist arrivals in several cities","time spent on leisure activities by age group","car ownership in several countries over time"];
-const KINDS_T2=["agree or disagree","discuss both views and give your own opinion","advantages and disadvantages","problem and solution","two-part question"];
-const TOPICS_T2=["education","technology","the environment","work","health","cities","culture and tradition","government spending","media and advertising","globalisation","crime and punishment","families"];
+// Task 1 の図：グラフ1つ／2つ（円2つ・組み合わせ）／工程図／地図
+function t1VisualHTML(t){
+  if(t.diagram && t.diagram.type==="process") return processHTML(t.diagram);
+  if(t.diagram && t.diagram.type==="map") return mapsHTML(t.diagram);
+  if(Array.isArray(t.charts) && t.charts.length) return t.charts.slice(0,2).map(c=>`<div class="ch-one">${chartHTML(c)}</div>`).join("");
+  return chartHTML(t.chart);
+}
+function processHTML(d){
+  const st=(d.steps||[]).slice(0,12);
+  return `<div class="ch-title">${esc(d.title||"")}</div><div class="proc">${st.map((x,i)=>`${i?`<div class="parr">↓</div>`:""}<div class="pstep"><span class="pnum">${i+1}</span><div><b class="en">${esc(x.label||"")}</b>${x.note?`<div class="tiny en">${esc(x.note)}</div>`:""}</div></div>`).join("")}${d.cycle?`<div class="parr">↺ 1 に戻る（くり返し）</div>`:""}</div>`;
+}
+const MAPCOL={building:"#c9a27a", road:"#9e9e9e", park:"#8bc68b", water:"#7fb7e6", farm:"#e8d27a", "car park":"#bdbdbd", housing:"#e4a08a", shop:"#d39bd3", sport:"#a5d6a7", trees:"#5f9e5f"};
+function mapsHTML(d){
+  const one=(m)=>{ const it=(m.items||[]).slice(0,12);
+    const g=it.map(x=>{ const X=+x.x||0, Y=+x.y||0, W=Math.max(4,+x.w||10), H=Math.max(4,+x.h||10), c=MAPCOL[x.kind]||"#d7ccc8";
+      return `<rect x="${X}" y="${Y}" width="${W}" height="${H}" rx="${x.kind==="water"||x.kind==="trees"?4:1}" fill="${c}" stroke="#fff" stroke-width=".6"/><text x="${X+W/2}" y="${Y+H/2}" font-size="3.6" text-anchor="middle" dominant-baseline="middle" fill="#3a3128">${esc(x.name||"")}</text>`; }).join("");
+    return `<div class="mapone"><div class="tiny" style="text-align:center"><b>${esc(m.label||"")}</b></div><svg viewBox="-2 -2 104 104" role="img" aria-label="${esc(m.label||"")}"><rect x="-2" y="-2" width="104" height="104" fill="#f6f1e6" stroke="var(--line)"/>${g}<text x="96" y="6" font-size="5" text-anchor="middle">N↑</text></svg></div>`; };
+  return `<div class="ch-title">${esc(d.title||"")}</div><div class="maps">${(d.maps||[]).slice(0,2).map(one).join("")}</div>`;
+}
+// Task 1：本番に近い種類（棒・折れ線・表・円2つ・組み合わせ・工程・地図）を、種類ごとの話題から出す
+const T1_TYPES=["bar","line","table","pie","mixed","process","map","bar","line","mixed"];
+const TOPICS_T1={
+  bar:["household spending by category in five countries","reasons for travel by age group","weekly hours spent on leisure activities by men and women","university graduates by subject in two years","how people commute to work in four cities","energy consumption per person in several countries","museum visitors by type of exhibition","employment in different sectors in three regions"],
+  line:["electricity production from coal, gas, nuclear and renewables in one country 1980-2020","international tourist arrivals in three countries 2000-2020","consumption of fish, chicken, beef and lamb 1980-2015","the percentage of people using the internet by age group 2005-2022","car ownership in three cities over 40 years","the price of three commodities over a decade","the number of visitors to three national parks 1990-2020"],
+  table:["underground railway systems in six cities (opening year, length, passengers)","average hours worked and salaries in five professions","consumer spending on different items in five countries","the proportion of income spent on housing, food and transport by income group","sales of fair-trade products in five European countries in two years"],
+  pie:["the main causes of land degradation in one region in two years","household energy use in a country in 1990 and 2020","sources of university funding in two years","how a city's waste is treated in 2000 and 2020","the age structure of a country's population in 1980 and 2030 (projected)"],
+  mixed:["a line graph of rail passenger numbers and a bar chart of the reasons for travel","a table of water use by sector and a pie chart of water use in one country","a bar chart of cinema attendance by age and a line graph of total tickets sold","a pie chart of energy sources and a table of energy costs"],
+  process:["how bricks are manufactured","the life cycle of the salmon","how instant noodles are produced","how rainwater is collected and treated for drinking","how glass bottles are recycled","how coffee is produced and packaged","the stages in the production of cement and concrete","how electricity is generated in a hydroelectric power station"],
+  map:["changes to a small fishing village between 1980 and now","a proposed redevelopment of a city-centre shopping area","changes to a university campus over 20 years","an island before and after the construction of tourist facilities","two possible sites for a new supermarket near a town","changes to a public park between 1990 and today"],
+};
+const KINDS_T2=["agree or disagree (to what extent)","discuss both views and give your own opinion","advantages and disadvantages (do the advantages outweigh the disadvantages?)","positive or negative development","causes and solutions","problem and solution","two-part direct question","agree or disagree (to what extent)","discuss both views and give your own opinion"];
+const TOPICS_T2=["university education and whether it should be free","online learning replacing classrooms","children's use of smartphones","artificial intelligence and jobs","working from home","the four-day working week","plastic waste and government action","individual vs government responsibility for climate change","public transport vs private cars in cities","space exploration spending","tourism and local cultures","the decline of traditional crafts and languages","fast food and public health","sugar taxes","the ageing population","people living alone","advertising aimed at children","social media and news","celebrity culture and young people","longer prison sentences vs rehabilitation","young offenders","funding for the arts vs hospitals","international aid","globalisation and national identity","learning a foreign language at primary school","competitive sports at school","animal testing","zoos","city growth and housing costs","rural depopulation","gap years","job satisfaction vs salary","the importance of history as a school subject","genetically modified food","museums charging entry fees","shopping online and high streets"];
 setupWriter({
-  p:"ia", key:"it1", peek:(t)=>chartHTML(t.chart), name:"Task 1", label:"IELTS Writing", gen:"gen_i_task1", ev:"eval_i_writing", max:9, limit:1200,
-  genInput:()=>({chart:pick(["bar","line","pie","table","bar","line"]), topic:pick(TOPICS_T1)}),
-  evalInput:(t)=>({task:1, prompt:t.prompt_en||"", chart:t.chart||null}),
+  p:"ia", key:"it1", peek:(t)=>t1VisualHTML(t), name:"Task 1", label:"IELTS Writing", gen:"gen_i_task1", ev:"eval_i_writing", max:9, limit:1200,
+  genInput:()=>{ const c=pick(T1_TYPES); return {chart:c, topic:pick(TOPICS_T1[c])}; },
+  evalInput:(t)=>({task:1, prompt:t.prompt_en||"", chart:t.diagram||t.charts||t.chart||null}),
   taskHTML:(t)=>`
       <hr>
       <p class="tiny">You should spend about 20 minutes on this task. Write at least 150 words.</p>
-      <div class="chartbox">${chartHTML(t.chart)}</div>
+      <div class="chartbox">${t1VisualHTML(t)}</div>
       <p class="en"><strong>${esc(t.prompt_en)}</strong></p>
       <p class="muted">${esc(t.prompt_ja||"")}</p>
-      <details><summary>書くべき主な特徴（書き終えてから見るのがおすすめ）</summary><ul>${(t.key_features_ja||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></details>
+      <details><summary>書くべき主な特徴（書き終えてから見るのがおすすめ）</summary><ul>${(t.key_features_ja||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${t.structure_ja?`<p class="tiny">段落の分け方：${esc(t.structure_ja)}</p>`:""}</details>
       ${phrasesHTML(t.useful_phrases)}`,
 });
 setupWriter({
