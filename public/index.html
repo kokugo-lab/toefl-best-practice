@@ -1499,7 +1499,10 @@ function setupWriter(o){
   const P=o.p, el=(x)=>$(`#${P}-${x}`), max=o.max||6, label=`${o.label||"Writing"}（${o.name}）`;
   let task=null, timer=null, left=0, started=0, last=null, rewriting=false, lite=false;
   const tab={email:"email", disc:"disc", it1:"t1", it2:"t2"}[o.key]||"";
-  stockDef("w:"+o.key, ()=>api(o.gen, o.genInput()));
+  // o.check があれば、形がおかしい課題（図が描けないなど）は作り直す（最大3回）
+  const genOne=async()=>{ for(let k=0;k<3;k++){ const r=await api(o.gen, o.genInput()); if(!o.check || o.check(r)) return r; }
+    throw new Error("図表がうまく作れませんでした。もう一度お試しください。"); };
+  stockDef("w:"+o.key, genOne);
   const limit=()=>(task&&task.time_limit_sec)||o.limit||600;
   const draft=()=>{ DB.draft[o.key]={text:el("text").value, task, left}; save(); };
   const showTask=()=>{ el("task").style.display="block"; el("task").innerHTML=o.taskHTML(task); el("editor").style.display="block";
@@ -1523,7 +1526,8 @@ function setupWriter(o){
     claim("w:"+P); { const gk={it1:"it1",it2:"it2"}[o.key]||o.key; if(GUIDE[gk]) wuStart(gk.startsWith("it")?"iwriting":"writing"); }
     const box=el("task"); box.style.display="block"; busy(box,"課題を作っています…");
     try{
-      const t = await stockGet("w:"+o.key);
+      let t = await stockGet("w:"+o.key);
+      if(o.check && !o.check(t)) t = await genOne();   // 以前に作り置きした形の合わない課題
       if(!owns("w:"+P)){ box.innerHTML=""; box.style.display="none"; return; }
       task = t;
       rewriting=false; last=null;
@@ -2895,11 +2899,43 @@ function chartHTML(c){
 
 /* ================= IELTS Writing ================= */
 // Task 1 の図：グラフ1つ／2つ（円2つ・組み合わせ）／工程図／地図
+// 生成の形の揺れを吸収する（chart／charts／diagram の取り違え、数値が文字列、円グラフの複数系列など）
+const toNum=(v)=>{ const n=parseFloat(String(v).replace(/[,%$£€\s]/g,"")); return isNaN(n)?null:n; };
+function normChart(c){
+  if(!c || typeof c!=="object") return [];
+  const ty=String(c.type||"bar").toLowerCase();
+  const type=/pie|donut/.test(ty)?"pie":/line/.test(ty)?"line":/table/.test(ty)?"table":"bar";
+  const cats=(c.categories||c.labels||c.rows||c.x||[]).map(String);
+  let ser=Array.isArray(c.series)?c.series:Array.isArray(c.values)?[{name:c.title||"",values:c.values}]:[];
+  ser=ser.filter(x=>x&&Array.isArray(x.values)).map(x=>({name:String(x.name||""), values:x.values.map(toNum)}));
+  ser=ser.filter(x=>x.values.some(v=>v!=null));
+  if(!cats.length || !ser.length) return [];
+  const base={title:c.title||"", unit:c.unit||"", x_label:c.x_label||""};
+  if(type==="pie" && ser.length>1) return ser.slice(0,2).map(x=>Object.assign({}, base, {type, title:(base.title?base.title+" — ":"")+x.name, categories:cats, series:[x]}));
+  return [Object.assign(base, {type, categories:cats, series:ser})];
+}
+function normDiagram(d){
+  if(!d || typeof d!=="object") return null;
+  const ty=String(d.type||"").toLowerCase();
+  if(/process|cycle|flow/.test(ty) || (!ty && (d.steps||d.stages))){
+    const st=(d.steps||d.stages||[]).map(x=>typeof x==="string"?{label:x}:{label:String(x.label||x.name||x.step||""), note:String(x.note||x.description||"")}).filter(x=>x.label);
+    return st.length>=3 ? {type:"process", title:d.title||"", cycle:!!d.cycle||/cycle/.test(ty), steps:st} : null;
+  }
+  if(/map|plan/.test(ty) || d.maps){
+    const ms=(Array.isArray(d.maps)?d.maps:[d.before,d.after]).filter(Boolean).map(m=>({label:String(m.label||m.year||""),
+      items:(m.items||m.features||[]).map(x=>({name:String(x.name||x.label||""), kind:String(x.kind||x.type||"building").toLowerCase(), x:toNum(x.x)||0, y:toNum(x.y)||0, w:toNum(x.w||x.width)||12, h:toNum(x.h||x.height)||10})).filter(x=>x.name)}))
+      .filter(m=>m.items.length);
+    return ms.length ? {type:"map", title:d.title||"", maps:ms} : null;
+  }
+  return null;
+}
 function t1VisualHTML(t){
-  if(t.diagram && t.diagram.type==="process") return processHTML(t.diagram);
-  if(t.diagram && t.diagram.type==="map") return mapsHTML(t.diagram);
-  if(Array.isArray(t.charts) && t.charts.length) return t.charts.slice(0,2).map(c=>`<div class="ch-one">${chartHTML(c)}</div>`).join("");
-  return chartHTML(t.chart);
+  if(!t) return "";
+  const pool=[t.diagram, t.chart, ...(Array.isArray(t.charts)?t.charts:[]), ...(Array.isArray(t.chart)?t.chart:[]), ...(Array.isArray(t.diagrams)?t.diagrams:[])].filter(x=>x&&typeof x==="object"&&!Array.isArray(x));
+  for(const d of pool){ const n=normDiagram(d); if(n) return n.type==="process"?processHTML(n):mapsHTML(n); }
+  const charts=pool.flatMap(normChart).slice(0,2);
+  const html=charts.map(c=>chartHTML(c)).filter(Boolean);
+  return html.length>1 ? html.map(h=>`<div class="ch-one">${h}</div>`).join("") : (html[0]||"");
 }
 function processHTML(d){
   const st=(d.steps||[]).slice(0,12);
@@ -2929,7 +2965,8 @@ const TOPICS_T2=["university education and whether it should be free","online le
 setupWriter({
   p:"ia", key:"it1", peek:(t)=>t1VisualHTML(t), name:"Task 1", label:"IELTS Writing", gen:"gen_i_task1", ev:"eval_i_writing", max:9, limit:1200,
   genInput:()=>{ const c=pick(T1_TYPES); return {chart:c, topic:pick(TOPICS_T1[c])}; },
-  evalInput:(t)=>({task:1, prompt:t.prompt_en||"", chart:t.diagram||t.charts||t.chart||null}),
+  check:(t)=>!!t1VisualHTML(t),
+  evalInput:(t)=>({task:1, prompt:t.prompt_en||"", chart:{diagram:t.diagram||null, charts:t.charts||null, chart:t.chart||null}}),
   taskHTML:(t)=>`
       <hr>
       <p class="tiny">You should spend about 20 minutes on this task. Write at least 150 words.</p>
