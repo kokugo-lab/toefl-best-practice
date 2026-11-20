@@ -2905,8 +2905,19 @@ function normChart(c){
   if(!c || typeof c!=="object") return [];
   const ty=String(c.type||"bar").toLowerCase();
   const type=/pie|donut/.test(ty)?"pie":/line/.test(ty)?"line":/table/.test(ty)?"table":"bar";
-  const cats=(c.categories||c.labels||c.rows||c.x||[]).map(String);
+  let cats=(c.categories||c.labels||c.rows||c.x||[]).map(String);
   let ser=Array.isArray(c.series)?c.series:Array.isArray(c.values)?[{name:c.title||"",values:c.values}]:[];
+  // data: [{category, value|percentage…}] や {"2000":{"Car":45,…}, …} の形も読む
+  if(!ser.length && c.data && typeof c.data==="object"){
+    if(Array.isArray(c.data) && c.data.length && typeof c.data[0]==="object"){
+      const ks=Object.keys(c.data[0]), lk=ks.find(k=>typeof c.data[0][k]==="string")||ks[0], vk=ks.filter(k=>k!==lk);
+      cats=c.data.map(r=>String(r[lk])); ser=vk.map(k=>({name:vk.length>1?k:(c.title||""), values:c.data.map(r=>r[k])}));
+    } else if(!Array.isArray(c.data)){
+      const rows=Object.keys(c.data), first=c.data[rows[0]];
+      if(first && typeof first==="object"){ const cols=Object.keys(first); cats=rows; ser=cols.map(k=>({name:k, values:rows.map(r=>(c.data[r]||{})[k])})); }
+      else { cats=rows; ser=[{name:c.title||"", values:rows.map(r=>c.data[r])}]; }
+    }
+  }
   ser=ser.filter(x=>x&&Array.isArray(x.values)).map(x=>({name:String(x.name||""), values:x.values.map(toNum)}));
   ser=ser.filter(x=>x.values.some(v=>v!=null));
   if(!cats.length || !ser.length) return [];
