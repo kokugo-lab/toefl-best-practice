@@ -127,6 +127,7 @@ function dueList(){const d=today();return allBlocks().filter(b=>S.box[b.id]&&S.b
 function pct(t){const bl=blocksOf(t);return Math.round(bl.reduce((s,b)=>s+((S.box[b.id]||{}).l||0),0)/(bl.length*5)*100)}
 function ring(p,c){const r=22,C=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="${r}" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="26" cy="26" r="${r}" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C*p/100} ${C}" transform="rotate(-90 26 26)"/><text x="26" y="30" text-anchor="middle" font-size="12" font-weight="900" fill="currentColor" font-family="Nunito">${p}%</text></svg>`}
 const MODES=[
+ ['full','全','全文を見る','本体と続きの全文を、日本語つきで通して読む'],
  ['look','A','隠してスピーク','日本語を見て英語で言う → めくって答え合わせ'],
  ['order','B','骨組みリレー','バラバラのキーワードを正しい順にタップ'],
  ['cloze','C','フレーズ穴埋め','太字・マーカーの表現を4択で当てる'],
@@ -156,7 +157,7 @@ function menu(t,part){part=part||'a';const c=COL[t.k];
   $('bk').onclick=home;
   app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>menu(t,b.dataset.p));
   app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const bl=t[part].map(x=>({...x,t}));const m=b.dataset.m;
-    if(m==='look')look(bl.filter(x=>!isIntro(x)),t.name,c);if(m==='order')order(bl,0,c,t);if(m==='cloze')cloze(t,c);if(m==='two')two(t,c)})}
+    if(m==='full')full(t,c);if(m==='look')look(bl.filter(x=>!isIntro(x)),t.name,c);if(m==='order')order(bl,0,c,t);if(m==='cloze')cloze(t,c);if(m==='two')two(t,c)})}
 function xmenu(x){const c=x.col;
   const groups=x.k==='t1'?[...new Set(x.blocks.map(b=>b.label.split('｜')[0]))]:[];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
@@ -169,6 +170,16 @@ function xmenu(x){const c=x.col;
   const pick=()=>x.blocks.filter(b=>!g||b.label.startsWith(g+'｜')).map(b=>({...b,t:x}));
   app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;
     if(m==='look')look(pick(),x.name,c);if(m==='shuf')look(shuffle(pick()),x.name,c);if(m==='cloze')cloze({...x,blocks:pick().map(({t,...r})=>r),_src:x},c)})}
+function full(t,c,showJp=true){
+  const sec=(title,q,bl)=>`<div class="card" style="--c:${c};margin-top:14px;animation:none"><span class="lab">${title}</span><p class="big" style="font-size:17px">${q}</p>
+   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`;
+  app.innerHTML=`<button class="back" id="bk">← もどる</button>
+  <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1>
+   <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div></div>
+  ${sec('本体（Part 2）',t.q1,t.a)}${sec('続き（'+t.theme2+'）',t.q2,t.b)}
+  <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
+  $('bk').onclick=$('bk2').onclick=()=>menu(t);
+  $('jpOn').onclick=()=>full(t,c,true);$('jpOff').onclick=()=>full(t,c,false);window.scrollTo(0,0)}
 function look(list,title,c,i=0){if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
   app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span><span class="prog">${i+1} / ${list.length}</span>
   <p class="jpt">${b.jp}</p><div id="ans"><div class="hide">声に出して英語で言ってみよう${b.sk?`<br><small>ヒント：${b.sk.replace(/<[^>]+>/g,'')}</small>`:''}</div></div>
