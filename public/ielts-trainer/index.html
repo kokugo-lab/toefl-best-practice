@@ -86,6 +86,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .mpi{flex:1;min-width:0}.mpi b{display:block;font:700 13px 'Zen Maru Gothic';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mpi small{font:700 12px 'Nunito';opacity:.7}
 .mp button{border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:var(--bg);border-radius:12px;min-width:44px;height:44px;font:800 15px 'Zen Maru Gothic','Nunito';cursor:pointer;padding:0 10px}
 .spk{border:1px solid var(--line);background:var(--paper);color:var(--c);border-radius:99px;font:800 13px 'Zen Maru Gothic','Nunito';padding:6px 12px;min-height:36px;cursor:pointer;margin-left:6px}
+.mem{display:inline-block;font:800 11px 'Zen Maru Gothic';border-radius:99px;padding:2px 8px;margin-left:6px;background:var(--line);color:var(--mut)}.mem.on{background:var(--c);color:#fff}
 .spk.on{background:var(--c);color:#fff;border-color:var(--c)}
 .qtag{font:800 12px 'Nunito';color:var(--mut);letter-spacing:.04em}
 .big{font:800 20px/1.45 'Nunito';margin:8px 0 4px}
@@ -140,7 +141,8 @@ const app=$('app');
 const strip=h=>h.replace(/<[^>]+>/g,'');
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const isIntro=b=>/^(導入|橋渡し)/.test(b.label);
-const blocksOf=t=>t.blocks||[...t.a,...t.b].filter(b=>!isIntro(b));const colOf=t=>t.col||COL[t.k];
+const isMem=b=>/^[123](a1|b1|b2|b3)$/.test(b.id);
+const blocksOf=t=>t.blocks||[...t.a,...t.b].filter(b=>S.focus===false?!isIntro(b):isMem(b));const colOf=t=>t.col||COL[t.k];
 const allBlocks=()=>[...D.T,...D.X].flatMap(t=>blocksOf(t).map(b=>({...b,t})));
 const today=()=>new Date().toISOString().slice(0,10);
 const BANDS=['5.0','5.5','6.0','6.5','7.0','7.5','8.0','8.5','9.0'];
@@ -169,15 +171,20 @@ const MODES=[
 ];
 function home(){if(!PL.bg)stopTTS();hud();
   app.innerHTML=`<h1 class="jp">今日もテンプレートを<br>1枚ずつ。</h1><p class="lead">3つの万能テンプレートと、Task 1・Task 2・Part 1の型を、カードゲームで覚えよう。言えたら XP、全部覚えたら Band 9.0。</p>
+  <div class="sec">スピーキング Part 1</div>
+  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">P1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='p1'))}</div>
+  <div class="sec">万能テンプレート（Part 2・3／Task 2）</div>
   <div class="deck">${D.T.map(t=>`<button class="tpl" style="--c:${COL[t.k]}" data-t="${t.k}"><span class="n">${'①②③'[t.k-1]}</span><span><h3 class="jp">${t.name}</h3><p>Part 2 → 続き：${t.theme2}</p></span>${ring(pct(t),COL[t.k])}</button>`).join('')}</div>
-  <div class="sec">ほかの暗記要素</div>
-  <div class="deck">${D.X.map((x,i)=>`<button class="tpl" style="--c:${x.col}" data-x="${i}"><span class="n" style="font-size:17px">${['型','例','P1','T1'][i]}</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`).join('')}</div>
+  <div class="sec">ライティング Task 1</div>
+  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">T1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='t1'))}</div>
+  <div class="sec">ライティング Task 2</div>
+  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">型</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='t2'))}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">例</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='ex'))}</div>
   <div class="sec">ミックスで遊ぶ</div>
   <div class="modes" style="--c:#E07A9B">
    <button class="mode" id="mDue"><div class="ic">!</div><b>今日の復習</b><span>忘れかけのブロックだけを出題（${dueList().length}枚）</span></button>
    <button class="mode" id="mQ"><div class="ic">?</div><b>質問ルーレット</b><span>ランダムな質問に、どのテンプレートで返す？</span></button>
    <button class="mode" id="mL1"><div class="ic">♪</div><b>ながら聞き：テンプレート</b><span>①②③の本体と続きを通して再生。画面を消しても続く</span></button>
-   <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>テンプレート＋Task 1・2・Part 1 を全部再生</span></button>
+   <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>Part 1 → テンプレート → Task 1 → Task 2 の順に全部再生</span></button>
   </div>
   <p class="note">進み具合はこの端末のブラウザにだけ保存されます。</p>`;
   app.querySelectorAll('.tpl[data-t]').forEach(b=>b.onclick=()=>menu(D.T[b.dataset.t-1]));
@@ -186,21 +193,26 @@ function home(){if(!PL.bg)stopTTS();hud();
   $('mQ').onclick=()=>roulette(0,0);
   const tIds=D.T.flatMap(t=>[...t.a,...t.b].map(b=>b.id));
   $('mL1').onclick=()=>playIds(tIds,null,'テンプレート',true);
-  $('mL2').onclick=()=>playIds([...tIds,...D.X.flatMap(x=>x.blocks.map(b=>b.id))],null,'全部',true)}
+  const xIds=k=>D.X.find(x=>x.k===k).blocks.map(b=>b.id);
+  $('mL2').onclick=()=>playIds([...xIds('p1'),...tIds,...xIds('t1'),...xIds('t2'),...xIds('ex')],null,'全部',true)}
 function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
   <div class="card" style="--c:${c}"><span class="lab">万能テンプレート ${'①②③'[t.k-1]}</span><h1 class="jp" style="font-size:30px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${part==='a'?'':'g'}" data-p="a">本体（Part 2）</button><button class="btn ${part==='b'?'':'g'}" data-p="b">続き（${t.theme2}）</button></div>
-   <div class="koma">${t.koma.map((k,i)=>`<div><b>${i+1}</b>${k}</div>`).join('')}</div></div>
+   <div class="koma">${t.koma.map((k,i)=>`<div><b>${i+1}</b>${k}</div>`).join('')}</div>
+   <p class="qtag" style="margin:4px 0 0">隠してスピークで出すブロック</p>
+   <div class="chips" style="margin-top:6px"><button class="chip ${S.focus===false?'':'done'}" data-f="1">丸ごと覚える4つ</button><button class="chip ${S.focus===false?'done':''}" data-f="0">全部</button></div>
+   <p class="note" style="margin-top:6px">丸ごと覚える：本体の核・社会の核・C・D。ほかは骨組みリレーで流れだけ。</p></div>
   <div class="modes" style="--c:${c}">${MODES.map(m=>`<button class="mode" data-m="${m[0]}"><div class="ic">${m[1]}</div><b>${m[2]}</b><span>${m[3]}</span></button>`).join('')}</div>`;
   $('bk').onclick=home;
   app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>menu(t,b.dataset.p));
+  app.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{S.focus=b.dataset.f==='1';save();menu(t,part)});
   app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const bl=t[part].map(x=>({...x,t}));const m=b.dataset.m;
-    if(m==='full')full(t,c);if(m==='look')look(bl.filter(x=>!isIntro(x)),t.name,c);if(m==='order')order(bl,0,c,t);if(m==='cloze')cloze(t,c);if(m==='two')two(t,c)})}
+    if(m==='full')full(t,c);if(m==='look'){const L=bl.filter(x=>S.focus===false?!isIntro(x):isMem(x));if(!L.length){toast('このページに丸ごと覚えるブロックはありません');return}look(L,t.name,c)}if(m==='order')order(bl,0,c,t);if(m==='cloze')cloze(t,c);if(m==='two')two(t,c)})}
 function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
   const groups=x.k==='t1'?[...new Set(x.blocks.map(b=>b.label.split('｜')[0]))]:[];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
-  <div class="card" style="--c:${c}"><span class="lab">ほかの暗記要素</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
+  <div class="card" style="--c:${c}"><span class="lab">暗記カード</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
   ${groups.length?`<div class="chips" id="gr">${groups.map((g,i)=>`<button class="chip ${i?'':'done'}" data-g="${g}">${g}</button>`).join('')}<button class="chip" data-g="">全部</button></div>`:''}</div>
   <div class="modes" style="--c:${c}">${MODES.filter(m=>m[0]==='full'||m[0]==='look'||m[0]==='cloze').map(m=>`<button class="mode" data-m="${m[0]}"><div class="ic">${m[1]}</div><b>${m[2]}</b><span>${m[3]}</span></button>`).join('')}
   <button class="mode" data-m="shuf"><div class="ic">S</div><b>シャッフル</b><span>順番をバラバラにして隠してスピーク</span></button></div>`;
@@ -211,7 +223,7 @@ function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
     if(m==='full')xfull(x,c);if(m==='look')look(pick(),x.name,c);if(m==='shuf')look(shuffle(pick()),x.name,c);if(m==='cloze')cloze({...x,blocks:pick().map(({t,...r})=>r),_src:x},c)})}
 function full(t,c,showJp=true){
   const sec=(title,q,bl)=>`<div class="card" style="--c:${c};margin-top:14px;animation:none"><span class="lab">${title}</span><p class="big" style="font-size:17px">${q}</p>
-   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`;
+   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><span class="mem ${isMem(b)?'on':''}">${isMem(b)?'丸ごと':'骨組み'}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`;
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
   <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
@@ -236,7 +248,7 @@ function xfull(x,c,showJp=true){
   $('jpOn').onclick=()=>{stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
   const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z))}
 function look(list,title,c,i=0){if(!PL.bg)stopTTS();if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
-  app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span><span class="prog">${i+1} / ${list.length}</span>
+  app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span>${b.t&&b.t.a?`<span class="mem ${isMem(b)?'on':''}">${isMem(b)?'丸ごと':'骨組み'}</span>`:''}<span class="prog">${i+1} / ${list.length}</span>
   <p class="jpt">${b.jp}</p><div id="ans"><div class="hide">声に出して英語で言ってみよう${b.sk?`<br><small>ヒント：${b.sk.replace(/<[^>]+>/g,'')}</small>`:''}</div></div>
   <div class="row" id="ctl"><button class="btn" id="flip">めくる</button></div></div>`;
   $('bk').onclick=home;
