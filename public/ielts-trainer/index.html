@@ -81,6 +81,10 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .conf i{position:absolute;top:-12px;width:9px;height:14px;border-radius:3px;animation:fall 1.3s ease-in forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.7}}
 .note{font-size:13px;color:var(--mut);margin-top:10px}
+.mp{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));width:min(612px,calc(100% - 20px));background:var(--ink);color:var(--bg);border-radius:20px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:6px;z-index:7;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
+.mp[hidden]{display:none}
+.mpi{flex:1;min-width:0}.mpi b{display:block;font:700 13px 'Zen Maru Gothic';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mpi small{font:700 12px 'Nunito';opacity:.7}
+.mp button{border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:var(--bg);border-radius:12px;min-width:44px;height:44px;font:800 15px 'Zen Maru Gothic','Nunito';cursor:pointer;padding:0 10px}
 .spk{border:1px solid var(--line);background:var(--paper);color:var(--c);border-radius:99px;font:800 13px 'Zen Maru Gothic','Nunito';padding:6px 12px;min-height:36px;cursor:pointer;margin-left:6px}
 .spk.on{background:var(--c);color:#fff;border-color:var(--c)}
 .qtag{font:800 12px 'Nunito';color:var(--mut);letter-spacing:.04em}
@@ -94,6 +98,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <div class="pill"><b id="streak">0</b>連続</div><div class="pill"><b id="due">0</b>復習</div></div>
 <main id="app"></main>
 </div>
+<div class="mp" id="mp" hidden><div class="mpi"><b id="mpT"></b><small id="mpN"></small></div><button id="mpPrev" aria-label="前へ">‹</button><button id="mpPlay">止める</button><button id="mpNext" aria-label="次へ">›</button><button id="mpX" aria-label="停止">×</button></div>
 <div class="toast" id="toast"></div><div class="conf" id="conf"></div>
 <script>
 {
@@ -109,14 +114,28 @@ function pickVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^en/i.t
   const sc=v=>(/Premium|Enhanced|Natural|Neural/i.test(v.name)?4:0)+(/en[-_]GB/i.test(v.lang)?2:/en[-_]US/i.test(v.lang)?1:0)+(/Google|Daniel|Serena|Kate|Samantha|Karen/i.test(v.name)?1:0);
   return vs.sort((a,b)=>sc(b)-sc(a))[0]||null}catch(e){return null}}
 const ttsText=h=>h.replace(/<br\/?>/g,' ').replace(/<[^>]+>/g,'').replace(/&#x27;|&#39;/g,"'").replace(/&amp;/g,'&').replace(/_{2,}/g,'blank').replace(/[\[\]]/g,'');
-function stopTTS(){try{speechSynthesis.cancel()}catch(e){}document.querySelectorAll('.spk.on').forEach(b=>b.classList.remove('on'))}
+function stopTTS(){try{speechSynthesis.cancel()}catch(e){}try{AU.pause();AU.removeAttribute('src');AU.load()}catch(e){}PL.ids=[];PL.bg=false;mpShow(false);document.querySelectorAll('.spk.on').forEach(b=>b.classList.remove('on'))}
 function speak(list,btn){if(!('speechSynthesis' in window)){toast('この端末は読み上げに対応していません');return}
   if(btn&&btn.classList.contains('on')){stopTTS();return}stopTTS();if(btn)btn.classList.add('on');
   const v=pickVoice();let i=0;const next=()=>{if(i>=list.length){if(btn)btn.classList.remove('on');return}
     const u=new SpeechSynthesisUtterance(ttsText(list[i++]));u.lang=v?v.lang:'en-GB';if(v)u.voice=v;u.rate=S.rate||0.95;u.onend=next;u.onerror=()=>{if(btn)btn.classList.remove('on')};speechSynthesis.speak(u)};next()}
 try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+/* audio player: real files so playback continues in the background / lock screen */
+const ALL={};for(const t of D.T)for(const b of [...t.a,...t.b])ALL[b.id]={...b,grp:t.name};for(const x of D.X)for(const b of x.blocks)ALL[b.id]={...b,grp:x.name};
+const AU=new Audio();AU.preload='auto';window.__AU=AU;const PL={ids:[],i:0,btn:null,title:''};
+function mpShow(on){const m=$('mp');if(m)m.hidden=!on}
+function mpSync(){const b=ALL[PL.ids[PL.i]];if(!b)return;$('mpT').textContent=`${b.grp}｜${b.label}`;$('mpN').textContent=`${PL.i+1} / ${PL.ids.length}`;$('mpPlay').textContent=AU.paused?'再生':'止める';
+  try{if('mediaSession' in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:b.label,artist:b.grp,album:'IELTS 暗記トレーナー'});navigator.mediaSession.playbackState=AU.paused?'paused':'playing'}}catch(e){}}
+function plLoad(){const id=PL.ids[PL.i];AU.src='audio/'+id+'.mp3';AU.playbackRate=(S.rate||.95)/.95;
+  const p=AU.play();if(p&&p.catch)p.catch(()=>{const b=ALL[id];if(b)speak([b.en],null)});mpSync()}
+function playIds(ids,btn,title,bg){if(btn&&btn.classList.contains('on')){stopTTS();return}stopTTS();if(!ids.length)return;
+  PL.ids=ids;PL.i=0;PL.btn=btn||null;PL.bg=!!bg;PL.title=title||'';if(btn)btn.classList.add('on');mpShow(true);plLoad()}
+AU.onended=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}else{if(PL.btn)PL.btn.classList.remove('on');mpSync();$('mpPlay').textContent='再生';PL.i=0;AU.removeAttribute('src')}};
+AU.onplay=AU.onpause=mpSync;
+try{const ms=navigator.mediaSession;ms.setActionHandler('play',()=>AU.play());ms.setActionHandler('pause',()=>AU.pause());
+  ms.setActionHandler('nexttrack',()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}});ms.setActionHandler('previoustrack',()=>{if(PL.i>0){PL.i--;plLoad()}})}catch(e){}
 const rateHTML=()=>`<div class="chips" style="margin-top:8px">${[['ゆっくり',.8],['ふつう',.95],['はやい',1.1]].map(([n,r])=>`<button class="chip rate ${Math.abs((S.rate||.95)-r)<.01?'done':''}" data-r="${r}">${n}</button>`).join('')}</div>`;
-function bindRate(){document.querySelectorAll('.rate').forEach(b=>b.onclick=()=>{S.rate=+b.dataset.r;save();document.querySelectorAll('.rate').forEach(z=>z.classList.toggle('done',z===b))})}
+function bindRate(){document.querySelectorAll('.rate').forEach(b=>b.onclick=()=>{S.rate=+b.dataset.r;save();AU.playbackRate=S.rate/.95;document.querySelectorAll('.rate').forEach(z=>z.classList.toggle('done',z===b))})}
 const app=$('app');
 const strip=h=>h.replace(/<[^>]+>/g,'');
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -148,7 +167,7 @@ const MODES=[
  ['cloze','C','フレーズ穴埋め','太字・マーカーの表現を4択で当てる'],
  ['two','D','2分チャレンジ','4コマだけを見て、2分話しきる'],
 ];
-function home(){stopTTS();hud();
+function home(){if(!PL.bg)stopTTS();hud();
   app.innerHTML=`<h1 class="jp">今日もテンプレートを<br>1枚ずつ。</h1><p class="lead">3つの万能テンプレートと、Task 1・Task 2・Part 1の型を、カードゲームで覚えよう。言えたら XP、全部覚えたら Band 9.0。</p>
   <div class="deck">${D.T.map(t=>`<button class="tpl" style="--c:${COL[t.k]}" data-t="${t.k}"><span class="n">${'①②③'[t.k-1]}</span><span><h3 class="jp">${t.name}</h3><p>Part 2 → 続き：${t.theme2}</p></span>${ring(pct(t),COL[t.k])}</button>`).join('')}</div>
   <div class="sec">ほかの暗記要素</div>
@@ -157,13 +176,18 @@ function home(){stopTTS();hud();
   <div class="modes" style="--c:#E07A9B">
    <button class="mode" id="mDue"><div class="ic">!</div><b>今日の復習</b><span>忘れかけのブロックだけを出題（${dueList().length}枚）</span></button>
    <button class="mode" id="mQ"><div class="ic">?</div><b>質問ルーレット</b><span>ランダムな質問に、どのテンプレートで返す？</span></button>
+   <button class="mode" id="mL1"><div class="ic">♪</div><b>ながら聞き：テンプレート</b><span>①②③の本体と続きを通して再生。画面を消しても続く</span></button>
+   <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>テンプレート＋Task 1・2・Part 1 を全部再生</span></button>
   </div>
   <p class="note">進み具合はこの端末のブラウザにだけ保存されます。</p>`;
   app.querySelectorAll('.tpl[data-t]').forEach(b=>b.onclick=()=>menu(D.T[b.dataset.t-1]));
   app.querySelectorAll('.tpl[data-x]').forEach(b=>b.onclick=()=>xmenu(D.X[b.dataset.x]));
   $('mDue').onclick=()=>{const l=dueList();if(!l.length){toast('今日の復習はありません');return}look(shuffle(l),'今日の復習','#E07A9B')};
-  $('mQ').onclick=()=>roulette(0,0)}
-function menu(t,part){stopTTS();part=part||'a';const c=COL[t.k];
+  $('mQ').onclick=()=>roulette(0,0);
+  const tIds=D.T.flatMap(t=>[...t.a,...t.b].map(b=>b.id));
+  $('mL1').onclick=()=>playIds(tIds,null,'テンプレート',true);
+  $('mL2').onclick=()=>playIds([...tIds,...D.X.flatMap(x=>x.blocks.map(b=>b.id))],null,'全部',true)}
+function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
   <div class="card" style="--c:${c}"><span class="lab">万能テンプレート ${'①②③'[t.k-1]}</span><h1 class="jp" style="font-size:30px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${part==='a'?'':'g'}" data-p="a">本体（Part 2）</button><button class="btn ${part==='b'?'':'g'}" data-p="b">続き（${t.theme2}）</button></div>
@@ -173,7 +197,7 @@ function menu(t,part){stopTTS();part=part||'a';const c=COL[t.k];
   app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>menu(t,b.dataset.p));
   app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const bl=t[part].map(x=>({...x,t}));const m=b.dataset.m;
     if(m==='full')full(t,c);if(m==='look')look(bl.filter(x=>!isIntro(x)),t.name,c);if(m==='order')order(bl,0,c,t);if(m==='cloze')cloze(t,c);if(m==='two')two(t,c)})}
-function xmenu(x){stopTTS();const c=x.col;
+function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
   const groups=x.k==='t1'?[...new Set(x.blocks.map(b=>b.label.split('｜')[0]))]:[];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
   <div class="card" style="--c:${c}"><span class="lab">ほかの暗記要素</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
@@ -197,8 +221,8 @@ function full(t,c,showJp=true){
   $('bk').onclick=$('bk2').onclick=()=>{stopTTS();menu(t)};
   $('jpOn').onclick=()=>{stopTTS();full(t,c,true)};$('jpOff').onclick=()=>{stopTTS();full(t,c,false)};window.scrollTo(0,0);bindRate();
   const byId={};[...t.a,...t.b].forEach(b=>byId[b.id]=b);
-  app.querySelectorAll('.spk[data-id]').forEach(x=>x.onclick=()=>speak([byId[x.dataset.id].en],x));
-  $('allA').onclick=e=>speak(t.a.map(b=>b.en),e.currentTarget);$('allB').onclick=e=>speak(t.b.map(b=>b.en),e.currentTarget)}
+  app.querySelectorAll('.spk[data-id]').forEach(x=>x.onclick=()=>playIds([x.dataset.id],x));
+  $('allA').onclick=e=>playIds(t.a.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(t.b.map(b=>b.id),e.currentTarget)}
 function xfull(x,c,showJp=true){
   const grp={};for(const b of x.blocks){const g=x.k==='t1'?b.label.split('｜')[0]:'';(grp[g]=grp[g]||[]).push(b)}
   const lab=b=>x.k==='t1'?b.label.split('｜')[1]:b.label;
@@ -210,8 +234,8 @@ function xfull(x,c,showJp=true){
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
   $('bk').onclick=$('bk2').onclick=()=>{stopTTS();xmenu(x)};
   $('jpOn').onclick=()=>{stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
-  const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>speak([byId[z.dataset.id].en],z))}
-function look(list,title,c,i=0){stopTTS();if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
+  const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z))}
+function look(list,title,c,i=0){if(!PL.bg)stopTTS();if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
   app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span><span class="prog">${i+1} / ${list.length}</span>
   <p class="jpt">${b.jp}</p><div id="ans"><div class="hide">声に出して英語で言ってみよう${b.sk?`<br><small>ヒント：${b.sk.replace(/<[^>]+>/g,'')}</small>`:''}</div></div>
   <div class="row" id="ctl"><button class="btn" id="flip">めくる</button></div></div>`;
@@ -220,7 +244,7 @@ function look(list,title,c,i=0){stopTTS();if(i>=list.length){finish(title,c);ret
   const cover=()=>{$('ans').innerHTML=hidden;$('ctl').innerHTML=`<button class="btn" id="flip">めくる</button>`;$('flip').onclick=open};
   const open=()=>{$('ans').innerHTML=`<div class="ent">${b.en}</div>`;
     $('ctl').innerHTML=`<button class="btn g" id="cov">↩ 戻す</button><button class="btn g spk" id="say" style="flex:1;margin:0;min-height:48px;font-size:16px">▶ 英文を聞く</button><div style="flex-basis:100%;height:0"></div><button class="btn ng" data-g="ng">もう一回</button><button class="btn mid" data-g="mid">だいたい</button><button class="btn ok" data-g="ok">言えた！</button>`;
-    $('cov').onclick=()=>{stopTTS();cover()};$('say').onclick=e=>speak([b.en],e.currentTarget);
+    $('cov').onclick=()=>{stopTTS();cover()};$('say').onclick=e=>playIds([b.id],e.currentTarget);
     $('ctl').querySelectorAll('[data-g]').forEach(x=>x.onclick=()=>{grade(b.id,x.dataset.g);gain(x.dataset.g==='ok'?15:x.dataset.g==='mid'?8:3);
       if(x.dataset.g==='ng')list.push(b);look(list,title,c,i+1)})};
   $('flip').onclick=open}
@@ -267,10 +291,14 @@ function roulette(n,score){if(n>=8){toast(`${score} / 8 正解`);finish('質問�
     app.querySelectorAll('.opt')[q.t-1].classList.add('right');app.querySelectorAll('.opt').forEach(x=>x.disabled=true);gain(ok?10:2);
     $('ex').innerHTML=`<div style="margin-top:14px"><span class="lab" style="--c:${COL[q.t]}">${q.tag}</span>${q.en?`<div class="ent" style="--c:${COL[q.t]};font-size:16px">→ ${q.en}</div>`:''}<p class="jpt" style="font-size:14px;margin:6px 0">${q.jp}</p></div><div class="row"><button class="btn" id="nx" style="background:#E07A9B">次へ</button></div>`;
     $('nx').onclick=()=>roulette(n+1,score+(ok?1:0))})}
-function finish(title,c){stopTTS();confetti();
+function finish(title,c){if(!PL.bg)stopTTS();confetti();
   app.innerHTML=`<div class="card" style="--c:${c};text-align:center"><span class="lab">ラウンド終了</span><h1 class="jp" style="font-size:28px">${title}<br>おつかれさま！</h1>
   <p class="lead">今の Band：<b>${$('band').textContent}</b>　連続 ${S.streak} 日</p><div class="row"><button class="btn" id="hm">ホームへ</button></div></div>`;
   $('hm').onclick=home}
+$('mpPlay').onclick=()=>{if(!AU.src&&PL.ids.length){plLoad();return}AU.paused?AU.play():AU.pause()};
+$('mpNext').onclick=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}};
+$('mpPrev').onclick=()=>{if(PL.i>0){PL.i--;plLoad()}};
+$('mpX').onclick=()=>stopTTS();
 home();
 }
 </script>
