@@ -7,6 +7,7 @@
 
 ## 構成
 - `public/index.html` … 画面すべて（CSS・JS込みの単一ファイル）。ほかに `public/sw.js`・`public/manifest.webmanifest`・`public/icons/`。データは localStorage キー `toefl_bp_v1`（必ず try/catch）。
+- `public/ielts-trainer/` … 別アプリ「IELTS 暗記トレーナー」（万能テンプレートの暗記用・単一HTML、API不使用、localStorage キー `ielts-trainer-v1`）。`/ielts-trainer/` で配信。
 - `lib/core.mjs` … LLM呼び出しの本体（プロンプト `TASKS`、Gemini/Claude 呼び出し、`handle()`）。`action` で処理を分岐。
   APIキーはサーバー側の環境変数のみ（`env` 引数で受け取る。`process.env` は直接使わない）。
 - `worker/index.mjs`＋`wrangler.jsonc` … Cloudflare Workers の入口（`public/` を配信し `/api/claude` を処理、待ち時間50秒）。
