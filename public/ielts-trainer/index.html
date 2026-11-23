@@ -200,7 +200,7 @@ function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
   <div class="card" style="--c:${c}"><span class="lab">万能テンプレート ${'①②③'[t.k-1]}</span><h1 class="jp" style="font-size:30px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${part==='a'?'':'g'}" data-p="a">本体（Part 2）</button><button class="btn ${part==='b'?'':'g'}" data-p="b">続き（${t.theme2}）</button></div>
    <div class="koma">${t.koma.map((k,i)=>`<div><b>${i+1}</b>${k}</div>`).join('')}</div>
-   <p class="qtag" style="margin:4px 0 0">隠してスピークで出すブロック</p>
+   <p class="qtag" style="margin:4px 0 0">全文を見る・隠してスピークで出すブロック</p>
    <div class="chips" style="margin-top:6px"><button class="chip ${S.focus===false?'':'done'}" data-f="1">丸ごと覚える4つ</button><button class="chip ${S.focus===false?'done':''}" data-f="0">全部</button></div>
    <p class="note" style="margin-top:6px">丸ごと覚える：本体の核・社会の核・C・D。ほかは骨組みリレーで流れだけ。</p></div>
   <div class="modes" style="--c:${c}">${MODES.map(m=>`<button class="mode" data-m="${m[0]}"><div class="ic">${m[1]}</div><b>${m[2]}</b><span>${m[3]}</span></button>`).join('')}</div>`;
@@ -222,19 +222,23 @@ function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
   app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;
     if(m==='full')xfull(x,c);if(m==='look')look(pick(),x.name,c);if(m==='shuf')look(shuffle(pick()),x.name,c);if(m==='cloze')cloze({...x,blocks:pick().map(({t,...r})=>r),_src:x},c)})}
 function full(t,c,showJp=true){
+  const fm=S.focus!==false;const A=fm?t.a.filter(isMem):t.a,B=fm?t.b.filter(isMem):t.b;
   const sec=(title,q,bl)=>`<div class="card" style="--c:${c};margin-top:14px;animation:none"><span class="lab">${title}</span><p class="big" style="font-size:17px">${q}</p>
    ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><span class="mem ${isMem(b)?'on':''}">${isMem(b)?'丸ごと':'骨組み'}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`;
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
   <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
+   <p class="qtag" style="margin:12px 0 0">表示するブロック（隠してスピークも同じ設定）</p>
+   <div class="chips" style="margin-top:6px"><button class="chip ${fm?'done':''}" data-f="1">丸ごと覚える4つ</button><button class="chip ${fm?'':'done'}" data-f="0">全部</button></div>
    <div class="row"><button class="btn spk" id="allA" style="margin:0;min-height:48px;font-size:15px">▶ 本体を聞く</button><button class="btn spk" id="allB" style="margin:0;min-height:48px;font-size:15px">▶ 続きを聞く</button></div>${rateHTML()}</div>
-  ${sec('本体（Part 2）',t.q1,t.a)}${sec('続き（'+t.theme2+'）',t.q2,t.b)}
+  ${sec('本体（Part 2）',t.q1,A)}${sec('続き（'+t.theme2+'）',t.q2,B)}
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
   $('bk').onclick=$('bk2').onclick=()=>{stopTTS();menu(t)};
   $('jpOn').onclick=()=>{stopTTS();full(t,c,true)};$('jpOff').onclick=()=>{stopTTS();full(t,c,false)};window.scrollTo(0,0);bindRate();
   const byId={};[...t.a,...t.b].forEach(b=>byId[b.id]=b);
   app.querySelectorAll('.spk[data-id]').forEach(x=>x.onclick=()=>playIds([x.dataset.id],x));
-  $('allA').onclick=e=>playIds(t.a.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(t.b.map(b=>b.id),e.currentTarget)}
+  $('allA').onclick=e=>playIds(A.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(B.map(b=>b.id),e.currentTarget);
+  app.querySelectorAll('[data-f]').forEach(z=>z.onclick=()=>{S.focus=z.dataset.f==='1';save();stopTTS();full(t,c,showJp)})}
 function xfull(x,c,showJp=true){
   const grp={};for(const b of x.blocks){const g=x.k==='t1'?b.label.split('｜')[0]:'';(grp[g]=grp[g]||[]).push(b)}
   const lab=b=>x.k==='t1'?b.label.split('｜')[1]:b.label;
