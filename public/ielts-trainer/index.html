@@ -88,6 +88,8 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .mp button{border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:var(--bg);border-radius:12px;min-width:44px;height:44px;font:800 15px 'Zen Maru Gothic','Nunito';cursor:pointer;padding:0 10px}
 .spk{border:1px solid var(--line);background:var(--paper);color:var(--c);border-radius:99px;font:800 13px 'Zen Maru Gothic','Nunito';padding:6px 12px;min-height:36px;cursor:pointer;margin-left:6px}
 .mem{display:inline-block;font:800 11px 'Zen Maru Gothic';border-radius:99px;padding:2px 8px;margin-left:6px;background:var(--line);color:var(--mut)}.mem.on{background:var(--c);color:#fff}
+.ent.playing{background:color-mix(in srgb,var(--c) 7%,transparent);border-radius:12px;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 7%,transparent)}
+.sn{transition:background .2s;border-radius:4px}.sn.rd{background:rgba(255,214,70,.55);box-shadow:0 0 0 2px rgba(255,214,70,.55)}
 .spk.on{background:var(--c);color:#fff;border-color:var(--c)}
 .qtag{font:800 12px 'Nunito';color:var(--mut);letter-spacing:.04em}
 .big{font:800 20px/1.45 'Nunito';margin:8px 0 4px}
@@ -116,13 +118,25 @@ function pickVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^en/i.t
   const sc=v=>(/Premium|Enhanced|Natural|Neural/i.test(v.name)?4:0)+(/en[-_]GB/i.test(v.lang)?2:/en[-_]US/i.test(v.lang)?1:0)+(/Google|Daniel|Serena|Kate|Samantha|Karen/i.test(v.name)?1:0);
   return vs.sort((a,b)=>sc(b)-sc(a))[0]||null}catch(e){return null}}
 const ttsText=h=>h.replace(/<br\/?>/g,' ').replace(/<[^>]+>/g,'').replace(/&#x27;|&#39;/g,"'").replace(/&amp;/g,'&').replace(/_{2,}/g,'blank').replace(/[\[\]]/g,'');
-function stopTTS(){try{speechSynthesis.cancel()}catch(e){}try{AU.pause();AU.removeAttribute('src');AU.load()}catch(e){}PL.ids=[];PL.bg=false;mpShow(false);document.querySelectorAll('.spk.on').forEach(b=>b.classList.remove('on'))}
+function stopTTS(){hlClear();try{speechSynthesis.cancel()}catch(e){}try{AU.pause();AU.removeAttribute('src');AU.load()}catch(e){}PL.ids=[];PL.bg=false;mpShow(false);document.querySelectorAll('.spk.on').forEach(b=>b.classList.remove('on'))}
 function speak(list,btn){if(!('speechSynthesis' in window)){toast('この端末は読み上げに対応していません');return}
   if(btn&&btn.classList.contains('on')){stopTTS();return}stopTTS();if(btn)btn.classList.add('on');
   const v=pickVoice();let i=0;const next=()=>{if(i>=list.length){if(btn)btn.classList.remove('on');return}
     const u=new SpeechSynthesisUtterance(ttsText(list[i++]));u.lang=v?v.lang:'en-GB';if(v)u.voice=v;u.rate=S.rate||0.95;u.onend=next;u.onerror=()=>{if(btn)btn.classList.remove('on')};speechSynthesis.speak(u)};next()}
 try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
 /* audio player: real files so playback continues in the background / lock screen */
+function sentHTML(h){const out=[];let cur='',depth=0,i=0;
+  while(i<h.length){if(h[i]==='<'){const j=h.indexOf('>',i);const tag=h.slice(i,j+1);if(/^<(b|u|i)>$/.test(tag))depth++;else if(/^<\/(b|u|i)>$/.test(tag))depth--;cur+=tag;i=j+1;continue}
+    cur+=h[i];if(/[.!?]/.test(h[i])&&depth===0&&(h[i+1]===' '||i===h.length-1)){out.push(cur);cur='';if(h[i+1]===' '){i++;cur=''}}i++}
+  if(cur.trim())out.push(cur);return out.map(x=>`<span class="sn">${x}</span>`).join(' ')}
+function hlClear(){document.querySelectorAll('.playing').forEach(e=>e.classList.remove('playing'));document.querySelectorAll('.sn.rd').forEach(e=>e.classList.remove('rd'))}
+function hl(){const id=PL.ids[PL.i];if(!id){hlClear();return}
+  const els=document.querySelectorAll(`[data-blk="${id}"]`);
+  document.querySelectorAll('.playing').forEach(e=>{if(e.dataset.blk!==id)e.classList.remove('playing')});
+  els.forEach(el=>{if(!el.classList.contains('playing')){el.classList.add('playing');const r=el.getBoundingClientRect();if(r.top<60||r.bottom>innerHeight-130)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'})}
+    const sn=[...el.querySelectorAll('.sn')];if(!sn.length)return;const lens=sn.map(x=>x.textContent.length);const tot=lens.reduce((a,b)=>a+b,0);
+    const f=AU.duration?AU.currentTime/AU.duration:0;let acc=0,k=0;for(;k<lens.length;k++){acc+=lens[k]/tot;if(f<acc)break}
+    sn.forEach((x,j)=>x.classList.toggle('rd',j===Math.min(k,sn.length-1)))})}
 const ALL={};for(const t of D.T)for(const b of [...t.a,...t.b,...t.a.filter(x=>x.short).map(x=>({...x,id:x.id+'s',en:x.short.en,jp:x.short.jp,label:x.label+'（短縮版）'}))])ALL[b.id]={...b,grp:t.name};for(const x of D.X)for(const b of x.blocks)ALL[b.id]={...b,grp:x.name};
 const AU=new Audio();AU.preload='auto';window.__AU=AU;const PL={ids:[],i:0,btn:null,title:''};
 function mpShow(on){const m=$('mp');if(m)m.hidden=!on}
@@ -134,7 +148,7 @@ function plLoad(){const id=PL.ids[PL.i];AU.src='audio/'+id+'.mp3';AU.playbackRat
 function playIds(ids,btn,title,bg,loop){if(btn&&btn.classList.contains('on')){stopTTS();return}stopTTS();if(!ids.length)return;
   PL.ids=ids;PL.i=0;PL.btn=btn||null;PL.bg=!!bg;PL.loop=!!loop;PL.rounds=1;PL.title=title||'';if(btn)btn.classList.add('on');mpShow(true);plLoad()}
 AU.onended=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}else if(PL.loop){PL.i=0;PL.rounds++;plLoad()}else{if(PL.btn)PL.btn.classList.remove('on');mpSync();$('mpPlay').textContent='再生';PL.i=0;AU.removeAttribute('src')}};
-AU.onplay=AU.onpause=mpSync;
+AU.onplay=AU.onpause=mpSync;AU.ontimeupdate=hl;
 try{const ms=navigator.mediaSession;ms.setActionHandler('play',()=>AU.play());ms.setActionHandler('pause',()=>AU.pause());
   ms.setActionHandler('nexttrack',()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}});ms.setActionHandler('previoustrack',()=>{if(PL.i>0){PL.i--;plLoad()}})}catch(e){}
 const rateHTML=()=>`<div class="chips" style="margin-top:8px">${[['ゆっくり',.8],['ふつう',.95],['はやい',1.1]].map(([n,r])=>`<button class="chip rate ${Math.abs((S.rate||.95)-r)<.01?'done':''}" data-r="${r}">${n}</button>`).join('')}</div>`;
@@ -227,7 +241,7 @@ function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
 function full(t,c,showJp=true){
   const A=memA(t),B=memB(t);
   const sec=(title,q,bl)=>`<div class="card" style="--c:${c};margin-top:14px;animation:none"><span class="lab">${title}</span><p class="big" style="font-size:17px">${q}</p>
-   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}${ALL[b.id.replace(/s$/,'')]&&b.id.endsWith('s')?`<details style="margin-top:6px"><summary class="qtag" style="cursor:pointer">元の長い文（冊子と同じ）</summary><div class="ent" style="font-size:14px;color:var(--mut)">${ALL[b.id.replace(/s$/,'')].en}</div></details>`:''}</div>`).join('')}</div>`;
+   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}${ALL[b.id.replace(/s$/,'')]&&b.id.endsWith('s')?`<details style="margin-top:6px"><summary class="qtag" style="cursor:pointer">元の長い文（冊子と同じ）</summary><div class="ent" style="font-size:14px;color:var(--mut)">${ALL[b.id.replace(/s$/,'')].en}</div></details>`:''}</div>`).join('')}</div>`;
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
   <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
@@ -239,7 +253,7 @@ function full(t,c,showJp=true){
   $('jpOn').onclick=()=>{if(!PL.bg)stopTTS();full(t,c,true)};$('jpOff').onclick=()=>{if(!PL.bg)stopTTS();full(t,c,false)};window.scrollTo(0,0);bindRate();
   
   app.querySelectorAll('.spk[data-id]').forEach(x=>x.onclick=()=>playIds([x.dataset.id],x));
-  $('allAB').onclick=()=>{playIds([...A,...B].map(b=>b.id),null,t.name,true,true);toast('くり返し再生します。止めるときは下の×')};$('allA').onclick=e=>playIds(A.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(B.map(b=>b.id),e.currentTarget);}
+  hl();$('allAB').onclick=()=>{playIds([...A,...B].map(b=>b.id),null,t.name,true,true);toast('くり返し再生します。止めるときは下の×')};$('allA').onclick=e=>playIds(A.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(B.map(b=>b.id),e.currentTarget);}
 function xfull(x,c,showJp=true){
   const grp={};for(const b of x.blocks){const g=x.k==='t1'?b.label.split('｜')[0]:'';(grp[g]=grp[g]||[]).push(b)}
   const lab=b=>x.k==='t1'?b.label.split('｜')[1]:b.label;
@@ -247,7 +261,7 @@ function xfull(x,c,showJp=true){
   <div class="card" style="--c:${c}"><span class="lab">一覧</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>${rateHTML()}</div>
   ${Object.entries(grp).map(([g,bl])=>`<div class="card" style="--c:${c};margin-top:14px;animation:none">${g?`<span class="lab">${g}</span>`:''}
-   ${bl.map((b,i)=>`<div style="${i||g?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${lab(b)}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`).join('')}
+   ${bl.map((b,i)=>`<div style="${i||g?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${lab(b)}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`).join('')}
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
   $('bk').onclick=$('bk2').onclick=()=>{if(!PL.bg)stopTTS();xmenu(x)};
   $('jpOn').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
@@ -259,7 +273,7 @@ function look(list,title,c,i=0){if(!PL.bg)stopTTS();if(i>=list.length){finish(ti
   $('bk').onclick=home;
   const hidden=$('ans').innerHTML;
   const cover=()=>{$('ans').innerHTML=hidden;$('ctl').innerHTML=`<button class="btn" id="flip">めくる</button>`;$('flip').onclick=open};
-  const open=()=>{$('ans').innerHTML=`<div class="ent">${b.en}</div>`;
+  const open=()=>{$('ans').innerHTML=`<div class="ent" data-blk="${b.id}">${sentHTML(b.en)}</div>`;
     $('ctl').innerHTML=`<button class="btn g" id="cov">↩ 戻す</button><button class="btn g spk" id="say" style="flex:1;margin:0;min-height:48px;font-size:16px">▶ 英文を聞く</button><div style="flex-basis:100%;height:0"></div><button class="btn ng" data-g="ng">もう一回</button><button class="btn mid" data-g="mid">だいたい</button><button class="btn ok" data-g="ok">言えた！</button>`;
     $('cov').onclick=()=>{stopTTS();cover()};$('say').onclick=e=>playIds([b.id],e.currentTarget);
     $('ctl').querySelectorAll('[data-g]').forEach(x=>x.onclick=()=>{grade(b.id,x.dataset.g);gain(x.dataset.g==='ok'?15:x.dataset.g==='mid'?8:3);
