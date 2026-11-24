@@ -83,7 +83,8 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .note{font-size:13px;color:var(--mut);margin-top:10px}
 .mp{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));width:min(612px,calc(100% - 20px));background:var(--ink);color:var(--bg);border-radius:20px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:6px;z-index:7;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
 .mp[hidden]{display:none}
-.mpi{flex:1;min-width:0}.mpi b{display:block;font:700 13px 'Zen Maru Gothic';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mpi small{font:700 12px 'Nunito';opacity:.7}
+.mp{flex-wrap:wrap;padding:10px 10px 10px}.mpi{flex:1 1 100%;min-width:0;padding:0 4px 4px}.mp button{flex:1}.mpi b{display:block;font:700 13px 'Zen Maru Gothic';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mpi small{font:700 12px 'Nunito';opacity:.7}
+.mp #mpLoop{font-size:12px;padding:0 6px;white-space:nowrap}.mp #mpLoop.on{background:var(--gold);color:#3b2c00}
 .mp button{border:0;background:color-mix(in srgb,var(--bg) 16%,transparent);color:var(--bg);border-radius:12px;min-width:44px;height:44px;font:800 15px 'Zen Maru Gothic','Nunito';cursor:pointer;padding:0 10px}
 .spk{border:1px solid var(--line);background:var(--paper);color:var(--c);border-radius:99px;font:800 13px 'Zen Maru Gothic','Nunito';padding:6px 12px;min-height:36px;cursor:pointer;margin-left:6px}
 .mem{display:inline-block;font:800 11px 'Zen Maru Gothic';border-radius:99px;padding:2px 8px;margin-left:6px;background:var(--line);color:var(--mut)}.mem.on{background:var(--c);color:#fff}
@@ -99,7 +100,7 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 <div class="pill"><b id="streak">0</b>連続</div><div class="pill"><b id="due">0</b>復習</div></div>
 <main id="app"></main>
 </div>
-<div class="mp" id="mp" hidden><div class="mpi"><b id="mpT"></b><small id="mpN"></small></div><button id="mpPrev" aria-label="前へ">‹</button><button id="mpPlay">止める</button><button id="mpNext" aria-label="次へ">›</button><button id="mpX" aria-label="停止">×</button></div>
+<div class="mp" id="mp" hidden><div class="mpi"><b id="mpT"></b><small id="mpN"></small></div><button id="mpPrev" aria-label="前へ">‹</button><button id="mpPlay">止める</button><button id="mpNext" aria-label="次へ">›</button><button id="mpLoop" aria-label="くり返し">くり返し</button><button id="mpX" aria-label="停止">×</button></div>
 <div class="toast" id="toast"></div><div class="conf" id="conf"></div>
 <script>
 {
@@ -125,13 +126,14 @@ try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
 const ALL={};for(const t of D.T)for(const b of [...t.a,...t.b,...t.a.filter(x=>x.short).map(x=>({...x,id:x.id+'s',en:x.short.en,jp:x.short.jp,label:x.label+'（短縮版）'}))])ALL[b.id]={...b,grp:t.name};for(const x of D.X)for(const b of x.blocks)ALL[b.id]={...b,grp:x.name};
 const AU=new Audio();AU.preload='auto';window.__AU=AU;const PL={ids:[],i:0,btn:null,title:''};
 function mpShow(on){const m=$('mp');if(m)m.hidden=!on}
-function mpSync(){const b=ALL[PL.ids[PL.i]];if(!b)return;$('mpT').textContent=`${b.grp}｜${b.label}`;$('mpN').textContent=`${PL.i+1} / ${PL.ids.length}`;$('mpPlay').textContent=AU.paused?'再生':'止める';
+function mpSync(){const b=ALL[PL.ids[PL.i]];if(!b)return;$('mpT').textContent=`${b.grp}｜${b.label}`;$('mpN').textContent=`${PL.i+1} / ${PL.ids.length}${PL.loop?`　くり返し ${PL.rounds}回目`:''}`;$('mpLoop').classList.toggle('on',!!PL.loop);$('mpPlay').textContent=AU.paused?'再生':'止める';
   try{if('mediaSession' in navigator){navigator.mediaSession.metadata=new MediaMetadata({title:b.label,artist:b.grp,album:'IELTS 暗記トレーナー'});navigator.mediaSession.playbackState=AU.paused?'paused':'playing'}}catch(e){}}
 function plLoad(){const id=PL.ids[PL.i];AU.src='audio/'+id+'.mp3';AU.playbackRate=(S.rate||.95)/.95;
-  const p=AU.play();if(p&&p.catch)p.catch(()=>{const b=ALL[id];if(b)speak([b.en],null)});mpSync()}
-function playIds(ids,btn,title,bg){if(btn&&btn.classList.contains('on')){stopTTS();return}stopTTS();if(!ids.length)return;
-  PL.ids=ids;PL.i=0;PL.btn=btn||null;PL.bg=!!bg;PL.title=title||'';if(btn)btn.classList.add('on');mpShow(true);plLoad()}
-AU.onended=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}else{if(PL.btn)PL.btn.classList.remove('on');mpSync();$('mpPlay').textContent='再生';PL.i=0;AU.removeAttribute('src')}};
+  const p=AU.play();if(p&&p.catch)p.catch(e=>{if(e&&(e.name==='AbortError'||e.name==='NotAllowedError')){mpSync();return}
+    const b=ALL[id];if(b&&'speechSynthesis' in window){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(ttsText(b.en));const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}u.rate=S.rate||.95;u.onend=()=>AU.onended();speechSynthesis.speak(u)}catch(_){}}});mpSync()}
+function playIds(ids,btn,title,bg,loop){if(btn&&btn.classList.contains('on')){stopTTS();return}stopTTS();if(!ids.length)return;
+  PL.ids=ids;PL.i=0;PL.btn=btn||null;PL.bg=!!bg;PL.loop=!!loop;PL.rounds=1;PL.title=title||'';if(btn)btn.classList.add('on');mpShow(true);plLoad()}
+AU.onended=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}else if(PL.loop){PL.i=0;PL.rounds++;plLoad()}else{if(PL.btn)PL.btn.classList.remove('on');mpSync();$('mpPlay').textContent='再生';PL.i=0;AU.removeAttribute('src')}};
 AU.onplay=AU.onpause=mpSync;
 try{const ms=navigator.mediaSession;ms.setActionHandler('play',()=>AU.play());ms.setActionHandler('pause',()=>AU.pause());
   ms.setActionHandler('nexttrack',()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}});ms.setActionHandler('previoustrack',()=>{if(PL.i>0){PL.i--;plLoad()}})}catch(e){}
@@ -186,6 +188,7 @@ function home(){if(!PL.bg)stopTTS();hud();
    <button class="mode" id="mDue"><div class="ic">!</div><b>今日の復習</b><span>忘れかけのブロックだけを出題（${dueList().length}枚）</span></button>
    <button class="mode" id="mQ"><div class="ic">?</div><b>質問ルーレット</b><span>ランダムな質問に、どのテンプレートで返す？</span></button>
    <button class="mode" id="mL1"><div class="ic">♪</div><b>ながら聞き：テンプレート</b><span>①②③の本体と続きを通して再生。画面を消しても続く</span></button>
+   <button class="mode" id="mL3"><div class="ic">∞</div><b>全部通し（くり返し）</b><span>①②③の本体と続きを、止めるまで何度でもくり返す</span></button>
    <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>Part 1 → テンプレート → Task 1 → Task 2 の順に全部再生</span></button>
   </div>
   <p class="note">進み具合はこの端末のブラウザにだけ保存されます。</p>`;
@@ -195,6 +198,7 @@ function home(){if(!PL.bg)stopTTS();hud();
   $('mQ').onclick=()=>roulette(0,0);
   const tIds=D.T.flatMap(t=>[...memA(t),...t.b].map(b=>b.id));
   $('mL1').onclick=()=>playIds(tIds,null,'テンプレート',true);
+  $('mL3').onclick=()=>{playIds(tIds,null,'テンプレート',true,true);toast('くり返し再生します')};
   const xIds=k=>D.X.find(x=>x.k===k).blocks.map(b=>b.id);
   $('mL2').onclick=()=>playIds([...xIds('p1'),...tIds,...xIds('t1'),...xIds('t2'),...xIds('ex')],null,'全部',true)}
 function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
@@ -227,14 +231,15 @@ function full(t,c,showJp=true){
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
   <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
-   <div class="row"><button class="btn spk" id="allA" style="margin:0;min-height:48px;font-size:15px">▶ 本体を聞く</button><button class="btn spk" id="allB" style="margin:0;min-height:48px;font-size:15px">▶ 続きを聞く</button></div>${rateHTML()}</div>
+   <div class="row"><button class="btn spk" id="allA" style="margin:0;min-height:48px;font-size:15px">▶ 本体を聞く</button><button class="btn spk" id="allB" style="margin:0;min-height:48px;font-size:15px">▶ 続きを聞く</button></div>
+   <div class="row" style="margin-top:8px"><button class="btn" id="allAB" style="min-height:52px">▶ 本体＋続きを通して聞く（くり返し）</button></div>${rateHTML()}</div>
   ${sec('本体（Part 2）',t.q1,A)}${sec('続き（'+t.theme2+'）',t.q2,B)}
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
-  $('bk').onclick=$('bk2').onclick=()=>{stopTTS();menu(t)};
-  $('jpOn').onclick=()=>{stopTTS();full(t,c,true)};$('jpOff').onclick=()=>{stopTTS();full(t,c,false)};window.scrollTo(0,0);bindRate();
+  $('bk').onclick=$('bk2').onclick=()=>{if(!PL.bg)stopTTS();menu(t)};
+  $('jpOn').onclick=()=>{if(!PL.bg)stopTTS();full(t,c,true)};$('jpOff').onclick=()=>{if(!PL.bg)stopTTS();full(t,c,false)};window.scrollTo(0,0);bindRate();
   
   app.querySelectorAll('.spk[data-id]').forEach(x=>x.onclick=()=>playIds([x.dataset.id],x));
-  $('allA').onclick=e=>playIds(A.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(B.map(b=>b.id),e.currentTarget);}
+  $('allAB').onclick=()=>{playIds([...A,...B].map(b=>b.id),null,t.name,true,true);toast('くり返し再生します。止めるときは下の×')};$('allA').onclick=e=>playIds(A.map(b=>b.id),e.currentTarget);$('allB').onclick=e=>playIds(B.map(b=>b.id),e.currentTarget);}
 function xfull(x,c,showJp=true){
   const grp={};for(const b of x.blocks){const g=x.k==='t1'?b.label.split('｜')[0]:'';(grp[g]=grp[g]||[]).push(b)}
   const lab=b=>x.k==='t1'?b.label.split('｜')[1]:b.label;
@@ -244,8 +249,8 @@ function xfull(x,c,showJp=true){
   ${Object.entries(grp).map(([g,bl])=>`<div class="card" style="--c:${c};margin-top:14px;animation:none">${g?`<span class="lab">${g}</span>`:''}
    ${bl.map((b,i)=>`<div style="${i||g?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${lab(b)}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" style="font-size:16px;margin:4px 0">${b.en}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`).join('')}
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
-  $('bk').onclick=$('bk2').onclick=()=>{stopTTS();xmenu(x)};
-  $('jpOn').onclick=()=>{stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
+  $('bk').onclick=$('bk2').onclick=()=>{if(!PL.bg)stopTTS();xmenu(x)};
+  $('jpOn').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
   const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z))}
 function look(list,title,c,i=0){if(!PL.bg)stopTTS();if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
   app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span>${b.t&&b.t.a?``:''}<span class="prog">${i+1} / ${list.length}</span>
@@ -311,6 +316,7 @@ $('mpPlay').onclick=()=>{if(!AU.src&&PL.ids.length){plLoad();return}AU.paused?AU
 $('mpNext').onclick=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}};
 $('mpPrev').onclick=()=>{if(PL.i>0){PL.i--;plLoad()}};
 $('mpX').onclick=()=>stopTTS();
+$('mpLoop').onclick=()=>{PL.loop=!PL.loop;if(PL.loop)PL.rounds=PL.rounds||1;mpSync()};
 home();
 }
 </script>
