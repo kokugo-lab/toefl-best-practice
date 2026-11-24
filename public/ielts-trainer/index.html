@@ -240,9 +240,9 @@ function home(){if(COURSE.on){courseView();return}if(!PL.bg)stopTTS();hud();
   <div class="modes" style="--c:#E07A9B">
    <button class="mode" id="mDue"><div class="ic">!</div><b>今日の復習</b><span>忘れかけのブロックだけを出題（${dueList().length}枚）</span></button>
    <button class="mode" id="mQ"><div class="ic">?</div><b>質問ルーレット</b><span>ランダムな質問に、どのテンプレートで返す？</span></button>
-   <button class="mode" id="mL1"><div class="ic">♪</div><b>ながら聞き：テンプレート</b><span>①②③の本体と論を通して再生。画面を消しても続く</span></button>
-   <button class="mode" id="mL3"><div class="ic">∞</div><b>全部通し（くり返し）</b><span>①②③の本体と論を、止めるまで何度でもくり返す</span></button>
-   <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>Part 1 → テンプレート → Task 1 → Task 2 の順に全部再生</span></button>
+   <button class="mode" id="mL1"><div class="ic">♪</div><b>ながら聞き：テンプレート</b><span>①②③の本体と論、論④貧困を通して再生。画面を消しても続く</span></button>
+   <button class="mode" id="mL3"><div class="ic">∞</div><b>全部通し（くり返し）</b><span>①②③の本体と論、論④貧困を、止めるまで何度でもくり返す</span></button>
+   <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>Part 1 → テンプレート → Part 3 → Task 1 → Task 2 の順に全部再生</span></button>
   </div>
   <p class="note">進み具合はこの端末のブラウザにだけ保存されます。</p>`;
   app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>coursePlan(+b.dataset.c));
@@ -251,11 +251,11 @@ function home(){if(COURSE.on){courseView();return}if(!PL.bg)stopTTS();hud();
   app.querySelectorAll('.tpl[data-x]').forEach(b=>b.onclick=()=>xmenu(D.X[b.dataset.x]));
   $('mDue').onclick=()=>{const l=dueList();if(!l.length){toast('今日の復習はありません');return}look(shuffle(l),'今日の復習','#E07A9B')};
   $('mQ').onclick=()=>roulette(0,0);$('mEx').onclick=exMenu;
-  const tIds=D.T.flatMap(t=>[...memA(t),...t.b].map(b=>b.id));
+  const tIds=[...D.T.flatMap(t=>[...memA(t),...t.b].map(b=>b.id)),...D.X.find(x=>x.k==='pv').blocks.map(b=>b.id)];
   $('mL1').onclick=()=>playIds(tIds,null,'テンプレート',true);
   $('mL3').onclick=()=>{playIds(tIds,null,'テンプレート',true,true);toast('くり返し再生します')};
   const xIds=k=>D.X.find(x=>x.k===k).blocks.map(b=>b.id);
-  $('mL2').onclick=()=>playIds([...xIds('p1'),...tIds,...xIds('t1'),...xIds('t2'),...xIds('ex')],null,'全部',true)}
+  $('mL2').onclick=()=>playIds([...xIds('p1'),...tIds,...xIds('ct'),...xIds('t1'),...xIds('t2'),...xIds('ur'),...xIds('ex')],null,'全部',true)}
 function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
   <div class="card" style="--c:${c}"><span class="lab">万能テンプレート ${'①②③'[t.k-1]}</span><h1 class="jp" style="font-size:30px">${t.name}</h1>
@@ -383,13 +383,14 @@ function xfull(x,c,showJp=true){
   const lab=b=>x.k==='t1'?b.label.split('｜')[1]:b.label;
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
   <div class="card" style="--c:${c}"><span class="lab">一覧</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
-   <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>${rateHTML()}</div>
+   <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
+   <div class="row"><button class="btn g" id="xAll" style="min-height:48px;font-size:15px">▶ 全文を聞く</button><button class="btn" id="xLoop" style="min-height:48px;font-size:15px">▶ くり返し聞く</button></div>${rateHTML()}</div>
   ${Object.entries(grp).map(([g,bl])=>`<div class="card" style="--c:${c};margin-top:14px;animation:none">${g?`<span class="lab">${g}</span>`:''}
    ${bl.map((b,i)=>`<div style="${i||g?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${lab(b)}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`).join('')}
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
   $('bk').onclick=$('bk2').onclick=()=>{if(!PL.bg)stopTTS();xmenu(x)};
   $('jpOn').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
-  const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z))}
+  const xIdsAll=x.blocks.map(b=>b.id);$('xAll').onclick=()=>playIds(xIdsAll,$('xAll'),x.name,true);$('xLoop').onclick=()=>{playIds(xIdsAll,$('xLoop'),x.name,true,true);toast('くり返し再生します')};const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z))}
 function look(list,title,c,i=0){if(!PL.bg)stopTTS();if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
   app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span>${b.t&&b.t.a?``:''}<span class="prog">${i+1} / ${list.length}</span>
   <p class="jpt">${b.jp}</p><div id="ans"><div class="hide">声に出して英語で言ってみよう${b.sk?`<br><small>ヒント：${b.sk.replace(/<[^>]+>/g,'')}</small>`:''}</div></div>
