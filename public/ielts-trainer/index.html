@@ -90,6 +90,10 @@ button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .mem{display:inline-block;font:800 11px 'Zen Maru Gothic';border-radius:99px;padding:2px 8px;margin-left:6px;background:var(--line);color:var(--mut)}.mem.on{background:var(--c);color:#fff}
 .ent.playing{background:color-mix(in srgb,var(--c) 7%,transparent);border-radius:12px;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 7%,transparent)}
 .sn{transition:background .2s;border-radius:4px}.sn.rd{background:rgba(255,214,70,.55);box-shadow:0 0 0 2px rgba(255,214,70,.55)}
+.cbar{position:fixed;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top));width:min(612px,calc(100% - 20px));background:#264653;color:#fff;border-radius:16px;padding:8px 8px 8px 12px;display:flex;align-items:center;gap:6px;z-index:6;box-shadow:0 8px 24px -10px rgba(0,0,0,.5)}
+.cbar.over{background:#B4472D}.cbi{flex:1;min-width:0}.cbi b{display:block;font:700 13px 'Zen Maru Gothic';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cbi small{font:700 11.5px 'Nunito','Zen Maru Gothic';opacity:.85}
+.cbar button{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:12px;min-height:44px;padding:0 12px;font:800 14px 'Zen Maru Gothic';cursor:pointer}
+body:has(.cbar) .wrap{padding-top:calc(86px + env(safe-area-inset-top))}
 .spk.on{background:var(--c);color:#fff;border-color:var(--c)}
 .qtag{font:800 12px 'Nunito';color:var(--mut);letter-spacing:.04em}
 .big{font:800 20px/1.45 'Nunito';margin:8px 0 4px}
@@ -187,8 +191,8 @@ const MODES=[
  ['cloze','C','フレーズ穴埋め','太字・マーカーの表現を4択で当てる'],
  ['two','D','2分チャレンジ','4コマだけを見て、2分話しきる'],
 ];
-function home(){if(!PL.bg)stopTTS();hud();
-  app.innerHTML=`<h1 class="jp">今日もテンプレートを<br>1枚ずつ。</h1><p class="lead">3つの万能テンプレートと、Task 1・Task 2・Part 1の型を、カードゲームで覚えよう。言えたら XP、全部覚えたら Band 9.0。</p>
+function home(){if(COURSE.on){courseView();return}if(!PL.bg)stopTTS();hud();
+  app.innerHTML=`${courseHome()}<h1 class="jp">今日もテンプレートを<br>1枚ずつ。</h1><p class="lead">3つの万能テンプレートと、Task 1・Task 2・Part 1の型を、カードゲームで覚えよう。言えたら XP、全部覚えたら Band 9.0。</p>
   <div class="sec">スピーキング Part 1</div>
   <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">P1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='p1'))}</div>
   <div class="sec">万能テンプレート（Part 2・3／Task 2）</div>
@@ -206,6 +210,8 @@ function home(){if(!PL.bg)stopTTS();hud();
    <button class="mode" id="mL2"><div class="ic">♪</div><b>ながら聞き：全部</b><span>Part 1 → テンプレート → Task 1 → Task 2 の順に全部再生</span></button>
   </div>
   <p class="note">進み具合はこの端末のブラウザにだけ保存されます。</p>`;
+  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>coursePlan(+b.dataset.c));
+  app.querySelectorAll('[data-known]').forEach(b=>b.onclick=()=>{markKnown(b.dataset.known);home()});
   app.querySelectorAll('.tpl[data-t]').forEach(b=>b.onclick=()=>menu(D.T[b.dataset.t-1]));
   app.querySelectorAll('.tpl[data-x]').forEach(b=>b.onclick=()=>xmenu(D.X[b.dataset.x]));
   $('mDue').onclick=()=>{const l=dueList();if(!l.length){toast('今日の復習はありません');return}look(shuffle(l),'今日の復習','#E07A9B')};
@@ -226,6 +232,89 @@ function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
 
   app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const bl=t[part].map(x=>({...x,t}));const m=b.dataset.m;
     if(m==='full')full(t,c);if(m==='look'){const L=(part==='a'?memA(t):memB(t)).filter(x=>!isIntro(x)).map(x=>({...x,t}));if(!L.length){toast('このページに丸ごと覚えるブロックはありません');return}look(L,t.name,c)}if(m==='order')order(bl,0,c,t);if(m==='cloze')cloze(t,c);if(m==='two')two(t,c)})}
+/* ===== コース：学習状況から分刻みのメニューを作る ===== */
+const DEADLINE='2026-11-28';
+const COURSE={on:false,steps:[],i:0,len:0,t0:0,st0:0,tick:null};
+const IDX={};for(const t of D.T){for(const b of memA(t))IDX[b.id]={b,t,part:'a'};for(const b of memB(t))IDX[b.id]={b,t,part:'b'}}for(const x of D.X)for(const b of x.blocks)IDX[b.id]={b,t:x,part:'x'};
+const TIERS=[
+ ['最優先：テンプレートの核',['1a1','1b1','2a1','2b1','3a1','3b1']],
+ ['優先：A・B（短縮版）とC・D',['1a2s','1a3s','1b2','1b3','2a2s','2a3s','2b2','2b3','3a2s','3a3s','3b2','3b3']],
+ ['Part 1 短い答え',D.X.find(x=>x.k==='p1').blocks.map(b=>b.id)],
+ ['テンプレートの結び',['1a4','1b4','2a4','2b4','3a4','3b4']],
+ ['Task 2 の型と具体例',[...D.X.find(x=>x.k==='t2').blocks,...D.X.find(x=>x.k==='ex').blocks].map(b=>b.id)],
+ ['Task 1 図表の型',D.X.find(x=>x.k==='t1').blocks.map(b=>b.id)]];
+const tierOf=id=>TIERS.findIndex(([,ids])=>ids.includes(id));
+const lvl=id=>(S.box[id]||{}).l||0;const learned=id=>lvl(id)>=3;
+const isDue=id=>{const b=S.box[id];return b&&b.l<5&&b.d<=today()};
+function daysLeft(){return Math.max(1,Math.round((new Date(DEADLINE+'T23:59:00')-new Date(today()+'T00:00:00'))/864e5))}
+function tierStat(){return TIERS.map(([n,ids])=>({n,ids,done:ids.filter(learned).length}))}
+const grpKey=id=>{const e=IDX[id];return e.t.k+(e.part||'')};
+const grpName=id=>{const e=IDX[id];return e.part==='a'?e.t.name+'（本体）':e.part==='b'?e.t.name+'（続き）':e.t.name};
+function buildCourse(T){const steps=[];let left=T;const push=(type,ids,min,title,extra)=>{steps.push({type,ids,min,title,...(extra||{})});left-=min};
+  const order=TIERS.flatMap(([,ids])=>ids);const pr=id=>order.indexOf(id);
+  const finishMin=T>=30?(T>=60?6:4):0;
+  // 1) 復習（忘れかけ）
+  const due=order.filter(isDue);if(due.length){const n=Math.min(due.length,Math.max(2,Math.floor((T*0.35)/0.6)));const m=Math.max(2,Math.ceil(n*0.6));push('speak',due.slice(0,n),m,`復習：忘れかけ ${n}ブロック`)}
+  // 2) 新しく覚える（優先度順・同じまとまりで最大4つ）
+  let pool=order.filter(id=>!learned(id)&&!(due.includes(id)));
+  while(left-finishMin>=3&&pool.length){const g=grpKey(pool[0]);const tmax=Math.max(tierOf(pool[0]),1);const chunk=[];for(const id of pool){if(grpKey(id)===g&&tierOf(id)<=tmax&&chunk.length<4)chunk.push(id)}
+    const cost=n=>Math.ceil(n*1.3)+Math.ceil(n*0.8);while(chunk.length>1&&cost(chunk.length)>left-finishMin)chunk.pop();
+    if(cost(chunk.length)>left-finishMin)break;
+    push('read',chunk,Math.ceil(chunk.length*1.3),`音読：${grpName(chunk[0])} ${chunk.length}ブロック`);
+    push('speak',chunk,Math.ceil(chunk.length*0.8),`隠してスピーク：${grpName(chunk[0])}`);
+    pool=pool.filter(id=>!chunk.includes(id))}
+  // 3) 全部覚えていたら、レベルの低い順に総復習
+  if(!pool.length&&left-finishMin>=2){const rest=order.filter(id=>lvl(id)<5).sort((a,b)=>lvl(a)-lvl(b)||pr(a)-pr(b));const n=Math.min(rest.length,Math.floor((left-finishMin)/0.6));if(n)push('speak',rest.slice(0,n),Math.ceil(n*0.6),`総復習：定着の弱い順 ${n}ブロック`)}
+  // 4) 仕上げ
+  if(finishMin){const ready=D.T.filter(t=>learned(t.a[1].id));if(ready.length){const t=ready[Math.floor(Math.random()*ready.length)];push('two',[],3,`2分チャレンジ：${t.name}`,{t:t.k})}
+    else push('roulette',[],3,'質問ルーレット（5問）');if(T>=60)push('roulette',[],3,'質問ルーレット（5問）')}
+  if(left>0&&steps.length)steps[steps.length-1].min+=left;
+  return steps}
+const mmss=m=>`${Math.floor(m)}:${String(Math.round((m%1)*60)).padStart(2,'0')}`;
+function courseHome(){const st=tierStat();const remain=st.reduce((a,x)=>a+x.ids.length-x.done,0);const dl=daysLeft();
+  return `<div class="card" style="--c:#264653;margin-bottom:6px;animation:none"><span class="lab">学習コース</span>
+   <p class="big" style="font-size:18px;margin:6px 0 2px">${DEADLINE.slice(5).replace('-','/')}まで あと${dl}日・未完了 ${remain}ブロック</p>
+   <p class="note" style="margin:0">今日の目安：${Math.ceil(remain/dl)}ブロック以上を「覚えた」に（3回言えたら覚えた扱い）</p>
+   ${st.map(x=>`<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font:700 13px 'Zen Maru Gothic'"><span>${x.n}</span><span>${x.done}/${x.ids.length}</span></div><div class="bar"><i style="width:${x.done/x.ids.length*100}%"></i></div></div>`).join('')}
+   <div class="chips" style="margin-top:12px">${[15,30,45,60,90].map(m=>`<button class="chip" data-c="${m}">${m}分コース</button>`).join('')}</div>
+   <details style="margin-top:10px"><summary class="qtag" style="cursor:pointer">すでに覚えているものを登録する</summary><p class="note" style="margin:6px 0">登録すると、新しく覚えるメニューから外れ、復習だけに出ます。</p>
+   <div class="chips">${[...D.T.map(t=>[t.k,'①②③'[t.k-1]+' '+t.name]),['p1','Part 1']].map(([k,n])=>`<button class="chip" data-known="${k}">${n}</button>`).join('')}</div></details></div>`}
+function markKnown(k){const ids=k==='p1'?D.X.find(x=>x.k==='p1').blocks.map(b=>b.id):(t=>[...memA(t),...memB(t)].filter(b=>!isIntro(b)).map(b=>b.id))(D.T[k-1]);
+  const d=new Date(Date.now()+2*864e5).toISOString().slice(0,10);ids.forEach(id=>{if(lvl(id)<3)S.box[id]={l:3,d}});save();toast('覚えたものとして登録しました')}
+function coursePlan(T){const steps=buildCourse(T);let acc=0;
+  app.innerHTML=`<button class="back" id="bk">← ホーム</button><div class="card" style="--c:#264653"><span class="lab">${T}分コース</span><h1 class="jp" style="font-size:26px">今のあなた用のメニュー</h1>
+   <p class="note" style="margin-top:0">学習状況から自動で作りました。始めるたびに中身が変わります。</p>
+   ${steps.map((x,i)=>{const a=acc;acc+=x.min;return `<div style="display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;border-top:1px solid var(--line);padding:9px 0"><b style="font:800 14px Nunito;color:var(--mut)">${mmss(a)}–${mmss(acc)}</b><span style="font:700 15px 'Zen Maru Gothic'">${x.title}</span></div>`}).join('')}
+   <div class="row"><button class="btn" id="go" style="background:#264653">スタート</button><button class="btn g" id="re">作り直す</button></div></div>`;
+  $('bk').onclick=home;$('re').onclick=()=>coursePlan(T);
+  $('go').onclick=()=>{Object.assign(COURSE,{on:true,steps,i:-1,len:T,t0:Date.now()});clearInterval(COURSE.tick);COURSE.tick=setInterval(courseBar,1000);courseNext()}}
+function courseBar(){let b=$('cbar');if(!COURSE.on){if(b)b.remove();return}
+  if(!b){b=document.createElement('div');b.id='cbar';b.className='cbar';document.body.appendChild(b)}
+  const x=COURSE.steps[COURSE.i];if(!x)return;const el=(Date.now()-COURSE.st0)/1000,lim=x.min*60,rem=Math.round(lim-el);
+  const tot=Math.round(COURSE.len*60-(Date.now()-COURSE.t0)/1000);
+  b.innerHTML=`<div class="cbi"><b>${COURSE.i+1}/${COURSE.steps.length}　${x.title}</b><small>${rem>=0?`このステップ 残り ${Math.floor(rem/60)}:${String(rem%60).padStart(2,'0')}`:'時間です。キリのいいところで次へ'}　｜　全体 残り ${Math.max(0,Math.floor(tot/60))}分</small></div><button id="cnx">次へ</button><button id="cqt">やめる</button>`;
+  b.classList.toggle('over',rem<0);
+  if(rem===0)toast('このステップの時間です');
+  $('cnx').onclick=courseNext;$('cqt').onclick=()=>{COURSE.on=false;clearInterval(COURSE.tick);courseBar();stopTTS();home()}}
+function courseNext(){COURSE.i++;COURSE.st0=Date.now();if(PL.ids.length&&!PL.bg)stopTTS();
+  if(COURSE.i>=COURSE.steps.length){COURSE.on=false;clearInterval(COURSE.tick);courseBar();stopTTS();confetti();
+    app.innerHTML=`<div class="card" style="--c:#264653;text-align:center"><span class="lab">コース完了</span><h1 class="jp" style="font-size:28px">${COURSE.len}分、おつかれさま！</h1><p class="lead">今の Band：<b>${$('band').textContent}</b></p>${courseHome()}<div class="row"><button class="btn" id="hm" style="background:#264653">ホームへ</button></div></div>`;
+    app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>coursePlan(+b.dataset.c));$('hm').onclick=home;window.scrollTo(0,0);return}
+  courseBar();const x=COURSE.steps[COURSE.i];window.scrollTo(0,0);
+  if(x.type==='read')courseRead(x);
+  else if(x.type==='speak')look(x.ids.map(id=>({...IDX[id].b,t:IDX[id].t})),x.title,'#264653');
+  else if(x.type==='two')two(D.T[x.t-1],COL[x.t]);
+  else if(x.type==='roulette')roulette(0,0,5)}
+function courseRead(x){const c=colOf(IDX[x.ids[0]].t);
+  app.innerHTML=`<div class="card" style="--c:${c}"><span class="lab">音読</span><h1 class="jp" style="font-size:24px">${x.title}</h1>
+   <p class="note" style="margin-top:0">音声に重ねて読む → 自分だけで読む。各ブロック3〜5回。最後は顔を上げて言ってみる。</p>
+   <div class="row"><button class="btn" id="rl">▶ くり返し再生</button></div>${rateHTML()}</div>
+   <div class="card" style="--c:${c};margin-top:14px;animation:none">${x.ids.map((id,i)=>{const b=IDX[id].b;return `<div style="${i?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${b.label}</span><button class="spk" data-id="${id}">▶ 聞く</button><div class="ent" data-blk="${id}" style="font-size:17px;margin:4px 0">${sentHTML(b.en)}</div><p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p></div>`}).join('')}</div>
+   <div class="row"><button class="btn" id="dn" style="background:#264653">音読できた → 次へ</button></div>`;
+  bindRate();app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z));
+  $('rl').onclick=()=>playIds(x.ids,null,x.title,false,true);$('dn').onclick=()=>{stopTTS();gain(5);courseNext()}}
+function courseView(){const x=COURSE.steps[COURSE.i];if(!x){COURSE.on=false;home();return}COURSE.st0=COURSE.st0||Date.now();
+  if(x.type==='read')courseRead(x);else if(x.type==='speak')look(x.ids.map(id=>({...IDX[id].b,t:IDX[id].t})),x.title,'#264653');else if(x.type==='two')two(D.T[x.t-1],COL[x.t]);else roulette(0,0,5)}
 function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
   const groups=x.k==='t1'?[...new Set(x.blocks.map(b=>b.label.split('｜')[0]))]:[];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
@@ -312,17 +401,17 @@ function two(t,c){let left=120,run=null;const R=80,C=2*Math.PI*R;
     $('arc').setAttribute('stroke-dasharray',`${C*left/120} ${C}`);
     document.querySelectorAll('#km div').forEach((d,i)=>d.classList.toggle('on',i===Math.min(3,Math.floor((120-left)/30))));
     if(left<=0){stop();$('ctl').innerHTML=`<button class="btn ng" data-g="1">途中で止まった</button><button class="btn ok" data-g="0">話しきった！</button>`;
-      $('ctl').querySelectorAll('button').forEach(x=>x.onclick=()=>{if(x.dataset.g==='0'){gain(40);confetti()}else gain(10);menu(t)})}},1000)}}
-function roulette(n,score){if(n>=8){toast(`${score} / 8 正解`);finish('質問ルーレット','#E07A9B');return}
+      $('ctl').querySelectorAll('button').forEach(x=>x.onclick=()=>{if(x.dataset.g==='0'){gain(40);confetti()}else gain(10);if(COURSE.on)courseNext();else menu(t)})}},1000)}}
+function roulette(n,score,max=8){if(n>=max){toast(`${score} / ${max} 正解`);finish('質問ルーレット','#E07A9B');return}
   const q=shuffle(D.Q)[0];
-  app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:#E07A9B"><span class="qtag">${q.g}　${n+1} / 8</span><p class="big">${q.q}</p><p class="note" style="margin-top:0">どのテンプレートで返す？</p>
+  app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:#E07A9B"><span class="qtag">${q.g}　${n+1} / ${max}</span><p class="big">${q.q}</p><p class="note" style="margin-top:0">どのテンプレートで返す？</p>
   ${D.T.map(t=>`<button class="btn g opt" data-t="${t.k}">${'①②③'[t.k-1]}　${t.name}</button>`).join('')}<div id="ex"></div></div>`;
   $('bk').onclick=home;
   app.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const ok=+o.dataset.t===q.t;o.classList.add(ok?'right':'wrong');
     app.querySelectorAll('.opt')[q.t-1].classList.add('right');app.querySelectorAll('.opt').forEach(x=>x.disabled=true);gain(ok?10:2);
     $('ex').innerHTML=`<div style="margin-top:14px"><span class="lab" style="--c:${COL[q.t]}">${q.tag}</span>${q.en?`<div class="ent" style="--c:${COL[q.t]};font-size:16px">→ ${q.en}</div>`:''}<p class="jpt" style="font-size:14px;margin:6px 0">${q.jp}</p></div><div class="row"><button class="btn" id="nx" style="background:#E07A9B">次へ</button></div>`;
-    $('nx').onclick=()=>roulette(n+1,score+(ok?1:0))})}
-function finish(title,c){if(!PL.bg)stopTTS();confetti();
+    $('nx').onclick=()=>roulette(n+1,score+(ok?1:0),max)})}
+function finish(title,c){if(COURSE.on){courseNext();return}if(!PL.bg)stopTTS();confetti();
   app.innerHTML=`<div class="card" style="--c:${c};text-align:center"><span class="lab">ラウンド終了</span><h1 class="jp" style="font-size:28px">${title}<br>おつかれさま！</h1>
   <p class="lead">今の Band：<b>${$('band').textContent}</b>　連続 ${S.streak} 日</p><div class="row"><button class="btn" id="hm">ホームへ</button></div></div>`;
   $('hm').onclick=home}
