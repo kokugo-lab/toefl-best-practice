@@ -107,7 +107,7 @@ body:has(.cbar) .wrap{padding-top:calc(86px + env(safe-area-inset-top))}
 .memo,.wta{width:100%;border:2px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);font:500 16px/1.6 'Nunito';padding:10px 12px;resize:vertical}
 .memo{min-height:70px;margin-top:8px}.wta{min-height:46vh;margin-top:12px}.memo:focus,.wta:focus{outline:none;border-color:var(--c,#C2577A)}
 .peek{margin-top:12px}.peek summary{cursor:pointer;color:var(--mut);font:700 14px 'Zen Maru Gothic';padding:6px 0}
-.glue{background:rgba(120,130,140,.13);color:var(--mut);border-radius:4px;padding:0 2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.mtx{font-size:16px}.mdl{margin-top:12px;background:color-mix(in srgb,var(--gold) 9%,var(--paper));border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);border-radius:16px;padding:12px 14px}.mdl>b{font-size:14px}.mdl .ent{margin:8px 0}.mdl .mem{margin:2px 4px 2px 0}
+.t1img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:#fff;margin:8px 0}.t1img{cursor:zoom-in}.zoom{position:fixed;inset:0;z-index:20;background:rgba(20,24,30,.92);overflow:auto;-webkit-overflow-scrolling:touch;display:flex;align-items:center}.zoom img{width:max(100vw,900px);height:auto;background:#fff}.zoom button{position:fixed;top:calc(10px + env(safe-area-inset-top));right:10px;border:0;border-radius:99px;min-width:44px;min-height:44px;font:800 18px 'Nunito';background:#fff;color:#24323d}.wc{display:inline-block;margin-left:6px;font:800 11px 'Nunito','Zen Maru Gothic';color:var(--mut);background:var(--line);border-radius:99px;padding:1px 8px;vertical-align:middle}.glue{background:rgba(120,130,140,.13);color:var(--mut);border-radius:4px;padding:0 2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}.mtx{font-size:16px}.mdl{margin-top:12px;background:color-mix(in srgb,var(--gold) 9%,var(--paper));border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);border-radius:16px;padding:12px 14px}.mdl>b{font-size:14px}.mdl .ent{margin:8px 0}.mdl .mem{margin:2px 4px 2px 0}
 .warn{font:700 12px 'Zen Maru Gothic';color:#B4472D;background:#fde8e1;border-radius:99px;padding:2px 8px}
 .rv{margin-top:12px;animation:none}.aud{width:100%;margin:4px 0}
 .wclock{font:900 18px 'Nunito';font-variant-numeric:tabular-nums;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:6px 12px}.wclock.over{color:#fff;background:#B4472D}
@@ -215,6 +215,11 @@ function grade(id,g){const b=S.box[id]||{l:0,d:''};b.l=g==='ng'?1:g==='mid'?Math
 function dueList(){const d=today();return allBlocks().filter(b=>S.box[b.id]&&S.box[b.id].d<=d&&S.box[b.id].l<5)}
 function pct(t){const bl=blocksOf(t);return Math.round(bl.reduce((s,b)=>s+((S.box[b.id]||{}).l||0),0)/(bl.length*5)*100)}
 function ring(p,c){const r=22,C=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 52 52"><circle cx="26" cy="26" r="${r}" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="26" cy="26" r="${r}" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C*p/100} ${C}" transform="rotate(-90 26 26)"/><text x="26" y="30" text-anchor="middle" font-size="12" font-weight="900" fill="currentColor" font-family="Nunito">${p}%</text></svg>`}
+const T1IMG={'折れ線グラフ':'t1_2','棒グラフ':'t1_4','円グラフ':'t1_6','表':'t1_8','複合グラフ':'t1_10','地図':'t1_12','工程図':'t1_14'};
+const t1Img=lab=>{const k=T1IMG[(lab||'').split('｜')[0]];return k?`<img class="t1img" src="img/${k}.png" alt="例の図" loading="lazy">`:''};
+const wcount=h=>(h||'').replace(/<[^>]+>/g,' ').replace(/_{2,}/g,' ').split(/\s+/).filter(w=>/[A-Za-z0-9]/.test(w)).length;
+const wsum=bl=>bl.reduce((a,b)=>a+wcount(b.en),0);
+const wTag=n=>`<span class="wc">${n}語</span>`;
 const MODES=[
  ['full','全','全文を見る','全文を、日本語つきで通して読む'],
  ['look','A','隠してスピーク','日本語を見て英語で言う → めくって答え合わせ'],
@@ -225,15 +230,15 @@ const MODES=[
 function home(){if(COURSE.on){courseView();return}if(!PL.bg)stopTTS();hud();
   app.innerHTML=`${courseHome()}<h1 class="jp">今日もテンプレートを<br>1枚ずつ。</h1><p class="lead">3つの万能テンプレートと、Task 1・Task 2・Part 1の型を、カードゲームで覚えよう。言えたら XP、全部覚えたら Band 9.0。</p>
   <div class="sec">スピーキング Part 1</div>
-  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">P1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='p1'))}</div>
+  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">P1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚・${wsum(x.blocks)}語</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='p1'))}</div>
   <div class="sec">万能テンプレート（Part 2・3／Task 2）</div>
-  <div class="deck">${D.T.map(t=>`<button class="tpl" style="--c:${COL[t.k]}" data-t="${t.k}"><span class="n">${'①②③'[t.k-1]}</span><span><h3 class="jp">${t.name}</h3><p>Part 2 ＋ 論：${t.theme2}</p></span>${ring(pct(t),COL[t.k])}</button>`).join('')}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n">④</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='pv'))}</div>
+  <div class="deck">${D.T.map(t=>`<button class="tpl" style="--c:${COL[t.k]}" data-t="${t.k}"><span class="n">${'①②③'[t.k-1]}</span><span><h3 class="jp">${t.name}</h3><p>Part 2 ＋ 論：${t.theme2}・${wsum(memA(t))+wsum(memB(t))}語</p></span>${ring(pct(t),COL[t.k])}</button>`).join('')}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n">④</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${wsum(x.blocks)}語</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='pv'))}</div>
   <div class="sec">スピーキング Part 3</div>
   <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">P3</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='ct'))}</div>
   <div class="sec">ライティング Task 1</div>
-  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">T1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='t1'))}</div>
+  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">T1</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚・${wsum(x.blocks)}語</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='t1'))}</div>
   <div class="sec">ライティング Task 2</div>
-  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">型</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='t2'))}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">例</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='ex'))}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">理</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='ur'))}</div>
+  <div class="deck">${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">型</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚・${wsum(x.blocks)}語</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='t2'))}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">例</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚・${wsum(x.blocks)}語</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='ex'))}${(x=>`<button class="tpl" style="--c:${x.col}" data-x="${D.X.indexOf(x)}"><span class="n" style="font-size:17px">理</span><span><h3 class="jp">${x.name}</h3><p>${x.sub}・${x.blocks.length}枚・${wsum(x.blocks)}語</p></span>${ring(pct(x),x.col)}</button>`)(D.X.find(x=>x.k==='ur'))}</div>
   <div class="sec">本番モード（ランダム出題）</div>
   <button class="exbig" id="mEx"><span class="ic">🎙️</span><span><b>本番みたいに解く</b><span>スピーキング・ライティングのお題がランダムに出る。あとでテンプレートを使った答えと見比べ</span></span></button>
   <div class="sec">ミックスで遊ぶ</div>
@@ -258,7 +263,7 @@ function home(){if(COURSE.on){courseView();return}if(!PL.bg)stopTTS();hud();
   $('mL2').onclick=()=>playIds([...xIds('p1'),...tIds,...xIds('ct'),...xIds('t1'),...xIds('t2'),...xIds('ur'),...xIds('ex')],null,'全部',true)}
 function menu(t,part){if(!PL.bg)stopTTS();part=part||'a';const c=COL[t.k];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
-  <div class="card" style="--c:${c}"><span class="lab">万能テンプレート ${'①②③'[t.k-1]}</span><h1 class="jp" style="font-size:30px">${t.name}</h1>
+  <div class="card" style="--c:${c}"><span class="lab">万能テンプレート ${'①②③'[t.k-1]}</span><h1 class="jp" style="font-size:30px">${t.name}</h1><p class="lead" style="margin:0">本体 ${wsum(memA(t))}語 ＋ 論 ${wsum(memB(t))}語</p>
    <div class="row" style="margin-top:6px"><button class="btn ${part==='a'?'':'g'}" data-p="a">本体（Part 2）</button><button class="btn ${part==='b'?'':'g'}" data-p="b">論（${t.theme2}）</button></div>
    <div class="koma">${t.koma.map((k,i)=>`<div><b>${i+1}</b>${k}</div>`).join('')}</div></div>
   <div class="modes" style="--c:${c}">${MODES.map(m=>`<button class="mode" data-m="${m[0]}"><div class="ic">${m[1]}</div><b>${m[2]}</b><span>${m[3]}</span></button>`).join('')}</div>`;
@@ -353,7 +358,7 @@ function courseView(){const x=COURSE.steps[COURSE.i];if(!x){COURSE.on=false;home
 function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
   const groups=x.k==='t1'?[...new Set(x.blocks.map(b=>b.label.split('｜')[0]))]:[];
   app.innerHTML=`<button class="back" id="bk">← ホーム</button>
-  <div class="card" style="--c:${c}"><span class="lab">暗記カード</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
+  <div class="card" style="--c:${c}"><span class="lab">暗記カード</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚・合計 ${wsum(x.blocks)}語</p>
   ${groups.length?`<div class="chips" id="gr">${groups.map((g,i)=>`<button class="chip ${i?'':'done'}" data-g="${g}">${g}</button>`).join('')}<button class="chip" data-g="">全部</button></div>`:''}</div>
   <div class="modes" style="--c:${c}">${MODES.filter(m=>m[0]==='full'||m[0]==='look'||m[0]==='cloze'||(m[0]==='order'&&x.blocks.some(b=>b.sk))).map(m=>`<button class="mode" data-m="${m[0]}"><div class="ic">${m[1]}</div><b>${m[2]}</b><span>${m[3]}</span></button>`).join('')}
   <button class="mode" data-m="shuf"><div class="ic">S</div><b>シャッフル</b><span>順番をバラバラにして隠してスピーク</span></button></div>`;
@@ -364,10 +369,10 @@ function xmenu(x){if(!PL.bg)stopTTS();const c=x.col;
     if(m==='full')xfull(x,c);if(m==='look')look(pick(),x.name,c);if(m==='shuf')look(shuffle(pick()),x.name,c);if(m==='cloze')cloze({...x,blocks:pick().map(({t,...r})=>r),_src:x},c);if(m==='order')order(pick().filter(b=>b.sk),0,c,x)})}
 function full(t,c,showJp=true){
   const A=memA(t),B=memB(t);
-  const sec=(title,q,bl)=>`<div class="card" style="--c:${c};margin-top:14px;animation:none"><span class="lab">${title}</span><p class="big" style="font-size:17px">${q}</p>
-   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}${ALL[b.id.replace(/s$/,'')]&&b.id.endsWith('s')?`<details style="margin-top:6px"><summary class="qtag" style="cursor:pointer">元の長い文（冊子と同じ）</summary><div class="ent" style="font-size:14px;color:var(--mut)">${ALL[b.id.replace(/s$/,'')].en}</div></details>`:''}</div>`).join('')}</div>`;
+  const sec=(title,q,bl)=>`<div class="card" style="--c:${c};margin-top:14px;animation:none"><span class="lab">${title}</span>${wTag(wsum(bl))}<p class="big" style="font-size:17px">${q}</p>
+   ${bl.map(b=>`<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px"><span class="qtag">${b.label}</span>${wTag(wcount(b.en))}<button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}${ALL[b.id.replace(/s$/,'')]&&b.id.endsWith('s')?`<details style="margin-top:6px"><summary class="qtag" style="cursor:pointer">元の長い文（冊子と同じ）</summary><div class="ent" style="font-size:14px;color:var(--mut)">${ALL[b.id.replace(/s$/,'')].en}</div></details>`:''}</div>`).join('')}</div>`;
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
-  <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1>
+  <div class="card" style="--c:${c}"><span class="lab">全文</span><h1 class="jp" style="font-size:28px">${t.name}</h1><p class="lead" style="margin:0">本体 ${wsum(A)}語 ＋ 論 ${wsum(B)}語 ＝ 合計 ${wsum(A)+wsum(B)}語</p>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
    <div class="row"><button class="btn spk" id="allA" style="margin:0;min-height:48px;font-size:15px">▶ 本体を聞く</button><button class="btn spk" id="allB" style="margin:0;min-height:48px;font-size:15px">▶ 論を聞く</button></div>
    <div class="row" style="margin-top:8px"><button class="btn" id="allAB" style="min-height:52px">▶ 本体＋論を通して聞く（くり返し）</button></div>${rateHTML()}</div>
@@ -382,18 +387,18 @@ function xfull(x,c,showJp=true){
   const grp={};for(const b of x.blocks){const g=x.k==='t1'?b.label.split('｜')[0]:'';(grp[g]=grp[g]||[]).push(b)}
   const lab=b=>x.k==='t1'?b.label.split('｜')[1]:b.label;
   app.innerHTML=`<button class="back" id="bk">← もどる</button>
-  <div class="card" style="--c:${c}"><span class="lab">一覧</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚</p>
+  <div class="card" style="--c:${c}"><span class="lab">一覧</span><h1 class="jp" style="font-size:28px">${x.name}</h1><p class="lead" style="margin:0">${x.sub}・${x.blocks.length}枚・合計 ${wsum(x.blocks)}語</p>
    <div class="row" style="margin-top:6px"><button class="btn ${showJp?'':'g'}" id="jpOn">日本語つき</button><button class="btn ${showJp?'g':''}" id="jpOff">英語だけ</button></div>
    <div class="row"><button class="btn g" id="xAll" style="min-height:48px;font-size:15px">▶ 全文を聞く</button><button class="btn" id="xLoop" style="min-height:48px;font-size:15px">▶ くり返し聞く</button></div>${rateHTML()}</div>
-  ${Object.entries(grp).map(([g,bl])=>`<div class="card" style="--c:${c};margin-top:14px;animation:none">${g?`<span class="lab">${g}</span>`:''}
-   ${bl.map((b,i)=>`<div style="${i||g?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${lab(b)}</span><button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`).join('')}
+  ${Object.entries(grp).map(([g,bl])=>`<div class="card" style="--c:${c};margin-top:14px;animation:none">${g?`<span class="lab">${g}</span>${wTag(wsum(bl))}`:''}${x.k==='t1'?t1Img(g):''}
+   ${bl.map((b,i)=>`<div style="${i||g?'border-top:1px solid var(--line);padding-top:10px;margin-top:10px':''}"><span class="qtag">${lab(b)}</span>${wTag(wcount(b.en))}<button class="spk" data-id="${b.id}">▶ 聞く</button><div class="ent" data-blk="${b.id}" style="font-size:16px;margin:4px 0">${sentHTML(b.en)}</div>${showJp?`<p class="jpt" style="font-size:14px;margin:0;color:var(--mut)">${b.jp}</p>`:''}</div>`).join('')}</div>`).join('')}
   <div class="row"><button class="btn" id="bk2">メニューへ</button></div>`;
   $('bk').onclick=$('bk2').onclick=()=>{if(!PL.bg)stopTTS();xmenu(x)};
   $('jpOn').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,true)};$('jpOff').onclick=()=>{if(!PL.bg)stopTTS();xfull(x,c,false)};window.scrollTo(0,0);bindRate();
   const xIdsAll=x.blocks.map(b=>b.id);$('xAll').onclick=()=>playIds(xIdsAll,$('xAll'),x.name,true);$('xLoop').onclick=()=>{playIds(xIdsAll,$('xLoop'),x.name,true,true);toast('くり返し再生します')};const byId={};x.blocks.forEach(b=>byId[b.id]=b);app.querySelectorAll('.spk[data-id]').forEach(z=>z.onclick=()=>playIds([z.dataset.id],z))}
 function look(list,title,c,i=0){if(!PL.bg)stopTTS();if(i>=list.length){finish(title,c);return}const b=list[i];const cc=b.t?colOf(b.t):c;
-  app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span>${b.t&&b.t.a?``:''}<span class="prog">${i+1} / ${list.length}</span>
-  <p class="jpt">${b.jp}</p><div id="ans"><div class="hide">声に出して英語で言ってみよう${b.sk?`<br><small>ヒント：${b.sk.replace(/<[^>]+>/g,'')}</small>`:''}</div></div>
+  app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${cc}"><span class="lab">${b.t?b.t.name+'｜':''}${b.label}</span>${wTag(wcount(b.en))}${b.t&&b.t.a?``:''}<span class="prog">${i+1} / ${list.length}</span>
+  ${/^t1\d/.test(b.id)?t1Img(b.label):''}<p class="jpt">${b.jp}</p><div id="ans"><div class="hide">声に出して英語で言ってみよう${b.sk?`<br><small>ヒント：${b.sk.replace(/<[^>]+>/g,'')}</small>`:''}</div></div>
   <div class="row" id="ctl"><button class="btn" id="flip">めくる</button></div></div>`;
   $('bk').onclick=home;
   const hidden=$('ans').innerHTML;
@@ -422,7 +427,7 @@ function cloze(t,c,n=0,score=0){const all=phrases();const ids=new Set(blocksOf(t
   const p=mine[n];const near=all.filter(x=>x.kind===p.kind&&x.txt!==p.txt&&x.t.k===p.t.k);const pool=shuffle(near.length>=3?near:all.filter(x=>x.kind===p.kind&&x.txt!==p.txt)).slice(0,3);const opts=shuffle([p,...pool]);
   const sent=p.b.en.replace(p.raw,'<span style="background:var(--line);border-radius:6px;padding:0 1.2em">　?　</span>');
   app.innerHTML=`<button class="back" id="bk">← やめる</button><div class="card" style="--c:${c}"><span class="lab">${p.b.label}｜${p.t.k==='t1'?'使い回す型':p.kind==='b'?'句動詞':'文法'}</span><span class="prog">${n+1} / ${Math.min(8,mine.length)}</span>
-  <p class="jpt" style="font-size:15px">${p.b.jp}</p><div class="ent">${sent}</div>${opts.map((o,j)=>`<button class="btn g opt" data-j="${j}">${o.txt}</button>`).join('')}</div>`;
+  ${/^t1\d/.test(p.b.id)?t1Img(p.b.label):''}<p class="jpt" style="font-size:15px">${p.b.jp}</p><div class="ent">${sent}</div>${opts.map((o,j)=>`<button class="btn g opt" data-j="${j}">${o.txt}</button>`).join('')}</div>`;
   $('bk').onclick=home;
   app.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{const ok=opts[o.dataset.j]===p;o.classList.add(ok?'right':'wrong');
     if(!ok)app.querySelectorAll('.opt')[opts.indexOf(p)].classList.add('right');gain(ok?10:2);
@@ -482,7 +487,7 @@ function segHTML(x,top){if(x[0]==='~')return `<span class="tpb">${x.slice(1)}</s
   if(n){const ss=splitS(h);h=n.split(',').map(k=>ss[+k]).join(' ')}return `<span class="tpb">${h}</span>`}
 function modelOf(st){
   if(st.part==='w1'){const lab=T1NAME[st.chart.type];const deck=D.X.find(x=>x.k==='t1').blocks;
-    return {paras:[deck.filter(b=>b.label.startsWith(lab)).map(b=>'#'+b.id)],extra:deck.filter(b=>b.label.startsWith('共通の型')).map(b=>b.id),note:`同じ種類（${lab}）の型をつないだ答え。数字と項目をこのグラフのものに入れかえて書く。`}}
+    return {paras:[deck.filter(b=>b.label.startsWith(lab)).map(b=>'#'+b.id)],extra:deck.filter(b=>b.label.startsWith('共通の型')).map(b=>b.id),note:`同じ種類（${lab}）の型をつないだ答え（上の例の図について書いたもの）。数字と項目をこのグラフのものに入れかえて書く。`,img:t1Img(lab)}}
   if(st.part==='w2'){const x=st.task;return {paras:x.m.map(p=>p.map(s=>s==='@intro'?'@i':s==='@concl'?'@c':s)),x,note:'序論・結論は Task 2 の型を設問に合わせて埋めたもの。本論はテンプレートのブロック＋具体例＋つなぎの文。'}}
   const m=st.part===2?st.card.m:st.m;if(!m)return null;
   const note=st.part===1?(st.near?'カードにない話題。つなぎの文は自分の事実に合わせて変えてOK。':'Part 1 は 2〜3文で十分。'):st.part===2?'本体のブロックの前後に、お題に合わせたつなぎの文を足している。':'Part 3 は30〜60秒。最初の1文で質問に答えてから、ブロックで理由を足す。';
@@ -494,7 +499,7 @@ function modelHTML(st){const m=modelOf(st);if(!m)return '';
   if(m.x)ids.unshift(m.x.type);
   const used=ids.map(id=>`<span class="mem on" style="background:${COL[id[0]]||EXC}">${esc(bOf(id).grp)}｜${esc(bOf(id).label)}</span>`).join(' ');
   const ex=m.extra?`<details style="margin-top:8px"><summary class="note" style="cursor:pointer">共通の型（［　］つき）を見る</summary>${m.extra.map(id=>`<p class="ent mtx"><span class="tpb">${bOf(id).en}</span></p>`).join('')}</details>`:'';
-  return `<div class="mdl"><b class="jp">テンプレートをつなぎ合わせた答え</b><div style="margin:4px 0 2px">${used}</div><p class="note" style="margin:2px 0 0"><span class="glue">灰色の文</span>＝つなぎ（お題に合わせて足した文）。それ以外はテンプレートのまま。</p>${body}${ex}<p class="note" style="margin-top:4px">${m.note}</p></div>`}
+  return `<div class="mdl"><b class="jp">テンプレートをつなぎ合わせた答え</b><div style="margin:4px 0 2px">${used}</div>${m.img||''}<p class="note" style="margin:2px 0 0"><span class="glue">灰色の文</span>＝つなぎ（お題に合わせて足した文）。それ以外はテンプレートのまま。</p>${body}${ex}<p class="note" style="margin-top:4px">${m.note}</p></div>`}
 /* ---------- menu ---------- */
 function exMenu(){exQuit();if(!PL.bg)stopTTS();const o=(k,v,l)=>`<button class="chip ${S.ex[k]===v?'done':''}" data-k="${k}" data-v="${v}">${l}</button>`;
   const w=S.wcur?`<button class="btn" id="wRes" style="background:${EXC};margin-top:12px">書きかけの本番を続ける（${S.wcur.title}）</button>`:'';
@@ -667,6 +672,7 @@ function wReviewHTML(m){app.innerHTML=`<button class="back" id="bk">← 本番�
   <div class="row"><button class="btn g" id="hm">ホームへ</button><button class="btn" id="ag" style="background:${EXC}">別のお題でもう一度</button></div>`;
   $('bk').onclick=exMenu;$('hm').onclick=home;$('ag').onclick=()=>wStart({'Task 1＋2':'both','Task 1':'t1','Task 2':'t2'}[m.title.replace('ライティング ','')]||'both');scrollTo(0,0)}
 
+document.addEventListener('click',e=>{const im=e.target.closest&&e.target.closest('img.t1img');if(!im)return;const z=document.createElement('div');z.className='zoom';z.innerHTML=`<img src="${im.getAttribute('src')}" alt=""><button aria-label="閉じる">×</button>`;z.onclick=ev=>{if(ev.target.tagName!=='IMG')z.remove()};document.body.appendChild(z)});
 $('mpPlay').onclick=()=>{if(!AU.src&&PL.ids.length){plLoad();return}AU.paused?AU.play():AU.pause()};
 $('mpNext').onclick=()=>{if(PL.i<PL.ids.length-1){PL.i++;plLoad()}};
 $('mpPrev').onclick=()=>{if(PL.i>0){PL.i--;plLoad()}};
